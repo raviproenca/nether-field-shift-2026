@@ -1,0 +1,27 @@
+# segredos: credencial NUNCA vai para o Git (nem para o repo público)
+.env
+.env.*
+!.env.example
+.netrc
+_netrc
+*.netrc
+.edl_token
+*.pem
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+# dados brutos e cache (baixar com script; não versionar arquivos grandes)
+data/raw/
+data/cache/
+*.nc
+*.h5
+*.hdf
+*.tif
+# node / editores / SO
+node_modules/
+.DS_Store
+.vscode/
+.idea/
