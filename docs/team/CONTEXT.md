@@ -4,7 +4,7 @@
 
 _Updated Nov 14, 2026 after the mentor feedback. Read [docs/scope.md](../scope.md) first, then [decisions.md](decisions.md)._
 
-**Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out.
+**Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out. Implementation is paused until Ravi explicitly releases it (Nov 14 instruction).
 
 ## 1. Where we are
 
