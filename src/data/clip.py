@@ -281,6 +281,8 @@ def unpack_values(raw: np.ndarray, attrs: dict, hdf4: bool) -> np.ndarray:
     scale, offset = _scalar(attrs, "scale_factor"), _scalar(attrs, "add_offset", 0.0)
     if scale is None:
         return array - offset if offset else array
+    if hdf4 and scale > 1:
+        return (array - offset) / scale
     return array * scale + offset
 
 

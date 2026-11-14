@@ -39,12 +39,35 @@ def write_hdf5(path, name, raw, **attributes):
         h5.create_dataset("HDFEOS INFORMATION/StructMetadata.0", data=META.encode())
 
 
+def test_modis_hdf4_ndvi_divides_by_scale_factor(tmp_path):
+    """MOD13Q1: scale_factor=10000, valid_range [-2000, 10000], fill -3000 (real attributes)."""
+    path = tmp_path / "MOD13Q1.hdf"
+    write_hdf4(
+        path,
+        "250m 16 days NDVI",
+        raw_ndvi(),
+        _FillValue=-3000,
+        scale_factor=10000.0,
+        add_offset=0.0,
+        valid_range=[-2000, 10000],
+    )
+    da = clip.read_sinusoidal_tile(path, "NDVI")
+    assert da.values[5, 5] == pytest.approx(0.5)
+    assert np.isnan(da.values[0, :3]).all()  # fill, above and below valid_range
+    assert np.nanmin(da.values) >= -0.2 and np.nanmax(da.values) <= 1.0
+
+
 def test_modis_hdf4_with_a_small_scale_factor_multiplies(tmp_path):
     """MOD11 LST style: scale_factor 0.02 is a multiplier even in HDF4."""
     path = tmp_path / "MOD11.hdf"
     raw = np.full((20, 20), 15000, dtype="int16")
     write_hdf4(path, "LST_Day_1km", raw, _FillValue=0, scale_factor=0.02, add_offset=0.0)
     assert clip.read_sinusoidal_tile(path, "LST_Day").values[3, 3] == pytest.approx(300.0)
+
+
+def test_hdf4_offset_is_subtracted_before_dividing():
+    attrs = {"scale_factor": 100.0, "add_offset": 50.0}
+    assert clip.unpack_values(np.array([250], dtype="int16"), attrs, hdf4=True)[0] == pytest.approx(2.0)
 
 
 def test_viirs_hdf5_attributes_as_arrays(tmp_path):
