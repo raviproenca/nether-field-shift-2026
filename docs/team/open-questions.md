@@ -13,3 +13,4 @@
 | 7 | Who gathers the requirements and opens the issues? | 11:15 | team |
 | 8 | ~~Internal map access: no login or Cloudflare Access?~~ **Decided Nov 14: no login** (see decisions.md) | 11:40 | — |
 | 9 | ~~Which Cloudflare account hosts the `*.pages.dev` project?~~ **Decided Nov 14: Ravi's account**, neutral project name | 11:40 | — |
+| 10 | **Voice TTS license:** `piper-tts` 1.8.0 (`piper1-gpl`) is **GPL-3.0-or-later**; this repo is Apache-2.0. For front B, run Piper as a separate process/service (no import into product code) or choose another free TTS that does not expire; also check the `pt_BR-faber-medium` voice license. See `scripts/spikes/voice/README.md`. | 11:50 | Ravi |
