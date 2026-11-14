@@ -51,13 +51,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def csv_date_format(frame: pd.DataFrame) -> str:
+    """Daily data keeps plain dates; sub-daily data (e.g. GLDAS 3-hourly) keeps the hour."""
+    for column in frame.columns:
+        values = frame[column]
+        if pd.api.types.is_datetime64_any_dtype(values) and (values.dropna() != values.dropna().dt.normalize()).any():
+            return "%Y-%m-%d %H:%M"
+    return "%Y-%m-%d"
+
+
 def write_table(frame: pd.DataFrame, out: Path) -> None:
     if out.suffix not in TABLE_SUFFIXES:
         raise InputError(f"unsupported output '{out.suffix}': use .csv or .parquet")
     with remote_errors(f"writing {out.name}"):
         out.parent.mkdir(parents=True, exist_ok=True)
         if out.suffix == ".csv":
-            frame.to_csv(out, index=False, date_format="%Y-%m-%d")
+            frame.to_csv(out, index=False, date_format=csv_date_format(frame))
         else:
             frame.to_parquet(out, index=False)
 
