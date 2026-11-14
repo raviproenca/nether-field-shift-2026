@@ -1,0 +1,36 @@
+/* AI-assisted: generated with Claude Code, reviewed by <pending Gabriel> */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.map-container {
+  flex: 1;
+  min-height: 0;
+}
