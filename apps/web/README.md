@@ -26,6 +26,21 @@ npm run build       # type-checks, then builds into dist/ (dist/index.html)
 npm run preview     # serves the built dist/ locally
 ```
 
+## What it shows
+
+- OpenStreetMap base map, opening on Sergipe.
+- Region selector (Sergipe, Nordeste). The bounding boxes in `src/regions.ts` are copied from `src/data/regions.py` at the repo root; keep both files equal.
+
+## Credits
+
+| What | License / terms |
+|---|---|
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) tiles from `tile.openstreetmap.org` (attribution shown on the map) | Data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); tile use follows the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/) |
+| [MapLibre GL JS](https://maplibre.org/) | BSD-3-Clause |
+| [React](https://react.dev/) | MIT |
+| [Vite](https://vite.dev/) | MIT |
+| [Geist](https://vercel.com/font) font, self-hosted via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
+
 ## Files not to edit by hand
 
 - `public/_headers` and `public/robots.txt` keep the site out of search engines (`noindex`).
