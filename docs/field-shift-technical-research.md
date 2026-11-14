@@ -22,11 +22,9 @@ The **[Field Shift: Adapting Farms with NASA Data](https://www.spaceappschalleng
 
 ---
 
-## 2. Problem Summary (Portuguese Context Reference)
+## 2. Problem Summary (Short)
 
-*(Per repository language policy in `AGENTS.md`, repository documentation is maintained in English; see Section 3 for the complete problem summary.)*
-
-In summary for Brazilian/Portuguese-speaking contributors: o desafio pede uma ferramenta de apoio à decisão (não apenas um mapa ambiental) que traduza séries históricas da NASA, propriedades locais do solo, características de culturas e prioridades do produtor em comparações transparentes de **pelo menos 3 estratégias de rotação de culturas** (incluindo a atual), explicando evidências, trade-offs e limitações que exigem validação agronômica em campo.
+The challenge asks for a decision-support tool (not just an environmental map) that turns NASA time series, local soil properties, crop characteristics and farmer priorities into transparent comparisons of **at least 3 crop rotation strategies** (including the current one), explaining the evidence, trade-offs and limitations that need agronomic validation in the field.
 
 ---
 
