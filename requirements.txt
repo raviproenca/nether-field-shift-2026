@@ -1,0 +1,19 @@
+# Runtime dependencies, pinned for Python 3.12. Install: uv venv -p 3.12 .venv && uv pip install -r requirements.txt
+# (development, with pytest: requirements-dev.txt)
+earthaccess==0.19.0   # search and download NASA Earthdata (GES DISC, NSIDC, LP DAAC)
+xarray==2026.9.0      # labeled arrays, clipping
+netCDF4==1.7.5.1.post1  # NetCDF read/write
+h5netcdf==1.8.3       # reads remote/lazy HDF5-based NetCDF4 files (GLDAS, IMERG, SMAP)
+rioxarray==0.23.0     # raster clipping and GeoTIFF output
+pandas==3.1.1         # tables and CSV
+pyarrow==26.0.1       # Parquet output
+requests==2.34.2      # POWER API
+# Pinned because their versions decide how files are read and clipped (also pulled in by the packages above):
+numpy==2.5.4          # arrays under xarray, pandas, rasterio
+rasterio==1.5.2       # GDAL bindings behind rioxarray (GeoTIFF, reprojection)
+fsspec==2026.9.0      # remote file access behind earthaccess.open
+# Extras (indispensable):
+h5py==3.16.0          # HDF5 backend of h5netcdf and VIIRS tile reader (not pulled in by h5netcdf 1.8)
+pyhdf==0.11.7         # MODIS MOD13Q1 v061 is HDF4; the rasterio wheel has no HDF4 driver
+pystac-client==0.9.1       # STAC search of the Microsoft Planetary Computer (Sentinel-2), Apache-2.0
+planetary-computer==1.0.0  # signs Planetary Computer asset URLs, no account or key, MIT
