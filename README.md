@@ -6,5 +6,11 @@ Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.s
 
 > 🚧 **Work in progress.** Development happens during the hackathon (November 14–15, 2026), per the event rules.
 
+## Contributing
+Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents: [AGENTS.md](AGENTS.md).
+
+## AI usage
+Built with the help of AI coding assistants; the idea and decisions are the team's own.
+
 ## License
 [Apache License 2.0](LICENSE)
