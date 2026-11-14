@@ -107,3 +107,16 @@ def test_a_wrong_scale_is_still_reported(tmp_path):
     write_hdf4(path, "250m 16 days NDVI", raw_ndvi(), _FillValue=-3000, scale_factor=0.5)
     with pytest.raises(InputError, match="scale_factor looks inverted"):
         clip.read_sinusoidal_tile(path, "NDVI")
+
+
+def test_offset_without_scale_factor_follows_each_format_convention():
+    raw = np.array([100], dtype="int16")
+    assert clip.unpack_values(raw, {"add_offset": 10.0}, hdf4=False)[0] == pytest.approx(110.0)  # CF adds
+    assert clip.unpack_values(raw, {"add_offset": 10.0}, hdf4=True)[0] == pytest.approx(90.0)  # HDF4 subtracts
+    assert clip.unpack_values(raw, {}, hdf4=True)[0] == 100.0
+
+
+def test_hdf5_file_with_offset_only(tmp_path):
+    path = tmp_path / "offset.h5"
+    write_hdf5(path, "temperature", np.full((20, 20), 100, dtype="int16"), add_offset=np.array([10.0]))
+    assert clip.read_sinusoidal_tile(path, "temperature").values[2, 2] == pytest.approx(110.0)

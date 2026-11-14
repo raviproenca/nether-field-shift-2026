@@ -282,9 +282,10 @@ def unpack_values(raw: np.ndarray, attrs: dict, hdf4: bool) -> np.ndarray:
     """Physical values from raw integers: fill values and values outside valid_range first, then scaling.
 
     Two conventions exist and are told apart explicitly:
-    - HDF5 (VIIRS) follows CF: value = raw * scale_factor + add_offset.
-    - HDF4 (MODIS) with scale_factor > 1 (e.g. 10000 for MOD13 NDVI/EVI): value = (raw - add_offset) / scale_factor.
-      A HDF4 scale_factor <= 1 (e.g. 0.02 for MOD11 LST) is a multiplier, as in CF.
+    - HDF5 (VIIRS) follows CF: value = raw * scale_factor + add_offset (just raw + add_offset without a scale).
+    - HDF4 (MODIS) with scale_factor > 1 (e.g. 10000 for MOD13 NDVI/EVI): value = (raw - add_offset) / scale_factor,
+      and just raw - add_offset without a scale. A HDF4 scale_factor <= 1 (e.g. 0.02 for MOD11 LST) is a
+      multiplier, as in CF.
     _FillValue may hold several numbers (VIIRS: -15000 and -13000) and valid_range is a [min, max] pair.
     """
     array = raw.astype("float64")
@@ -294,7 +295,7 @@ def unpack_values(raw: np.ndarray, attrs: dict, hdf4: bool) -> np.ndarray:
         array[(raw < valid[0]) | (raw > valid[1])] = np.nan
     scale, offset = _scalar(attrs, "scale_factor"), _scalar(attrs, "add_offset", 0.0)
     if scale is None:
-        return array - offset if offset else array
+        return array - offset if hdf4 else array + offset
     if hdf4 and scale > 1:
         return (array - offset) / scale
     return array * scale + offset
