@@ -14,7 +14,7 @@ Do not keep a copy of the scope in this skill. Read the sources every time, so t
 ## Rules
 
 - **Read-only.** Never assign issues, change labels, move cards on the board, comment, commit or open PRs.
-- **Respect the current work gate.** `docs/scope.md` says implementation is paused until Ravi explicitly releases it. Show the next assigned issue as prepared work, and state clearly that the teammate must wait for Ravi before starting development.
+- **Teammates can start now.** `docs/scope.md` allows teammates to start assigned Todo issues. The pause applies only to implementation by Ravi's AI agents until he releases it. Respect each issue's dependencies and `bloqueada` label; never tell an assigned teammate to wait for a general release.
 - **Never propose ideas, features or scope changes.** The idea is the team's (AGENTS.md rule 2). Explain only what is recorded. If something looks missing or unclear, say so and suggest asking Ravi (Tech Lead).
 - **No credentials.** Never print tokens, `.env`, `.netrc` or `gh auth` output beyond "logged in" or "not logged in".
 - **Sources disagree?** If `docs/scope.md` and the board or the issues disagree (an issue in a different order, a closed issue still listed as open work, a different assignee), show the difference in a short "Divergências" note and suggest telling Ravi. Do not decide which one is right.

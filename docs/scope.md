@@ -4,7 +4,7 @@
 
 _Last updated: Nov 14, 2026. This file is the single source for the current scope. If it disagrees with an issue or the board, tell Ravi (Tech Lead)._
 
-**Current work gate (Ravi, Nov 14):** The issues are prepared for teammates, but implementation is paused until Ravi explicitly releases it. A Todo assignment identifies the next task; it does not authorize starting development yet.
+**Team work (Ravi, Nov 14):** Teammates may start their assigned Todo issues now. Ravi has paused only implementation by his AI agents until he explicitly releases it. Dependencies and blocked labels still apply.
 
 Built only from recorded decisions: [decisions.md](team/decisions.md), [CONTEXT.md](team/CONTEXT.md), the [PRD](../_bmad-output/planning-artifacts/prds/prd-nether-field-shift-2026-2026-11-14/prd.md) and [epics.md](../_bmad-output/planning-artifacts/epics.md).
 
