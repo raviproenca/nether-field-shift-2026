@@ -22,15 +22,15 @@ Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms
 
 ## 2. Stack and folder structure
 
-> **Stack: to be decided by the team on Nov 14.** Update this section in the first PR after the decision (the Tech Lead approves it).
+> **Stack recorded on Nov 14.** Versions and the product services are in the [architecture spine](_bmad-output/planning-artifacts/architecture/architecture-nether-field-shift-2026-2026-11-14/ARCHITECTURE-SPINE.md#stack). Changes go through a PR approved by the Tech Lead.
 
 | Item | Decision |
 |---|---|
-| Language / runtime | _TBD_ |
-| App / UI framework | _TBD_ |
-| Data access | _TBD_ (NASA APIs; `earthaccess` if Earthdata Login is needed) |
-| Tests | _TBD_ |
-| Deploy (public URL, no login) | _TBD_ |
+| Language / runtime | Python 3.12 (`src/data/`, `apps/api/`, `apps/bot/`); Node.js 24 + TypeScript (`apps/web/`) |
+| App / UI framework | `apps/web/`: Vite + React + TypeScript + MapLibre GL JS (internal map now; producer dashboard reuses it). `apps/api/`: FastAPI. `apps/bot/`: python-telegram-bot |
+| Data access | `src/data/` toolkit: NASA POWER API, `earthaccess` for Earthdata Login sources, Planetary Computer STAC for Sentinel-2. The internal map reads pre-generated snapshots in `apps/web/public/data/` and NASA GIBS tiles; product clients call `apps/api/` over HTTP only |
+| Tests | `pytest` (Python); `npm run lint` (ESLint) and `npm run typecheck` (`tsc --noEmit`) in `apps/web/` |
+| Deploy (public URL, no login) | Internal map: Cloudflare Pages (`*.pages.dev`) via [`.github/workflows/deploy-internal-map.yml`](.github/workflows/deploy-internal-map.yml). API, bot and voice: Google Cloud Run (see the architecture spine) |
 
 Folder layout (adjust once the stack is chosen, keep it flat and simple):
 
