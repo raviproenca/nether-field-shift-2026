@@ -70,7 +70,7 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 
 - **No API for the internal map** (decided Nov 14): the front end reads pre-generated JSON/GeoJSON files. The format (from the earlier API contract draft) is documented first, so the front end can build against it right away.
 - The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
-- Access (#17): no login inside the front end (it could not be verified). Options for Ravi: no login (unlisted URL, `noindex`) or Cloudflare Access.
+- Access (#17, closed): **no login**; unlisted `*.pages.dev` URL with `noindex`. Deploy (#18) via GitHub Actions to Ravi's Cloudflare account, project name neutral (e.g. `nether-field-map`).
 
 ## 5. Roles (as discussed; confirm in decisions.md)
 

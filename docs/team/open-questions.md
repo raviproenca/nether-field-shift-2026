@@ -11,5 +11,5 @@
 | 5 | ~~Demo channel: Telegram, WhatsApp or SMS?~~ **Decided Nov 14: Telegram for now** (see decisions.md) | 10:45 | — |
 | 6 | Which map API for the dashboards? | 10:36 | team |
 | 7 | Who gathers the requirements and opens the issues? | 11:15 | team |
-| 8 | Internal map access: no login (unlisted `*.pages.dev`, `noindex`) or Cloudflare Access? Recommendation in [#17](https://github.com/raviproenca/nether-field-shift-2026/issues/17): no login. | 11:40 | Ravi |
-| 9 | Which Cloudflare account hosts the `*.pages.dev` project? ([#18](https://github.com/raviproenca/nether-field-shift-2026/issues/18)) | 11:40 | Ravi |
+| 8 | ~~Internal map access: no login or Cloudflare Access?~~ **Decided Nov 14: no login** (see decisions.md) | 11:40 | — |
+| 9 | ~~Which Cloudflare account hosts the `*.pages.dev` project?~~ **Decided Nov 14: Ravi's account**, neutral project name | 11:40 | — |
