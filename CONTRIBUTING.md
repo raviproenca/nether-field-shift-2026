@@ -30,7 +30,8 @@ Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR p
 
 ## Lembretes do Space Apps
 
-- Código, commits, PRs e interface **em inglês** (aqui no CONTRIBUTING pode ser em português).
+- Código, commits, PRs, README, docs e interface **em inglês** (aqui no CONTRIBUTING pode ser em português).
+- Issues e quadro do Project **em português (PT-BR)**: título, descrição e etiquetas.
 - **Credencial nunca vai para o Git:** `.env` e `~/.netrc` ficam só na sua máquina. Use o `.env.example` como modelo.
 - Arquivos de dados grandes não entram no repo: use um script que baixa.
 - Todo dado da NASA ou de terceiros usado precisa ser citado no README, com link.
