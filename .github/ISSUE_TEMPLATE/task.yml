@@ -1,0 +1,28 @@
+name: Task
+description: A piece of work for the team (story, chore, docs)
+title: "[task] "
+labels: ["task"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs to be done
+      description: In English. Short and specific.
+    validations:
+      required: true
+  - type: input
+    id: story
+    attributes:
+      label: BMad story
+      description: Path to the story file in _bmad-output/implementation-artifacts/, if any.
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Acceptance criteria.
+      placeholder: "- [ ] ..."
+  - type: input
+    id: owner
+    attributes:
+      label: Owner
+      description: Who takes it (their branch will be <type>/<name>-<task>).
