@@ -2,13 +2,13 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 11:40 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 11:45 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
 - **Challenge:** Field Shift: Adapting Farms with NASA Data. Team Nether, Aracaju local event.
 - **Deadline:** Sun Nov 15, 2026, 23:59 BRT.
-- **Project idea:** **under discussion, not decided.** Only what is in [decisions.md](decisions.md) counts as decided.
+- **Project idea:** **Confirmed (Nov 14):** Brazilian family farming in Sergipe (Agreste & Semiárido), two interfaces (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*. See [decisions.md](decisions.md). Unblocks `bmad-product-brief` and PRD.
 
 ## 2. Three fronts
 
@@ -17,19 +17,20 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 | Front | What | Status |
 |---|---|---|
 | **A. Internal map** | Team tool to explore and validate data. No visual polish, **not judged**. Static site on Cloudflare Pages (`*.pages.dev`) with **pre-generated data and no API**; NASA GIBS layers live. | In progress (epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19)) |
-| **B. Farmer product** | A **Telegram bot** (family farmers) and a **producer web dashboard** (larger farms), both on the same API. Anything judges open works **without login** (demo mode in the dashboard; the bot open to anyone). | **Not started on purpose:** built only after the formal idea decision and the PRD (BMad) |
+| **B. Farmer product** | A **Telegram bot** (family farmers, `request_location`) and a **producer web dashboard** (larger farms, MapLibre GL + OSM), both on the same API (`apps/api/` + Open-Meteo). Anything judges open works **without login**. | **Idea confirmed (Nov 14):** ready for `bmad-product-brief` and PRD before implementation |
 | **C. Judges' delivery** | Project page on the Space Apps site (submission form), video ≤ 30 s or ≤ 7 slides, public links (demo, repo), all in English. | At the end; the checklist already exists |
 
-**Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the idea decision, and can serve the same format. The internal map's layers and map component can be reused in the producer dashboard.
+**Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts. The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
 
-## 2b. Direction under discussion (repeated and supported out loud; not decided)
+## 2b. Confirmed product direction
 
-- **Who:** family farming (agricultura familiar) in Brazil, with a well-defined persona.
-- **Minimum input:** the farmer's location plus the crop; everything else is pulled from data.
-- **Delivery:** asynchronous messages through a **Telegram bot (decided: Telegram for now; WhatsApp as future work)** and a more detailed web dashboard for larger farms, both on the same API.
-- **Data:** NASA data, plus local measurements for validation (a field device or sensor was discussed).
-- **Logic:** deterministic calculations; AI only to explain the results in plain language; complex ML as future work.
-- **Open:** forecasts (the data is historical), and where they would come from.
+- **Who:** Brazilian family farming (*agricultura familiar*) in Sergipe (Agreste & Semiárido) for the primary persona, plus larger farms/extension on the web dashboard.
+- **Minimum input:** farmer's location (Telegram `request_location` or map pin) + current/intended crop + priority (water, soil, erosion, or income/forage); everything else is pulled from data.
+- **Strategies:** compare **at least 3 crop/rotation strategies** (baseline + calculated alternatives including *consórcio*/intercropping and cover crops).
+- **Delivery:** asynchronous messages through **Telegram Bot API** (hackathon demo; WhatsApp Cloud API as future work) and a **MapLibre GL + OpenStreetMap** web dashboard on the same API.
+- **Data:** Global physical core `SMAP + GLDAS + IMERG + FAO-56` (+ NASA POWER, SRTM/NASADEM elevation/slope, HLS/Sentinel-2 NDVI) + **Open-Meteo** 15-day forecasts; local measurements for validation; **ANA HidroWeb** and complex ML scoped as future work.
+- **Logic:** deterministic agronomic/water-balance calculations; AI only to explain the results in plain language with uncertainties/evidence.
+- **Open for sign-off:** Language strategy (`EN` default + `PT-BR` toggle vs. English-first UI with subtitled PT-BR walkthrough) — see question #10 in [open-questions.md](open-questions.md).
 
 Session-by-session notes: [brainstorm-log.md](brainstorm-log.md).
 
@@ -53,9 +54,9 @@ Tested against the real services (Nov 14, Sergipe):
 | `imerg` GPM IMERG Late, daily | 0.1° | ✅ OK |
 | `hls` HLS L30 / S30 v2.0 | 30 m | ✅ OK |
 | `planetary` Sentinel-2 L2A (ESA/Copernicus, not NASA; no account) | 10 m | ✅ OK |
-| `smap` SMAP L3 enhanced | 9 km | 🔧 being fixed (wrong cell selected) |
-| `modis` MOD13Q1 NDVI | 250 m | 🔧 being fixed (scale factor) |
-| `viirs` VNP13A1 NDVI | 500 m | 🔧 being fixed (attribute read) |
+| `smap` SMAP L3 enhanced | 9 km | ✅ OK (fixed in #22) |
+| `modis` MOD13Q1 NDVI | 250 m | ✅ OK (fixed in #22) |
+| `viirs` VNP13A1 NDVI | 500 m | ✅ OK (fixed in #22) |
 
 Earthdata Login: each person runs `scripts/earthdata-login.sh` in their own terminal. Never share or commit credentials.
 
@@ -72,12 +73,12 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 - The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
 - Access (#17, closed): **no login**; unlisted `*.pages.dev` URL with `noindex`. Deploy (#18) via GitHub Actions to Ravi's Cloudflare account, project name neutral (e.g. `nether-field-map`).
 
-## 5. Roles (as discussed; confirm in decisions.md)
+## 5. Roles
 
 - **Ravi:** Tech Lead; approves and merges every PR.
 - **Duda (Eduarda):** data (sources, organization, analysis).
 - **Chaves (Gabriel):** screens (internal dashboard first).
-- **Requirements and issues:** one person gathers requirements and opens the issues (name to confirm).
+- **Lucas (`@LucasFe3152`):** requirements and issues (`docs/requirements.md`).
 
 ## 6. Space Apps rules that matter
 
