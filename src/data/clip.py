@@ -224,24 +224,6 @@ def _pick_unique(variable: str, names: list[str], where: str) -> str:
     raise InputError(f"'{variable}' matches several datasets in {where}: {', '.join(matches)}; use a longer name")
 
 
-def _attr(attrs: dict, name: str):
-    for key, value in attrs.items():
-        if key.lower() == name.lower():
-            return value.item() if hasattr(value, "item") else value
-    return None
-
-
-def _pick_unique(variable: str, names: list[str], where: str) -> str:
-    """An exact (case-insensitive) name wins; otherwise the text must match exactly one dataset."""
-    exact = [name for name in names if name.split("/")[-1].lower() == variable.lower()]
-    matches = exact or [name for name in names if variable.lower() in name.lower()]
-    if len(matches) == 1:
-        return matches[0]
-    if not matches:
-        raise InputError(f"no dataset matching '{variable}' in {where}; found: {', '.join(names)}")
-    raise InputError(f"'{variable}' matches several datasets in {where}: {', '.join(matches)}; use a longer name")
-
-
 def _read_hdf4(path: Path, variable: str) -> tuple[str, np.ndarray, dict, str]:
     from pyhdf.SD import SD, SDC
 
@@ -282,22 +264,38 @@ def _check_vegetation_index_range(name: str, array: np.ndarray) -> None:
         )
 
 
+def unpack_values(raw: np.ndarray, attrs: dict, hdf4: bool) -> np.ndarray:
+    """Physical values from raw integers: fill values and values outside valid_range first, then scaling.
+
+    Two conventions exist and are told apart explicitly:
+    - HDF5 (VIIRS) follows CF: value = raw * scale_factor + add_offset.
+    - HDF4 (MODIS) with scale_factor > 1 (e.g. 10000 for MOD13 NDVI/EVI): value = (raw - add_offset) / scale_factor.
+      A HDF4 scale_factor <= 1 (e.g. 0.02 for MOD11 LST) is a multiplier, as in CF.
+    _FillValue may hold several numbers (VIIRS: -15000 and -13000) and valid_range is a [min, max] pair.
+    """
+    array = raw.astype("float64")
+    fills, valid = _numbers(attrs, "_FillValue"), _numbers(attrs, "valid_range")
+    array[np.isin(raw, fills)] = np.nan
+    if valid.size == 2:
+        array[(raw < valid[0]) | (raw > valid[1])] = np.nan
+    scale, offset = _scalar(attrs, "scale_factor"), _scalar(attrs, "add_offset", 0.0)
+    if scale is None:
+        return array - offset if offset else array
+    return array * scale + offset
+
+
 def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
     """Read one variable of a MODIS (HDF4) or VIIRS (HDF5) sinusoidal tile as a georeferenced array.
 
-    Fill values become NaN and scale_factor is applied when the file declares them.
+    Fill values and out-of-range values become NaN, then scale_factor/add_offset are applied (see unpack_values).
     """
-    reader = _read_hdf4 if path.suffix.lower() == ".hdf" else _read_hdf5
+    hdf4 = path.suffix.lower() == ".hdf"
+    reader = _read_hdf4 if hdf4 else _read_hdf5
     name, values, attrs, metadata = reader(path, variable)
     (ul_x, ul_y), (lr_x, lr_y), x_dim, y_dim = _parse_grid_metadata(metadata)
     if values.shape != (y_dim, x_dim):
         raise InputError(f"'{variable}' is not a {y_dim}x{x_dim} tile grid (shape {values.shape})")
-    array = values.astype("float64")
-    fill, scale = _attr(attrs, "_FillValue"), _attr(attrs, "scale_factor")
-    if fill is not None:
-        array[values == fill] = np.nan
-    if scale is not None:
-        array = array * float(scale)
+    array = unpack_values(values, attrs, hdf4)
     _check_vegetation_index_range(name, array)
     step_x, step_y = (lr_x - ul_x) / x_dim, (ul_y - lr_y) / y_dim
     da = xr.DataArray(
@@ -306,7 +304,7 @@ def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
         coords={"y": ul_y - (np.arange(y_dim) + 0.5) * step_y, "x": ul_x + (np.arange(x_dim) + 0.5) * step_x},
         name=name.split("/")[-1],
     )
-    return da.rio.write_crs(SINUSOIDAL_CRS)
+    return da.rio.write_crs(SINUSOIDAL_CRS).rio.write_nodata(np.nan)
 
 
 def clip_tile(path: Path, variable: str, bbox: BBox) -> xr.DataArray:
