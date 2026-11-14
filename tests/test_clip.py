@@ -128,5 +128,65 @@ def test_read_hdf5_sinusoidal_tile(tmp_path):
     da = clip.read_sinusoidal_tile(path, "500 m 16 days NDVI")
     assert da.shape == (20, 20) and np.isnan(da.values[0, 0]) and da.values[1, 1] == pytest.approx(0.5)
     assert da.rio.crs is not None and da.y[0] > da.y[-1]
-    with pytest.raises(InputError, match="no HDF5 dataset"):
+    with pytest.raises(InputError, match="no dataset matching 'EVI'"):
         clip.read_sinusoidal_tile(path, "EVI")
+
+
+def test_box_smaller_than_a_cell_uses_the_nearest_cell_and_warns():
+    lat, lon = np.arange(-12, -8.9, 0.25), np.arange(-39, -35.9, 0.25)
+    data = np.arange(lat.size * lon.size, dtype=float).reshape(lat.size, lon.size)
+    da = xr.DataArray(data, dims=("lat", "lon"), coords={"lat": lat, "lon": lon})
+    tiny = BBox(-37.08, -10.92, -37.06, -10.90)
+    with pytest.warns(clip.NearestCellWarning, match="smaller than a grid cell"):
+        clipped = clip.clip_latlon(da, tiny)
+    assert clipped.shape == (1, 1) and float(clipped.lat[0]) == -11.0 and float(clipped.lon[0]) == -37.0
+
+
+def test_box_outside_the_grid_is_still_an_error():
+    axis = [0.0, 0.25, 0.5]
+    da = xr.DataArray(np.ones((3, 3)), dims=("lat", "lon"), coords={"lat": axis, "lon": axis})
+    with pytest.raises(InputError, match="does not overlap"):
+        clip.clip_latlon(da, BBox(-37.08, -10.92, -37.06, -10.90))
+
+
+def test_curvilinear_box_smaller_than_a_cell_uses_the_nearest_cell():
+    lat, lon = np.meshgrid(np.arange(-12, -8.9, 0.5), np.arange(-39, -35.9, 0.5), indexing="ij")
+    values = np.arange(lat.size, dtype=float).reshape(lat.shape)
+    ds = xr.Dataset(
+        {"sm": (("r", "c"), values)}, coords={"latitude": (("r", "c"), lat), "longitude": (("r", "c"), lon)}
+    )
+    with pytest.warns(clip.NearestCellWarning):
+        da = clip.clip_curvilinear(ds, "sm", BBox(-37.4, -10.4, -37.3, -10.3))
+    assert da.shape == (1, 1) and float(da.lat[0, 0]) == -10.5 and float(da.lon[0, 0]) == -37.5
+    assert not np.isnan(da.values).any()
+    with pytest.raises(InputError):
+        clip.clip_curvilinear(ds, "sm", BBox(10, 10, 10.1, 10.1))
+
+
+def _write_h5(path, names, scale=0.0001):
+    import h5py
+
+    meta = "UpperLeftPointMtrs=(-4450000.0,-1110000.0)\nLowerRightMtrs=(-4445000.0,-1115000.0)\nXDim=20\nYDim=20"
+    with h5py.File(path, "w") as h5:
+        for name in names:
+            data = np.full((20, 20), 5000, dtype="int16")
+            h5.create_dataset(f"HDFEOS/GRIDS/G/Data Fields/{name}", data=data).attrs["scale_factor"] = np.float64(scale)
+        h5.create_dataset("HDFEOS INFORMATION/StructMetadata.0", data=meta.encode())
+
+
+def test_ambiguous_variable_lists_candidates(tmp_path):
+    path = tmp_path / "t.h5"
+    _write_h5(path, ["500 m 16 days NDVI", "500 m 16 days NDVI quality", "500 m 16 days EVI"])
+    with pytest.raises(InputError, match="matches several datasets.*NDVI quality"):
+        clip.read_sinusoidal_tile(path, "500 m 16 days")
+    assert clip.read_sinusoidal_tile(path, "EVI").name == "500 m 16 days EVI"
+    assert clip.read_sinusoidal_tile(path, "500 m 16 days NDVI").name == "500 m 16 days NDVI"
+
+
+def test_inverted_scale_factor_is_reported(tmp_path):
+    path = tmp_path / "t.h5"
+    _write_h5(path, ["500 m 16 days NDVI"], scale=10000.0)
+    with pytest.raises(InputError, match="scale_factor looks inverted"):
+        clip.read_sinusoidal_tile(path, "NDVI")
+    _write_h5(path, ["500 m 16 days other"], scale=10000.0)
+    assert clip.read_sinusoidal_tile(path, "other").shape == (20, 20)

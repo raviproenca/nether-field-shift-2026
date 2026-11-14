@@ -2,6 +2,7 @@
 """Local clipping of downloaded data to a bounding box (lat/lon grids, curvilinear grids, rasters, HDF tiles)."""
 
 import re
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +26,23 @@ def _coord_name(obj: xr.Dataset | xr.DataArray, candidates: tuple[str, ...]) -> 
     raise InputError(f"no coordinate named {' or '.join(candidates)} in the data")
 
 
+class NearestCellWarning(UserWarning):
+    """The box is smaller than a grid cell, so the nearest cell to its center was used."""
+
+
+def _warn_nearest(what: str) -> None:
+    warnings.warn(
+        f"the box is smaller than a {what} cell; using the cell nearest to the box center", NearestCellWarning
+    )
+
+
+def _within_extent(values: np.ndarray, low: float, high: float) -> bool:
+    """True when [low, high] touches the span of the axis values (with half a cell of margin)."""
+    values = values[np.isfinite(values)]
+    margin = float(np.abs(np.diff(values)).max()) / 2 if values.size > 1 else 0.0
+    return low <= values.max() + margin and high >= values.min() - margin
+
+
 def _axis_slice(values: np.ndarray, low: float, high: float) -> slice:
     return slice(low, high) if values[0] <= values[-1] else slice(high, low)
 
@@ -39,7 +57,14 @@ def clip_latlon(da: xr.DataArray, bbox: BBox) -> xr.DataArray:
         }
     )
     if clipped.size == 0:
-        raise InputError("the bounding box does not overlap the data grid")
+        inside = _within_extent(da[lat_name].values, bbox.south, bbox.north) and _within_extent(
+            da[lon_name].values, bbox.west, bbox.east
+        )
+        if not inside:
+            raise InputError("the bounding box does not overlap the data grid")
+        lat, lon = bbox.center
+        clipped = da.sel({lat_name: [lat], lon_name: [lon]}, method="nearest")
+        _warn_nearest("grid")
     return clipped.rename({lat_name: "lat", lon_name: "lon"})
 
 
@@ -49,7 +74,17 @@ def clip_curvilinear(ds: xr.Dataset, variable: str, bbox: BBox) -> xr.DataArray:
     inside = (lat >= bbox.south) & (lat <= bbox.north) & (lon >= bbox.west) & (lon <= bbox.east)
     rows, cols = np.where(inside.values)
     if rows.size == 0:
-        raise InputError("no grid cell falls inside the bounding box")
+        if not (
+            _within_extent(lat.values, bbox.south, bbox.north) and _within_extent(lon.values, bbox.west, bbox.east)
+        ):
+            raise InputError("no grid cell falls inside the bounding box")
+        center_lat, center_lon = bbox.center
+        distance = (lat - center_lat) ** 2 + ((lon - center_lon) * np.cos(np.radians(center_lat))) ** 2
+        rows, cols = np.unravel_index(int(np.nanargmin(distance.values)), distance.shape)
+        inside = xr.zeros_like(inside)
+        inside[int(rows), int(cols)] = True
+        rows, cols = np.array([rows]), np.array([cols])
+        _warn_nearest("grid")
     window = {inside.dims[0]: slice(rows.min(), rows.max() + 1), inside.dims[1]: slice(cols.min(), cols.max() + 1)}
     da = ds[variable].isel(window).where(inside.isel(window))
     return da.assign_coords(lat=lat.isel(window), lon=lon.isel(window))
@@ -98,37 +133,55 @@ def _attr(attrs: dict, name: str):
     return None
 
 
-def _read_hdf4(path: Path, variable: str) -> tuple[np.ndarray, dict, str]:
+def _pick_unique(variable: str, names: list[str], where: str) -> str:
+    """An exact (case-insensitive) name wins; otherwise the text must match exactly one dataset."""
+    exact = [name for name in names if name.split("/")[-1].lower() == variable.lower()]
+    matches = exact or [name for name in names if variable.lower() in name.lower()]
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise InputError(f"no dataset matching '{variable}' in {where}; found: {', '.join(names)}")
+    raise InputError(f"'{variable}' matches several datasets in {where}: {', '.join(matches)}; use a longer name")
+
+
+def _read_hdf4(path: Path, variable: str) -> tuple[str, np.ndarray, dict, str]:
     from pyhdf.SD import SD, SDC
 
     sd = SD(str(path), SDC.READ)
     try:
-        names = [name for name in sd.datasets() if variable.lower() in name.lower()]
-        if not names:
-            raise InputError(f"no HDF4 dataset matching '{variable}' in {path.name}; found: {', '.join(sd.datasets())}")
-        sds = sd.select(names[0])
-        return sds.get(), sds.attributes(), sd.attributes()["StructMetadata.0"]
+        name = _pick_unique(variable, list(sd.datasets()), path.name)
+        sds = sd.select(name)
+        return name, sds.get(), sds.attributes(), sd.attributes()["StructMetadata.0"]
     finally:
         sd.end()
 
 
-def _read_hdf5(path: Path, variable: str) -> tuple[np.ndarray, dict, str]:
+def _read_hdf5(path: Path, variable: str) -> tuple[str, np.ndarray, dict, str]:
     import h5py
 
     with h5py.File(path, "r") as h5:
-        found: list[str] = []
-        h5.visititems(
-            lambda name, obj: (
-                found.append(name)
-                if isinstance(obj, h5py.Dataset) and name.split("/")[-1].lower() == variable.lower()
-                else None
-            )
-        )
-        if not found:
-            raise InputError(f"no HDF5 dataset named '{variable}' in {path.name}")
-        dataset = h5[found[0]]
+        names: list[str] = []
+        h5.visititems(lambda name, obj: names.append(name) if isinstance(obj, h5py.Dataset) else None)
+        name = _pick_unique(variable, names, path.name)
+        dataset = h5[name]
         meta = h5["HDFEOS INFORMATION/StructMetadata.0"][()]
-        return dataset[()], dict(dataset.attrs), meta.decode() if isinstance(meta, bytes) else str(meta)
+        return name, dataset[()], dict(dataset.attrs), meta.decode() if isinstance(meta, bytes) else str(meta)
+
+
+VI_NAME = re.compile(r"\b(NDVI|EVI2?)\b", re.IGNORECASE)
+VI_RANGE = (-1.0, 1.5)
+
+
+def _check_vegetation_index_range(name: str, array: np.ndarray) -> None:
+    """NDVI/EVI must be about -1..1 after scaling; anything else means scale_factor is missing or inverted."""
+    if not VI_NAME.search(name) or not np.isfinite(array).any():
+        return
+    low, high = float(np.nanmin(array)), float(np.nanmax(array))
+    if low < VI_RANGE[0] or high > VI_RANGE[1]:
+        raise InputError(
+            f"scale_factor looks inverted: '{name}' has valid values from {low:g} to {high:g}, "
+            f"outside {VI_RANGE[0]:g}..{VI_RANGE[1]:g}"
+        )
 
 
 def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
@@ -137,7 +190,7 @@ def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
     Fill values become NaN and scale_factor is applied when the file declares them.
     """
     reader = _read_hdf4 if path.suffix.lower() == ".hdf" else _read_hdf5
-    values, attrs, metadata = reader(path, variable)
+    name, values, attrs, metadata = reader(path, variable)
     (ul_x, ul_y), (lr_x, lr_y), x_dim, y_dim = _parse_grid_metadata(metadata)
     if values.shape != (y_dim, x_dim):
         raise InputError(f"'{variable}' is not a {y_dim}x{x_dim} tile grid (shape {values.shape})")
@@ -147,12 +200,13 @@ def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
         array[values == fill] = np.nan
     if scale is not None:
         array = array * float(scale)
+    _check_vegetation_index_range(name, array)
     step_x, step_y = (lr_x - ul_x) / x_dim, (ul_y - lr_y) / y_dim
     da = xr.DataArray(
         array,
         dims=("y", "x"),
         coords={"y": ul_y - (np.arange(y_dim) + 0.5) * step_y, "x": ul_x + (np.arange(x_dim) + 0.5) * step_x},
-        name=variable,
+        name=name.split("/")[-1],
     )
     return da.rio.write_crs(SINUSOIDAL_CRS)
 
