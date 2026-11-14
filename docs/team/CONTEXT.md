@@ -87,7 +87,7 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 - **Ravi:** Tech Lead; approves and merges every PR.
 - **Duda (Eduarda):** data (sources, organization, analysis).
 - **Chaves (Gabriel):** screens (internal dashboard first).
-- **Lucas (`@LucasFe3152`):** leads requirements gathering (`docs/requirements.md`).
+- **Lucas (`@LucasFe3152`):** leads requirements gathering (`docs/requirements.md`). Owns the Google Cloud trial account and its setup.
 - **Issues:** Ravi opens and coordinates them and splits tasks among teammates; AI agents only prepare drafts.
 - **Traffic light:** Ravi keeps [STATUS.md](STATUS.md) up to date.
 
