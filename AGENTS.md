@@ -93,7 +93,7 @@ your branch  ──PR──▶  dev  ──PR (Tech Lead only)──▶  main
 3. **CODEOWNER approval is required**: the Tech Lead (Ravi, `@raviproenca`) must approve every PR to `dev` and `main`. No force-push on `dev`/`main`.
 4. **Only the Tech Lead merges.** Teammates' PRs go in after Ravi approves them, and Ravi does the merge. PRs opened by Ravi (or by his agents) are merged by Ravi as admin.
 5. After merge, delete your branch and start the next task from an updated `dev`.
-6. Only the Tech Lead opens and merges the `dev` → `main` PR (the version the judges see).
+6. `dev` is the default branch: every branch starts from it. `main` stays frozen until submission, when only the Tech Lead merges `dev` → `main` (the version the judges see).
 
 Agents: never push to `dev`/`main`, never force-push, never merge PRs or change branch protection. Open PRs only when the user asks.
 

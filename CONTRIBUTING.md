@@ -1,6 +1,6 @@
 # Como contribuir (Equipe Nether)
 
-Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR para `dev`, com a aprovação do Tech Lead (Ravi), que faz o merge. Só ele leva `dev` para `main`.
+Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR para `dev`, com a aprovação do Tech Lead (Ravi), que faz o merge. A `dev` é a branch padrão e toda branch parte dela. A `main` fica parada até a entrega, quando só o Ravi leva a `dev` para a `main`.
 
 ## Passo a passo
 
