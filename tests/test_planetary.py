@@ -12,13 +12,14 @@ from rasterio.transform import from_origin
 from src.data import cli, planetary
 from src.data.dates import parse_range
 from src.data.errors import InputError, RemoteDataError
-from src.data.regions import PRESETS, BBox
+from src.data.paths import safe_filename
+from src.data.regions import PRESETS, BBox, point_to_bbox
 
 DATES = parse_range("2025-01-01", "2025-01-31")
 BOX = PRESETS["sergipe"]
 
 
-def make_item(item_id, href="/nonexistent.tif", day=4):
+def make_item(item_id, href="/nonexistent.tif", day=4, **asset_fields):
     item = Item(
         id=item_id,
         geometry=None,
@@ -26,7 +27,7 @@ def make_item(item_id, href="/nonexistent.tif", day=4):
         datetime=datetime(2025, 1, day, 12, 0, tzinfo=UTC),
         properties={},
     )
-    item.add_asset("B04", Asset(href=href))
+    item.add_asset("B04", Asset(href=href, extra_fields=asset_fields))
     return item
 
 
@@ -78,7 +79,9 @@ def test_empty_result_is_a_clear_error():
 
 
 def test_api_failure_is_a_clear_error():
-    with pytest.raises(RemoteDataError, match="search failed"):
+    with pytest.raises(
+        RemoteDataError, match="Planetary Computer search for sentinel-2-l2a failed: ConnectionError: down"
+    ):
         planetary.search(FakeClient(error=ConnectionError("down")), BOX, DATES, "sentinel-2-l2a", 20)
 
 
@@ -167,3 +170,43 @@ def test_real_planetary_search_sergipe():
     items = planetary.search(client, BOX, DATES, "sentinel-2-l2a", 20)
     assert len(items) > 0 and "B04" in items[0].assets
     assert planetary.latest_item_datetime(client, BOX, "sentinel-2-l2a").year >= 2025
+
+
+def test_size_guard_blocks_a_state_sized_box_before_reading():
+    item = make_item("big", gsd=10, **{"proj:shape": [10980, 10980]})
+    assert planetary.window_pixels(item, "B04", BOX) == 10980 * 10980  # capped by the tile size
+    with pytest.raises(InputError, match="million pixels per band.*--point/--radius-km.*--max-pixels"):
+        planetary.fetch_clips([item], "B04", BOX, "unused")
+
+
+def test_size_guard_allows_small_boxes_and_can_be_raised():
+    item = make_item("ok", gsd=10)
+    small = point_to_bbox(-10.91, -37.07, 2)
+    assert planetary.window_pixels(item, "B04", small) < 1_000_000
+    planetary.check_size([item], "B04", small, planetary.DEFAULT_MAX_PIXELS)
+    with pytest.raises(InputError):
+        planetary.check_size([item], "B04", small, 1000)
+    planetary.check_size([item], "B04", BOX, 10**10)
+
+
+def test_size_guard_is_skipped_when_resolution_is_unknown():
+    assert planetary.window_pixels(make_item("x"), "B04", BOX) is None
+
+
+def test_size_guard_uses_proj_transform_when_gsd_is_missing():
+    coarse = make_item("t", **{"proj:transform": [20.0, 0.0, 0.0, 0.0, -20.0, 0.0]})
+    fine = make_item("g", gsd=10)
+    small = point_to_bbox(-10.91, -37.07, 2)
+    assert planetary.window_pixels(coarse, "B04", small) < planetary.window_pixels(fine, "B04", small)
+
+
+def test_unsafe_names_are_sanitized_for_files():
+    assert safe_filename("../S2A/x y:B04") == ".._S2A_x_y_B04"
+    assert safe_filename("250m 16 days NDVI") == "250m_16_days_NDVI"
+
+
+def test_cli_max_pixels_flag_reaches_the_guard(monkeypatch, capsys):
+    monkeypatch.setattr(planetary, "open_client", lambda: FakeClient([make_item("big", gsd=10)]))
+    argv = ["planetary", "--variable", "B04", "--start", "2025-01-01", "--end", "2025-01-31"]
+    assert cli.main(argv) == 2
+    assert "million pixels per band" in capsys.readouterr().err

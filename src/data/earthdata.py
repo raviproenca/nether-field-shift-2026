@@ -15,7 +15,8 @@ import xarray as xr
 
 from . import clip
 from .dates import DateRange
-from .errors import AuthRequiredError, InputError, RemoteDataError
+from .errors import AuthRequiredError, InputError, RemoteDataError, describe_failure, remote_errors
+from .paths import safe_filename
 from .regions import BBox
 
 LOGIN_HINT = "run scripts/earthdata-login.sh first"
@@ -26,23 +27,39 @@ class Source:
     """How one NASA source is fetched. kind: 'remote_grid', 'file_grid' or 'file_raster'."""
 
     short_name: str
+    version: str
     kind: str
     resolution: str
     note: str
 
 
 SOURCES: dict[str, Source] = {
-    "gldas": Source("GLDAS_NOAH025_3H", "remote_grid", "0.25 deg, 3-hourly", "GES DISC, v2.1"),
+    "gldas": Source("GLDAS_NOAH025_3H", "2.1", "remote_grid", "0.25 deg, 3-hourly", "GES DISC"),
     "imerg": Source(
-        "GPM_3IMERGDL", "remote_grid", "0.1 deg, daily", "GES DISC, Late run (Final run GPM_3IMERGDF ends 2025-09-30)"
+        "GPM_3IMERGDL",
+        "07",
+        "remote_grid",
+        "0.1 deg, daily",
+        "GES DISC, Late run (Final run GPM_3IMERGDF ends 2025-09-30)",
     ),
-    "smap": Source("SPL3SMP_E", "file_grid", "9 km, daily", "NSIDC, enhanced L3 soil moisture"),
-    "modis": Source("MOD13Q1", "file_raster", "250 m, 16-day", "LP DAAC, Terra vegetation indices"),
-    "viirs": Source("VNP13A1", "file_raster", "500 m, 16-day", "LP DAAC, VIIRS vegetation indices (MODIS continuity)"),
+    "smap": Source("SPL3SMP_E", "006", "file_grid", "9 km, daily", "NSIDC, enhanced L3 soil moisture"),
+    "modis": Source("MOD13Q1", "061", "file_raster", "250 m, 16-day", "LP DAAC, Terra vegetation indices"),
+    "viirs": Source(
+        "VNP13A1", "002", "file_raster", "500 m, 16-day", "LP DAAC, VIIRS vegetation indices (MODIS continuity)"
+    ),
     "hls": Source(
-        "HLSL30", "file_raster", "30 m, 2-3 days", "LP DAAC, Landsat; use --short-name HLSS30 for Sentinel-2"
+        "HLSL30", "2.0", "file_raster", "30 m, 2-3 days", "LP DAAC, Landsat; use --short-name HLSS30 for Sentinel-2"
     ),
 }
+
+
+def collection_query(source: Source, short_name: str | None, version: str | None) -> tuple[str, str | None]:
+    """short_name and version to search. The default version only goes with the default short_name."""
+    if short_name and short_name != source.short_name:
+        return short_name, version
+    return source.short_name, version or source.version
+
+
 RASTER_SUFFIXES = {"modis": (".hdf",), "viirs": (".h5",), "hls": (".tif",)}
 
 
@@ -52,8 +69,8 @@ def require_login() -> None:
         raise AuthRequiredError(f"no Earthdata Login credentials ({netrc} not found): {LOGIN_HINT}")
     try:
         earthaccess.login(strategy="netrc")
-    except Exception as exc:  # earthaccess raises several unrelated types
-        raise AuthRequiredError(f"Earthdata Login failed ({exc}): {LOGIN_HINT}") from exc
+    except Exception as exc:  # noqa: BLE001  earthaccess raises several unrelated types
+        raise AuthRequiredError(f"Earthdata Login failed ({type(exc).__name__}): {LOGIN_HINT}") from None
 
 
 def search(short_name: str, bbox: BBox, dates: DateRange, version: str | None = None) -> list:
@@ -67,8 +84,8 @@ def search(short_name: str, bbox: BBox, dates: DateRange, version: str | None = 
         query["version"] = version
     try:
         granules = earthaccess.search_data(count=-1, **query)
-    except Exception as exc:
-        raise RemoteDataError(f"CMR search failed for {short_name}: {exc}") from exc
+    except Exception as exc:  # noqa: BLE001  CMR errors vary
+        raise RemoteDataError(f"CMR search failed for {short_name}: {describe_failure(exc)}") from None
     if not granules:
         raise RemoteDataError(f"no {short_name} granules for this box and period (try another --short-name or dates)")
     return granules
@@ -111,11 +128,13 @@ def fetch_grid(
     unless download_full is set. SMAP files are always downloaded to raw_dir and clipped locally.
     """
     require_login()
-    if source.kind == "file_grid" or download_full:
-        handles = _local_files(granules, raw_dir)
-    else:
-        handles = earthaccess.open(granules)
-    frames = [_clip_grid(g, h, variable, bbox, source.kind) for g, h in zip(granules, handles)]
+    with remote_errors("opening the granules"):
+        if source.kind == "file_grid" or download_full:
+            handles = _local_files(granules, raw_dir)
+        else:
+            handles = earthaccess.open(granules)
+    with remote_errors("reading the granules"):
+        frames = [_clip_grid(g, h, variable, bbox, source.kind) for g, h in zip(granules, handles)]
     return pd.concat(frames, ignore_index=True)
 
 
@@ -126,19 +145,21 @@ def _band_links(granule, band: str) -> list[str]:
 def fetch_rasters(name: str, granules: list, variable: str, bbox: BBox, raw_dir: Path, out_dir: Path) -> list[Path]:
     """Download tiles to raw_dir, clip each to the box and write one GeoTIFF per granule to out_dir."""
     require_login()
-    if name == "hls":
-        links = [link for g in granules for link in _band_links(g, variable)]
-        if not links:
-            raise InputError(f"no HLS band '{variable}' found (use names like B04, B8A, Fmask)")
-        raw_dir.mkdir(parents=True, exist_ok=True)
-        files = earthaccess.download(links, local_path=raw_dir)
-    else:
-        files = [f for f in _local_files(granules, raw_dir) if f.suffix.lower() in RASTER_SUFFIXES[name]]
+    with remote_errors("downloading the granules"):
+        if name == "hls":
+            links = [link for g in granules for link in _band_links(g, variable)]
+            if not links:
+                raise InputError(f"no HLS band '{variable}' found (use names like B04, B8A, Fmask)")
+            raw_dir.mkdir(parents=True, exist_ok=True)
+            files = earthaccess.download(links, local_path=raw_dir)
+        else:
+            files = [f for f in _local_files(granules, raw_dir) if f.suffix.lower() in RASTER_SUFFIXES[name]]
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
-    for path in files:
-        clipped = clip.clip_raster(path, bbox) if name == "hls" else clip.clip_tile(path, variable, bbox)
-        target = out_dir / f"{path.stem}_{variable.replace(' ', '_')}.tif"
-        clipped.rio.to_raster(target)
-        written.append(target)
+    with remote_errors("reading the tiles"):
+        for path in files:
+            clipped = clip.clip_raster(path, bbox) if name == "hls" else clip.clip_tile(path, variable, bbox)
+            target = out_dir / f"{safe_filename(path.stem)}_{safe_filename(variable)}.tif"
+            clipped.rio.to_raster(target)
+            written.append(target)
     return written

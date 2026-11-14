@@ -3,16 +3,19 @@
 
 import argparse
 import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
 
 from . import earthdata, planetary, power
+from .clip import NearestCellWarning
 from .dates import DateRange, parse_range
 from .errors import DataToolkitError, InputError
-from .paths import PROCESSED_DIR, RAW_DIR
-from .regions import BBox, resolve_region
+from .paths import CACHE_DIR, PROCESSED_DIR, RAW_DIR, safe_filename
+from .regions import BBox, parse_point, resolve_region
 
+TABLE_SUFFIXES = (".csv", ".parquet")
 SOURCE_CHOICES = ["power", *earthdata.SOURCES, "planetary"]
 
 
@@ -21,7 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("source", choices=SOURCE_CHOICES)
     place = parser.add_mutually_exclusive_group()
     place.add_argument("--bbox", help="'W,S,E,N' or a preset: sergipe (default), nordeste")
-    place.add_argument("--point", help="'LAT,LON'; needs --radius-km")
+    place.add_argument("--point", help="'LAT,LON'; needs --radius-km (except for power, which uses the point itself)")
     parser.add_argument("--radius-km", type=float, help="half-side of the box around --point, in km")
     parser.add_argument("--start", required=True, help="YYYY-MM-DD")
     parser.add_argument("--end", required=True, help="YYYY-MM-DD")
@@ -30,10 +33,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--max-cloud", type=float, default=planetary.DEFAULT_MAX_CLOUD, help="planetary: eo:cloud_cover < N"
     )
+    parser.add_argument(
+        "--max-pixels", type=int, default=planetary.DEFAULT_MAX_PIXELS, help="planetary: max pixels per band and item"
+    )
     parser.add_argument("--short-name", help="override the default NASA short_name of the source")
-    parser.add_argument("--version", help="collection version for the CMR search")
+    parser.add_argument(
+        "--version", help="collection version (default: the version of the source's default short_name)"
+    )
     parser.add_argument("--out", type=Path, help=".csv/.parquet table, or a folder for GeoTIFF sources")
-    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="raw cache root (default data/raw)")
+    parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="downloaded granules (default data/raw)")
+    parser.add_argument("--cache-dir", type=Path, default=CACHE_DIR, help="API response cache (default data/cache)")
     parser.add_argument("--search-only", action="store_true", help="count granules and show the latest date; no login")
     parser.add_argument(
         "--download", action="store_true", help="GLDAS/IMERG: download full files instead of lazy reads"
@@ -56,14 +65,36 @@ def default_out(source: str, variable: str, dates: DateRange) -> Path:
     spec = earthdata.SOURCES.get(source)
     if spec and spec.kind == "file_raster":
         return PROCESSED_DIR / source
-    name = variable.replace("/", "-").replace(",", "-")
+    name = safe_filename(variable)
     return PROCESSED_DIR / f"{source}_{name}_{dates.start}_{dates.end}.csv"
 
 
-def run_power(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> None:
+def power_point(args: argparse.Namespace) -> tuple[float, float]:
+    """POWER is a point API: --point is used as is (no radius needed); a box becomes its center."""
+    if args.point is not None:
+        return parse_point(args.point)
+    if args.radius_km is not None:
+        raise InputError("--radius-km needs --point")
+    return resolve_region(args.bbox).center
+
+
+def check_out_extension(args: argparse.Namespace) -> None:
+    """Fail before any search or download when --out does not fit the source."""
+    if args.out is None:
+        return
+    spec = earthdata.SOURCES.get(args.source)
+    folder_output = args.source == "planetary" or (spec is not None and spec.kind == "file_raster")
+    suffix = args.out.suffix.lower()
+    if folder_output and suffix in (*TABLE_SUFFIXES, ".tif"):
+        raise InputError(f"{args.source} writes GeoTIFF files into a folder: --out '{args.out}' should be a folder")
+    if not folder_output and suffix not in TABLE_SUFFIXES:
+        raise InputError(f"unsupported --out '{args.out}': use a .csv or .parquet file")
+
+
+def run_power(args: argparse.Namespace, dates: DateRange) -> None:
     variables = power.parse_variables(args.variable or "")
-    lat, lon = bbox.center
-    frame = power.fetch_point(lat, lon, dates, variables, cache_dir=args.raw_dir / "power", refresh=args.refresh)
+    lat, lon = power_point(args)
+    frame = power.fetch_point(lat, lon, dates, variables, cache_dir=args.cache_dir / "power", refresh=args.refresh)
     out = args.out or default_out("power", args.variable, dates)
     write_table(frame.reset_index(), out)
     valid = frame.dropna(how="all")
@@ -72,8 +103,8 @@ def run_power(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> None:
 
 def run_earthdata(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> None:
     source = earthdata.SOURCES[args.source]
-    short_name = args.short_name or source.short_name
-    granules = earthdata.search(short_name, bbox, dates, args.version)
+    short_name, version = earthdata.collection_query(source, args.short_name, args.version)
+    granules = earthdata.search(short_name, bbox, dates, version)
     print(f"{short_name}: {len(granules)} granules, latest start {earthdata.latest_granule_date(granules).date()}")
     if args.search_only:
         return
@@ -114,23 +145,28 @@ def run_planetary(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> Non
     if not args.variable:
         raise InputError("--variable is required (asset/band name, e.g. B04, B08, SCL)")
     out = args.out or PROCESSED_DIR / "planetary"
-    written = planetary.fetch_clips(items, args.variable, bbox, out)
+    written = planetary.fetch_clips(items, args.variable, bbox, out, args.max_pixels)
     print(f"wrote {len(written)} GeoTIFF files to {out}")
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(attach_negative_values(sys.argv[1:] if argv is None else argv))
     try:
-        bbox = resolve_region(args.bbox, args.point, args.radius_km)
-        dates = parse_range(args.start, args.end)
-        if args.source == "power":
-            if args.search_only:
-                raise InputError("--search-only applies to Earthdata sources, not POWER")
-            run_power(args, bbox, dates)
-        elif args.source == "planetary":
-            run_planetary(args, bbox, dates)
-        else:
-            run_earthdata(args, bbox, dates)
+        with warnings.catch_warnings():
+            warnings.simplefilter("default", NearestCellWarning)
+            warnings.showwarning = lambda message, *_: print(f"warning: {message}", file=sys.stderr)
+            dates = parse_range(args.start, args.end)
+            check_out_extension(args)
+            if args.source == "power":
+                if args.search_only:
+                    raise InputError("--search-only applies to Earthdata sources, not POWER")
+                run_power(args, dates)
+            else:
+                bbox = resolve_region(args.bbox, args.point, args.radius_km)
+                if args.source == "planetary":
+                    run_planetary(args, bbox, dates)
+                else:
+                    run_earthdata(args, bbox, dates)
     except DataToolkitError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2 if isinstance(exc, InputError) else 1
