@@ -111,9 +111,11 @@ def _open_dataset(handle, variable: str) -> tuple[xr.Dataset, str]:
 
 def _clip_grid(granule, handle, variable: str, bbox: BBox, kind: str) -> pd.DataFrame:
     ds, name = _open_dataset(handle, variable)
-    if name not in ds:
-        raise InputError(f"variable '{name}' not found; available: {', '.join(ds.data_vars)}")
-    da = clip.clip_latlon(ds[name], bbox) if kind == "remote_grid" else clip.clip_curvilinear(ds, name, bbox)
+    with ds:
+        if name not in ds:
+            raise InputError(f"variable '{name}' not found; available: {', '.join(ds.data_vars)}")
+        da = clip.clip_latlon(ds[name], bbox) if kind == "remote_grid" else clip.clip_curvilinear(ds, name, bbox)
+        da = clip.mask_valid_range(da).load()
     if "time" not in da.dims and "time" not in da.coords:
         da = da.expand_dims(time=[granule_start(granule)])
     return clip.to_long_frame(da, name)
@@ -135,7 +137,13 @@ def fetch_grid(
             handles = earthaccess.open(granules)
     with remote_errors("reading the granules"):
         frames = [_clip_grid(g, h, variable, bbox, source.kind) for g, h in zip(granules, handles)]
-    return pd.concat(frames, ignore_index=True)
+    table = pd.concat(frames, ignore_index=True)
+    if table.empty:
+        raise RemoteDataError(
+            f"the granules have no valid '{variable}' values inside the box "
+            "(satellite swaths leave gaps: try other dates, a bigger box or, for SMAP, the PM group)"
+        )
+    return table
 
 
 def _band_links(granule, band: str) -> list[str]:

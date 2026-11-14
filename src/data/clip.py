@@ -20,7 +20,7 @@ SINUSOIDAL_CRS = "+proj=sinu +R=6371007.181 +units=m +no_defs"
 
 
 def _coord_name(obj: xr.Dataset | xr.DataArray, candidates: tuple[str, ...]) -> str:
-    for name in candidates:
+    for name in (*candidates, *(f"{c}_pm" for c in candidates)):  # SMAP's PM group names them latitude_pm
         if name in obj.coords or name in getattr(obj, "data_vars", {}):
             return name
     raise InputError(f"no coordinate named {' or '.join(candidates)} in the data")
@@ -48,6 +48,14 @@ def _within_extent(values: np.ndarray, low: float, high: float) -> bool:
     return low <= finite.max() + margin and high >= finite.min() - margin
 
 
+def _box_reaches_axis(values: np.ndarray, low: float, high: float) -> bool:
+    """True when the center of [low, high] is within half a (local) cell of the nearest axis value."""
+    center = (low + high) / 2
+    nearest = int(np.argmin(np.abs(values - center)))
+    steps = [abs(values[j] - values[nearest]) for j in (nearest - 1, nearest + 1) if 0 <= j < values.size]
+    return abs(values[nearest] - center) <= max(steps, default=0.0) / 2
+
+
 def _axis_slice(values: np.ndarray, low: float, high: float) -> slice:
     return slice(low, high) if values[0] <= values[-1] else slice(high, low)
 
@@ -62,7 +70,7 @@ def clip_latlon(da: xr.DataArray, bbox: BBox) -> xr.DataArray:
         }
     )
     if clipped.size == 0:
-        inside = _within_extent(da[lat_name].values, bbox.south, bbox.north) and _within_extent(
+        inside = _box_reaches_axis(da[lat_name].values, bbox.south, bbox.north) and _box_reaches_axis(
             da[lon_name].values, bbox.west, bbox.east
         )
         if not inside:
@@ -73,9 +81,45 @@ def clip_latlon(da: xr.DataArray, bbox: BBox) -> xr.DataArray:
     return clipped.rename({lat_name: "lat", lon_name: "lon"})
 
 
+def _valid_coordinates(values: np.ndarray, limit: float) -> np.ndarray:
+    """Coordinates as float with fill values and anything outside +-limit turned into NaN.
+
+    SMAP stores -9999 in its 2-D latitude/longitude arrays without declaring it as a fill value.
+    """
+    values = values.astype("float64")
+    return np.where(np.abs(values) <= limit, values, np.nan)
+
+
+def _axis_vector(values: np.ndarray, axis: int, tolerance: float = 1e-3) -> np.ndarray | None:
+    """1-D coordinates when a 2-D array is constant along `axis` (EASE-Grid 2.0: one latitude per row, one
+    longitude per column), ignoring NaN holes. None when it is not constant or not monotonic."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN rows or columns
+        high, low = np.nanmax(values, axis=axis), np.nanmin(values, axis=axis)
+        spread = np.nanmax(high - low) if np.isfinite(high).any() else np.inf
+    steps = np.diff(high[np.isfinite(high)])
+    monotonic = steps.size > 0 and (np.all(steps > 0) or np.all(steps < 0))
+    return high if spread <= tolerance and monotonic else None
+
+
 def clip_curvilinear(ds: xr.Dataset, variable: str, bbox: BBox) -> xr.DataArray:
-    """Clip a 2-D array that carries 2-D latitude/longitude arrays (SMAP EASE-Grid); outside cells become NaN."""
-    lat, lon = ds[_coord_name(ds, LAT_NAMES)], ds[_coord_name(ds, LON_NAMES)]
+    """Clip a 2-D array that carries 2-D latitude/longitude arrays (SMAP EASE-Grid).
+
+    Fill values in the coordinate arrays are ignored. When latitude is constant per row and longitude per
+    column (EASE-Grid 2.0) the grid is clipped through those two 1-D axes; otherwise cell by cell, with cells
+    outside the box set to NaN.
+    """
+    lat_name, lon_name = _coord_name(ds, LAT_NAMES), _coord_name(ds, LON_NAMES)
+    lat = ds[lat_name].copy(data=_valid_coordinates(ds[lat_name].values, 90))
+    lon = ds[lon_name].copy(data=_valid_coordinates(ds[lon_name].values, 180))
+    da = ds[variable]
+    row_dim, col_dim = lat.dims
+    lat_axis, lon_axis = _axis_vector(lat.values, axis=1), _axis_vector(lon.values, axis=0)
+    if lat_axis is not None and lon_axis is not None:
+        keep_rows, keep_cols = np.isfinite(lat_axis), np.isfinite(lon_axis)
+        axes = da.isel({row_dim: keep_rows, col_dim: keep_cols})
+        axes = axes.assign_coords(lat=(row_dim, lat_axis[keep_rows]), lon=(col_dim, lon_axis[keep_cols]))
+        return clip_latlon(axes.swap_dims({row_dim: "lat", col_dim: "lon"}), bbox)
     inside = (lat >= bbox.south) & (lat <= bbox.north) & (lon >= bbox.west) & (lon <= bbox.east)
     rows, cols = np.where(inside.values)
     if rows.size == 0:
@@ -91,8 +135,25 @@ def clip_curvilinear(ds: xr.Dataset, variable: str, bbox: BBox) -> xr.DataArray:
         rows, cols = np.array([rows]), np.array([cols])
         _warn_nearest("grid")
     window = {inside.dims[0]: slice(rows.min(), rows.max() + 1), inside.dims[1]: slice(cols.min(), cols.max() + 1)}
-    da = ds[variable].isel(window).where(inside.isel(window))
-    return da.assign_coords(lat=lat.isel(window), lon=lon.isel(window))
+    clipped = da.isel(window).where(inside.isel(window))
+    return clipped.assign_coords(lat=lat.isel(window), lon=lon.isel(window))
+
+
+def mask_valid_range(da: xr.DataArray) -> xr.DataArray:
+    """NaN outside the variable's valid_min/valid_max (or valid_range) attributes, when it declares them.
+
+    Skipped for variables xarray unpacked with scale_factor/add_offset: their valid range is in packed units.
+    """
+    if "scale_factor" in da.encoding or "add_offset" in da.encoding:
+        return da
+    bounds, valid_min, valid_max = (_numbers(da.attrs, n) for n in ("valid_range", "valid_min", "valid_max"))
+    low = bounds[0] if bounds.size == 2 else (valid_min[0] if valid_min.size == 1 else None)
+    high = bounds[1] if bounds.size == 2 else (valid_max[0] if valid_max.size == 1 else None)
+    if low is not None:
+        da = da.where(da >= low)
+    if high is not None:
+        da = da.where(da <= high)
+    return da
 
 
 def to_long_frame(da: xr.DataArray, value_name: str) -> pd.DataFrame:
@@ -130,6 +191,37 @@ def _parse_grid_metadata(text: str) -> tuple[tuple[float, float], tuple[float, f
         return int(match.group(1))
 
     return pair("UpperLeftPointMtrs"), pair("LowerRightMtrs"), integer("XDim"), integer("YDim")
+
+
+def _numbers(attrs: dict, name: str) -> np.ndarray:
+    """Attribute (case-insensitive) as a flat float array: scalars and 1- or 2-element arrays alike.
+
+    Empty when the attribute is missing or not numeric. HDF5 attributes often come as 1-element arrays
+    (scale_factor) and valid_range or even _FillValue as 2-element ones.
+    """
+    for key, value in attrs.items():
+        if key.lower() == name.lower():
+            try:
+                return np.asarray(value, dtype="float64").ravel()
+            except (TypeError, ValueError):
+                return np.array([])
+    return np.array([])
+
+
+def _scalar(attrs: dict, name: str, default: float | None = None) -> float | None:
+    values = _numbers(attrs, name)
+    return float(values[0]) if values.size == 1 else default
+
+
+def _pick_unique(variable: str, names: list[str], where: str) -> str:
+    """An exact (case-insensitive) name wins; otherwise the text must match exactly one dataset."""
+    exact = [name for name in names if name.split("/")[-1].lower() == variable.lower()]
+    matches = exact or [name for name in names if variable.lower() in name.lower()]
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise InputError(f"no dataset matching '{variable}' in {where}; found: {', '.join(names)}")
+    raise InputError(f"'{variable}' matches several datasets in {where}: {', '.join(matches)}; use a longer name")
 
 
 def _attr(attrs: dict, name: str):
