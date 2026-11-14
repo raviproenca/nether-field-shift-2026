@@ -1,4 +1,6 @@
 # AI-assisted: generated with Claude Code, reviewed by Periélio (pending Ravi)
+import json
+
 import pandas as pd
 import pytest
 import requests
@@ -144,3 +146,35 @@ def test_real_power_api_aracaju():
     frame = power.fetch_point(-10.91, -37.07, dates, ["T2M", "PRECTOTCORR"])
     assert len(frame) == 10 and frame["T2M"].between(15, 40).all()
     assert frame.index.name == "date"
+
+
+def test_corrupt_cache_is_a_miss_and_is_rebuilt(tmp_path):
+    complete = {"properties": {"parameter": {"T2M": {"20250101": 1.0, "20250102": 2.0, "20250103": 3.0}}}}
+    first = FakeSession(FakeResponse(body=complete))
+    power.fetch_point(0, 0, DATES, ["T2M"], cache_dir=tmp_path, session=first, sleep=no_sleep)
+    (cached,) = tmp_path.glob("*.json")
+    cached.write_text("{not json")
+    session = FakeSession(FakeResponse(body=complete))
+    frame = power.fetch_point(0, 0, DATES, ["T2M"], cache_dir=tmp_path, session=session, sleep=no_sleep)
+    assert len(session.calls) == 1 and frame["T2M"].iloc[0] == 1.0
+    assert json.loads(cached.read_text()) == complete
+
+
+@pytest.mark.parametrize("body", [None, [], "oops", {"messages": "plain text"}, {"header": None}])
+def test_error_body_of_any_shape(body):
+    session = FakeSession(FakeResponse(400, body, text="raw error text"))
+    with pytest.raises(RemoteDataError, match="HTTP 400"):
+        power.fetch_point(0, 0, DATES, ["T2M"], session=session, sleep=no_sleep)
+
+
+def test_any_requests_exception_is_retried_then_reported():
+    errors = requests.exceptions
+    session = FakeSession(errors.ChunkedEncodingError(), errors.SSLError(), errors.TooManyRedirects())
+    with pytest.raises(RemoteDataError, match="unavailable after 3 attempts"):
+        power.fetch_point(0, 0, DATES, ["T2M"], session=session, sleep=no_sleep)
+
+
+def test_header_that_is_not_a_dict_still_parses():
+    payload = {"header": "text", "properties": {"parameter": {"T2M": {"20250101": -999.0, "20250102": 1.0}}}}
+    frame = power.parse_response(payload)
+    assert pd.isna(frame["T2M"].iloc[0]) and frame["T2M"].iloc[1] == 1.0

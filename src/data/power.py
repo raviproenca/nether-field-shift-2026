@@ -44,11 +44,17 @@ def build_params(lat: float, lon: float, dates: DateRange, variables: list[str],
 
 
 def _describe_error(response: requests.Response) -> str:
+    detail = ""
     try:
         body = response.json()
-        detail = "; ".join(body.get("messages") or []) or body.get("header", "")
+        if isinstance(body, dict):
+            messages = body.get("messages")
+            if isinstance(messages, list):
+                detail = "; ".join(str(m) for m in messages)
+            detail = detail or str(body.get("header") or "")
     except ValueError:
-        detail = response.text[:200]
+        pass
+    detail = detail or str(response.text or "")[:200]
     return f"POWER API rejected the request (HTTP {response.status_code}): {detail}"
 
 
@@ -59,7 +65,7 @@ def _request_json(
     for attempt in range(1, retries + 1):
         try:
             response = session.get(POWER_URL, params=params, timeout=timeout)
-        except (requests.Timeout, requests.ConnectionError) as exc:
+        except requests.RequestException as exc:
             reason = f"network error: {exc.__class__.__name__}"
         else:
             if response.status_code == 200:
@@ -84,7 +90,8 @@ def parse_response(payload: dict) -> pd.DataFrame:
         raise RemoteDataError(f"POWER API response has no data: {messages or 'unexpected format'}") from None
     if not parameters:
         raise RemoteDataError("POWER API returned no parameters for this request")
-    fill = payload.get("header", {}).get("fill_value", FILL_VALUE)
+    header = payload.get("header")
+    fill = header.get("fill_value", FILL_VALUE) if isinstance(header, dict) else FILL_VALUE
     frame = pd.DataFrame(parameters).astype(float).mask(lambda df: df == fill)
     frame.index = pd.to_datetime(frame.index, format="%Y%m%d")
     frame.index.name = "date"
@@ -98,6 +105,15 @@ def _cache_path(cache_dir: Path, params: dict[str, str]) -> Path:
     return (
         cache_dir / f"point_{params['latitude']}_{params['longitude']}_{params['start']}_{params['end']}_{digest}.json"
     )
+
+
+def _read_cache(path: Path) -> pd.DataFrame | None:
+    """Cached response as a frame, or None (after deleting the file) when it is corrupt."""
+    try:
+        return parse_response(json.loads(path.read_text()))
+    except (OSError, ValueError, RemoteDataError):
+        path.unlink(missing_ok=True)
+        return None
 
 
 def fetch_point(
@@ -118,7 +134,9 @@ def fetch_point(
     params = build_params(lat, lon, dates, variables, community)
     cached = _cache_path(cache_dir, params) if cache_dir else None
     if cached and cached.is_file() and not refresh:
-        return parse_response(json.loads(cached.read_text()))
+        frame = _read_cache(cached)
+        if frame is not None:
+            return frame
     payload = _request_json(session or requests.Session(), params, timeout, retries, sleep)
     frame = parse_response(payload)
     if cached and not frame.iloc[-1].isna().any():
