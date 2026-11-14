@@ -18,7 +18,7 @@ What is done and what is missing for the submission. 🟢 done · 🟡 in progre
 | Internal map: deploy (#18) | 🟡 | Workflow merged; Cloudflare project and repo secrets still to be set by Ravi |
 | Farmer product: Telegram bot | 🔴 | Waits for the PRD |
 | Farmer product: producer web dashboard | 🔴 | Waits for the PRD |
-| Farmer product: hosting (Google Cloud) | 🟡 | Decided; Ravi activates the Global Offers credit and sets up the project (step-by-step ready) |
+| Farmer product: hosting (Google Cloud) | 🟡 | Decided; Lucas activates the Global Offers trial and sets up the project ([gcp-setup.md](../infra/gcp-setup.md)) |
 | Voice (speech-to-text / text-to-speech) | 🟡 | Google STT/TTS (pt-BR, en) decided; offline Piper + faster-whisper spike works as fallback |
 | Pitch skeleton | 🟡 | Keywords collected in [pitch-keywords.md](pitch-keywords.md) |
 | Demo: video ≤ 30 s or ≤ 7 slides | 🔴 | Not started |
