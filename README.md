@@ -11,15 +11,17 @@ Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.s
 Requirements: [uv](https://docs.astral.sh/uv/) and Python 3.12.
 
 ```bash
-uv venv -p 3.12 .venv && uv pip install -r requirements.txt
+uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt
 ```
+
+That installs the runtime packages plus pytest. To run only the toolkit, use `requirements.txt` instead.
 
 Data toolkit (details in [src/data/README.md](src/data/README.md)):
 
 ```bash
 source .venv/bin/activate
 # POWER needs no login
-python -m src.data power --point -10.91,-37.07 --radius-km 1 --start 2025-01-01 --end 2025-12-31 \
+python -m src.data power --point -10.91,-37.07 --start 2025-01-01 --end 2025-12-31 \
   --variable T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN --out data/sample/power_aracaju_2025.csv
 # Count granules without login
 python -m src.data modis --search-only --start 2025-01-01 --end 2025-01-31
@@ -74,7 +76,7 @@ Built with the help of AI coding assistants; the idea and decisions are the team
 
 ## Credits
 
-Libraries (pinned in [requirements.txt](requirements.txt)):
+Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requirements-dev.txt](requirements-dev.txt)):
 
 | Library | License |
 |---|---|
@@ -85,6 +87,9 @@ Libraries (pinned in [requirements.txt](requirements.txt)):
 | [h5py](https://www.h5py.org/) | BSD-3-Clause |
 | [rioxarray](https://corteva.github.io/rioxarray/) | Apache-2.0 |
 | [pandas](https://pandas.pydata.org/) | BSD-3-Clause |
+| [numpy](https://numpy.org/) | BSD-3-Clause |
+| [rasterio](https://rasterio.readthedocs.io/) | BSD-3-Clause |
+| [fsspec](https://filesystem-spec.readthedocs.io/) | BSD-3-Clause |
 | [pyarrow](https://arrow.apache.org/docs/python/) | Apache-2.0 |
 | [requests](https://requests.readthedocs.io/) | Apache-2.0 |
 | [pyhdf](https://github.com/fhs/pyhdf) | MIT |

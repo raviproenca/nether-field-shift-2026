@@ -4,7 +4,7 @@
 Download and clip NASA data to a region. It is infrastructure: it does not choose a variable or a use case for the team.
 
 ```bash
-source .venv/bin/activate          # after the setup in the root README
+source .venv/bin/activate          # after the setup in the root README (requirements-dev.txt)
 python -m src.data <source> [region] --start YYYY-MM-DD --end YYYY-MM-DD --variable NAME [--out PATH]
 ```
 
@@ -18,14 +18,17 @@ Sources: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls` (NASA) and `
 | `--bbox sergipe` / `--bbox nordeste` | Presets (`nordeste` = -48.8,-18.4,-34.7,-1.0) |
 | `--bbox W,S,E,N` | Free box in degrees, validated (W<E, S<N, lon within 180, lat within 90) |
 | `--point LAT,LON --radius-km N` | Square box of half-side N km around a point: lat deg = km/111.32, lon deg = km/(111.32·cos(lat)) |
+| `--point LAT,LON` (POWER only) | POWER is a point API, so the point is used as is and no radius is needed |
 
-`--bbox` and `--point` are mutually exclusive. Negative values work without quotes (`--point -10.91,-37.07`).
+`--bbox` and `--point` are mutually exclusive. Negative values work without quotes (`--point -10.91,-37.07`). `--radius-km` is required with `--point` for every source except `power`.
+
+If the box is smaller than one cell of a GLDAS, IMERG or SMAP grid (e.g. `--radius-km 1` on GLDAS's 0.25° grid), the cell nearest to the box center is used and a `warning:` line is printed. A box outside the grid is still an error.
 
 ## Examples
 
 ```bash
 # POWER daily series for Aracaju (no login). Variables are POWER parameter names.
-python -m src.data power --point -10.91,-37.07 --radius-km 1 --start 2025-01-01 --end 2025-12-31 \
+python -m src.data power --point -10.91,-37.07 --start 2025-01-01 --end 2025-12-31 \
   --variable T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN --out data/sample/power_aracaju_2025.csv
 
 # How many granules exist? (no login, no download)
@@ -44,23 +47,24 @@ python -m src.data modis --variable NDVI --start 2025-01-01 --end 2025-03-31    
 python -m src.data hls   --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31
 ```
 
-`--variable` is always yours to choose: a POWER parameter list, a variable name inside the file, `group/variable` for SMAP, a band name for HLS (`B04`, `B8A`, `Fmask`) or a substring of the dataset name for MODIS/VIIRS (`NDVI`, `EVI`). `--short-name` and `--version` override the defaults below.
+`--variable` is always yours to choose: a POWER parameter list, a variable name inside the file, `group/variable` for SMAP, a band name for HLS (`B04`, `B8A`, `Fmask`) or a substring of the dataset name for MODIS/VIIRS (`NDVI`, `EVI`). `--short-name` and `--version` override the defaults below. Each source pins a default version (GLDAS 2.1, IMERG 07, SMAP 006, MOD13Q1 061, VNP13A1 002, HLS 2.0); it is used only with the default short_name, so pass `--version` yourself when you change `--short-name` to a product with another version scheme. For MODIS/VIIRS the text must match exactly one dataset in the tile (an exact name wins; otherwise an error lists the candidates).
 
 ## Where files go
 
 | Folder | Content | Git |
 |---|---|---|
-| `data/raw/<source>/` | Downloaded granules and cached POWER JSON | ignored |
+| `data/raw/<source>/` | Downloaded granules (`--raw-dir`) | ignored |
+| `data/cache/power/` | Cached POWER API responses (`--cache-dir`) | ignored |
 | `data/processed/` | Clipped output (CSV, Parquet, GeoTIFF) | ignored |
 | `data/sample/` | Small hand-picked samples (e.g. `power_aracaju_2025.csv`) | versioned |
 
-Output of POWER, GLDAS, IMERG and SMAP is a table (`.csv` or `.parquet`; GLDAS/IMERG/SMAP long format `time, lat, lon, <variable>`). MODIS, VIIRS and HLS write one GeoTIFF per granule into the folder given by `--out` (default `data/processed/<source>/`). Use `--refresh` to ignore the POWER cache and `--download` to fetch whole GLDAS/IMERG files instead of lazy reads.
+Output of POWER, GLDAS, IMERG and SMAP is a table (`.csv` or `.parquet`; GLDAS/IMERG/SMAP long format `time, lat, lon, <variable>`). MODIS, VIIRS and HLS write one GeoTIFF per granule into the folder given by `--out` (default `data/processed/<source>/`). `--out` is checked before anything is searched or downloaded: `.csv` or `.parquet` for table sources, a folder for GeoTIFF sources. Use `--refresh` to ignore the POWER cache and `--download` to fetch whole GLDAS/IMERG files instead of lazy reads.
 
 ## What needs login
 
 | Source | Login | How it is read |
 |---|---|---|
-| `power` | No | Public API, center point of the box. The regional endpoint needs at least a 2-degree range, so a box becomes its center point. Timeout 60 s, 3 attempts, `-999` becomes NaN |
+| `power` | No | Public API; the point itself, or the center of a box. The regional endpoint needs at least a 2-degree range, so a box becomes its center point. Timeout 60 s, 3 attempts, `-999` becomes NaN |
 | `gldas`, `imerg` | Earthdata Login | `earthaccess.open` (HTTPS range reads); only the box bytes are transferred. Hyrax OPeNDAP was not used (see note) |
 | `smap` | Earthdata Login | Full `.h5` downloaded, clipped locally with its 2-D lat/lon arrays |
 | `modis` | Earthdata Login | HDF4 tile downloaded, read with `pyhdf`, clipped locally |
@@ -69,6 +73,8 @@ Output of POWER, GLDAS, IMERG and SMAP is a table (`.csv` or `.parquet`; GLDAS/I
 | `hls` | Earthdata Login | Only the requested band GeoTIFF is downloaded, clipped locally |
 
 Granule **search** never needs login. Without `~/.netrc` the download commands stop with `run scripts/earthdata-login.sh first`.
+
+> **Errors:** network, auth (HTTP 401/403), file and format failures while opening, downloading or reading data are reported as one `error:` line (HTTP status or error class plus a short text, never credentials or signed URLs), not as a traceback.
 
 > **Not exercised against the real services:** the Earthdata download paths (GLDAS, IMERG, SMAP, MODIS, VIIRS, HLS) were not run because there are no credentials in this environment. Search, clipping (synthetic files in `tests/`) and the login error are tested. Expect to fix small details (variable names, SMAP group paths, VIIRS scale attributes) on the first real run. OPeNDAP via Hyrax would need `pydap` or `.dodsrc` setup that cannot be validated without login, so lazy HTTPS reads are used instead.
 
@@ -101,6 +107,7 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 ### `planetary` (Sentinel-2)
 
 - Flags: `--collection` (default `sentinel-2-l2a`), `--max-cloud N` (default 20, query `eo:cloud_cover < N`; use `--max-cloud 100` for collections without cloud cover), `--variable` = asset name (`B04`, `B08`, `SCL`, `visual`). `--search-only` prints the item count in the period and the newest item over the box (any cloud, sorted by datetime descending).
+- Size guard: before reading, the window is estimated (box in meters / asset resolution, capped by the tile size). Above `--max-pixels` (default 25 million per band and item) the command stops and asks for a smaller `--point/--radius-km`. A 2 km radius at 10 m is about 0.16 million pixels.
 - Output: one GeoTIFF per item in `data/processed/planetary/` (`<item id>_<asset>.tif`), in the item's UTM CRS. The lat/lon box is reprojected before clipping and only that window is downloaded. Reflectance values are raw digital numbers (scale 0.0001; products after processing baseline 04.00 also carry an offset of -0.1, see the item's `raster:bands`). Keep boxes small: a 10 m raster of a whole state is huge.
 - Real test (2026-11-14): `--point -10.91,-37.07 --radius-km 2`, `B04`, January 2025, cloud < 20% gave 2 items and two 404 x 401 pixel uint16 GeoTIFFs (EPSG:32724, 10 m, about 317 KiB each).
 - Sentinel-2 is ESA/Copernicus data: credit "Contains modified Copernicus Sentinel data [year]". Use `hls` for the NASA 30 m alternative.
