@@ -128,3 +128,14 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 - Output: one GeoTIFF per item in `data/processed/planetary/` (`<item id>_<asset>.tif`), in the item's UTM CRS. The lat/lon box is reprojected before clipping and only that window is downloaded. Reflectance values are raw digital numbers (scale 0.0001; products after processing baseline 04.00 also carry an offset of -0.1, see the item's `raster:bands`). Keep boxes small: a 10 m raster of a whole state is huge.
 - Real test (2026-11-14): `--point -10.91,-37.07 --radius-km 2`, `B04`, January 2025, cloud < 20% gave 2 items and two 404 x 401 pixel uint16 GeoTIFFs (EPSG:32724, 10 m, about 317 KiB each).
 - Sentinel-2 is ESA/Copernicus data: credit "Contains modified Copernicus Sentinel data [year]". Use `hls` for the NASA 30 m alternative.
+
+### IBGE SIDRA (Produção Agrícola Municipal), third-party data
+
+Not NASA data. `python -m src.data.sidra` downloads any SIDRA table for all municipalities of one UF (default Sergipe, code 28) through the public API, no login. The table, variable and product codes are yours to choose (see [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md)).
+
+```bash
+python -m src.data.sidra --table 5457 --variable 8331,216,214,112,215 --classification 782 \
+  --categories 40112,40119,40122 --period "last 1" --out data/processed/pam_sergipe.csv
+```
+
+Output is a tidy CSV/Parquet (one row per municipality, variable, year and category) with `value` as a number (`-` becomes 0, `X`, `..` and `...` become NaN) and the raw text in `symbol`. One call may return at most 100,000 values; the connector stops with a clear error above that. Raw answers are cached in `data/cache/sidra/` (`--refresh` ignores the cache). The IBGE licence was not verified (see the research note): credit "Fonte: IBGE, Pesquisa Agrícola Municipal".
