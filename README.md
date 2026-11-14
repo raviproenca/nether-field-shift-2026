@@ -27,6 +27,10 @@ python -m src.data power --point -10.91,-37.07 --start 2025-01-01 --end 2025-12-
 python -m src.data modis --search-only --start 2025-01-01 --end 2025-01-31
 # Sentinel-2 (ESA, not NASA) from the Planetary Computer: no account
 python -m src.data planetary --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31
+# NASADEM / SRTM 30 m terrain elevation & slope (no account)
+python -m src.data srtm --point -10.685,-37.425 --radius-km 5 --variable all --out data/processed/srtm
+# Open-Meteo 15-day forecast with FAO-56 ET0 (no account)
+python -m src.data open-meteo --point -10.685,-37.425 --forecast-days 15
 # GLDAS, IMERG, SMAP, MODIS, VIIRS and HLS downloads need a free NASA Earthdata account:
 scripts/earthdata-login.sh        # once; stores credentials in ~/.netrc, never in the repo
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
@@ -49,6 +53,7 @@ Every dataset the project can read. NASA Earth science data are open: free to us
 | VIIRS/NPP Vegetation Indices 16-Day L3 500 m v002 (`VNP13A1`) | [LP DAAC](https://lpdaac.usgs.gov/products/vnp13a1v002/) | [10.5067/VIIRS/VNP13A1.002](https://doi.org/10.5067/VIIRS/VNP13A1.002) | NASA open data, EOSDIS use guidance |
 | HLS Landsat Surface Reflectance 30 m v2.0 (`HLSL30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlsl30v002/) | [10.5067/HLS/HLSL30.002](https://doi.org/10.5067/HLS/HLSL30.002) | NASA open data, EOSDIS use guidance |
 | HLS Sentinel-2 Surface Reflectance 30 m v2.0 (`HLSS30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlss30v002/) | [10.5067/HLS/HLSS30.002](https://doi.org/10.5067/HLS/HLSS30.002) | NASA open data, EOSDIS use guidance |
+| NASADEM Merged DEM Global 1 arc-second (~30 m) v001 (`NASADEM_HGT`, SRTM-derived) | [Planetary Computer](https://planetarycomputer.microsoft.com/dataset/nasadem) | [10.5067/MEASURES/NASADEM/NASADEM_HGT.001](https://doi.org/10.5067/MEASURES/NASADEM/NASADEM_HGT.001) | NASA open data, EOSDIS use guidance |
 
 DOIs were read from the NASA CMR collection records on 2026-11-14 and every link above answered HTTP 200 that day. Trim this table to the datasets actually used before submitting.
 
@@ -65,6 +70,7 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 | Dataset | Provider | Page | DOI | License / terms |
 |---|---|---|---|---|
 | Sentinel-2 MSI Level-2A surface reflectance, 10 m (`sentinel-2-l2a`) | ESA / Copernicus, served by the Microsoft Planetary Computer | [Planetary Computer catalog](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a) | [10.5270/S2_-znk9xsj](https://doi.org/10.5270/S2_-znk9xsj) (Sentinel-2 MSI Level-2A BOA Reflectance Product, ESA) | Free, full and open under the [Copernicus Sentinel data terms](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice); attribution: "Contains modified Copernicus Sentinel data [year]". Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
+| Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS, up to 15 days + FAO-56 ET0) | Open-Meteo | [open-meteo.com](https://open-meteo.com/) | none | Free for non-commercial use under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); attribution required ("Weather data by Open-Meteo.com") |
 
 Sentinel-2 is **European data, not NASA data**, so it is not part of "NASA data used". It is read through the `planetary` source of the toolkit (no account, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it.
 
