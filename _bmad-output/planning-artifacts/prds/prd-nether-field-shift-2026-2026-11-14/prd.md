@@ -3,6 +3,7 @@ title: "PRD: Field Shift decision support for family farming in Sergipe"
 status: draft
 created: 2026-11-14
 updated: 2026-11-14
+revision: 'Nov 14 (2): Google Cloud hosting, languages, v1 crops'
 ---
 
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad PRD, headless fast path) from the team's brief, docs/requirements.md and docs/team/*; pending review by Ravi (Tech Lead). The idea is the team's (docs/team/decisions.md). -->
@@ -58,7 +59,8 @@ Larger producers and extension workers see the same answer, with its evidence, i
 
 ## 3. Glossary
 - **Plot**: the place a request is about. It is a point, from the location, plus a small radius.
-- **Crop**: the crop the farmer plans or practices, such as beans, maize or cassava. The v1 list is in §8.
+- **Crop**: the crop the farmer plans or practices. The v1 list is **maize, beans and cassava** (decided Nov 14). Intercropping and cover crops are **Strategies**, not Crops.
+- **Language**: the user's interface language, either `pt-BR` or `en`. The bot defaults to `pt-BR` and the dashboard to `en`.
 - **Priority**: the farmer's chosen weight. It is one of **water**, **soil**, **erosion** or **income**. REQ-PRED-03.
 - **Strategy**: one option for the plot over the next season. Each **Recommendation** has at least three: **Current practice**, **Soil and water conservation** and **Resilient income or forage**. REQ-PRED-02.
 - **Diagnosis**: the plot's recent and seasonal conditions, taken from NASA data. It includes rain, soil moisture, vegetation, temperature, the water balance, terrain and **Bare-soil windows**.
@@ -81,7 +83,7 @@ The farmer can send the **Plot** with Telegram's location button. The dashboard 
 
 #### FR-2: Crop by voice, text or button
 The farmer can name the **Crop** with a voice note, with text, or with a button for the most common crops.
-- A voice note is transcribed in Brazilian Portuguese and mapped to a **Crop** on the v1 list.
+- A voice note is transcribed in the user's **Language** and mapped to a **Crop** on the v1 list.
 - If the mapping fails, the bot shows buttons instead of guessing.
 
 #### FR-3: Priority choice
@@ -132,7 +134,9 @@ Every **Recommendation** includes an **Uncertainty note** and a **Validation not
 
 ### 4.5 Plain-language explanation
 #### FR-13: Explain, never decide
-An AI layer only rewrites the deterministic **Recommendation** in short, plain language. It must not change numbers or **Strategies**. REQ-PRED-07. The farmer-facing bot speaks Brazilian Portuguese. The language of the dashboard and judge-facing views is **open question 11** (§8).
+An AI layer only rewrites the deterministic **Recommendation** in short, plain language in the user's **Language**. It must not change numbers or **Strategies**. REQ-PRED-07.
+- The explanation uses Vertex AI Gemini Flash.
+- If the call errors or the quota runs out, the system uses the fixed template text instead.
 - The numbers in the text equal the numbers in the structured output.
 - If the AI layer fails, the bot sends a fixed template text instead.
 
@@ -142,6 +146,12 @@ Anyone can start the bot with `/start`. There is no login or registration. REQ-D
 
 #### FR-15: Voice in and out
 The bot accepts voice notes, using speech-to-text. It replies with a short voice note, using text-to-speech, plus short text cards. Audio is OGG/Opus in both directions. REQ-DEV-BE-05, decided Nov 14.
+- Speech-to-text and text-to-speech use the user's **Language** (`pt-BR` or `en`).
+- The primary engine is Google Cloud Speech-to-Text and Text-to-Speech.
+- The fallback is faster-whisper for speech-to-text and Piper for text-to-speech. The fallback runs when the primary engine errors or runs out of quota.
+
+#### FR-20: Bot language choice
+The bot speaks Portuguese by default. The user can switch it to English, or back, with `/language` or a button. The choice applies to text, voice in and voice out for the rest of the chat.
 
 #### FR-16: Light messages
 Replies fit weak connections: short texts, small audio, and at most one small image. REQ-INFRA-05.
@@ -149,6 +159,9 @@ Replies fit weak connections: short texts, small audio, and at most one small im
 ### 4.7 Producer web dashboard
 #### FR-17: Plot view
 The dashboard shows the **Recommendation** for a **Plot** on a map with NASA GIBS layers and charts of the **Diagnosis** and the **Projection**. REQ-DEV-FE-02.
+
+#### FR-21: Dashboard language toggle
+The dashboard is in English by default. A button switches every label, explanation and unit name to PT-BR.
 
 #### FR-18: Demo mode for judges
 The dashboard has a public demo mode with the **Pilot sites** pre-loaded. A judge reaches a result in one click, with no login.
@@ -180,7 +193,7 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 
 ## 6. MVP Scope
 ### 6.1 In Scope
-- FR-1 to FR-19 for Sergipe and the two **Pilot sites**.
+- FR-1 to FR-21 for Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava).
 - The bot with voice.
 - The dashboard with demo mode.
 - The shared API.
@@ -189,6 +202,7 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 ### 6.2 Out of Scope for MVP
 - **Validation with real farmers.** It is skipped in the hackathon and is the next step in the pitch.
 - **Other states.**
+- **Languages other than PT-BR and English.**
 - **Seasonal outlook beyond 15 days.** The pitch names NASA GEOS-FP as the NASA path for forecasts.
 - **ANA HidroWeb, SoilGrids and MapBiomas integration.** Planned; research is in progress.
 
@@ -200,16 +214,16 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 
 ## 8. Open Questions
 1. **Product name.** Owner: the team.
-2. **Crops for v1.** The proposal is beans, maize and cassava, the ZARC crops under research. Intercropping and cover crops count as **Strategies**. Owner: the team.
-3. **Product hosting.** The proposal is Google Cloud from Global Offers (US$ 300 for 90 days). It must stay online until Jan 26, 2027, and it carries the CPU and RAM load of voice. Pending Ravi's OK.
-4. **AI provider for FR-13.** It must not depend on a trial that expires before Jan 26, 2027. Owner: Ravi.
-5. **ZARC data access.** Is it a file or an API, and at what granularity? Owner: research, in progress.
-6. **Piper `pt_BR` voice license.** See open question 10 in `docs/team/open-questions.md`.
-7. **Interface language (team open question 11, OPEN).** There are two options, and none is chosen:
-   - (a) English by default, with a PT-BR toggle;
-   - (b) English only.
+2. **ZARC data access.** Is it a file or an API, and at what granularity? Owner: research, in progress.
+3. **Piper `pt_BR` voice license.** Piper is only the fallback now. See open question 10 in `docs/team/open-questions.md`.
+4. **Cloud credit window.** The Global Offers credits last 90 days from activation. If they are activated on Nov 14, they end around Feb 12, 2027, which covers Jan 26, 2027. Confirm the activation date. Owner: Ravi.
 
-   This affects FR-13, FR-17 and FR-18. Owner: the team.
+**Decided Nov 14 (Ravi), no longer open:**
+- Hosting on Google Cloud.
+- Vertex AI Gemini Flash for the explanations.
+- Google Speech-to-Text and Text-to-Speech, with Piper and faster-whisper as the fallback.
+- The bot in PT-BR with an English option, and the dashboard in English with a PT-BR toggle.
+- The v1 crops: maize, beans and cassava.
 
 ## 9. Assumptions Index
 - §4.1 FR-3: the default **Priority** is water.

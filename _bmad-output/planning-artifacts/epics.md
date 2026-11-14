@@ -13,7 +13,7 @@ inputDocuments:
 
 ## Overview
 
-This is a draft breakdown of the PRD (FR-1 to FR-19, NFR-1 to NFR-6) and the architecture spine (AD-1 to AD-8) into stories for the 48-hour hackathon. The stories are small and ordered so that each epic delivers something usable.
+This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the architecture spine (AD-1 to AD-10). It was revised on Nov 14 for Google Cloud, languages and the v1 crops. into stories for the 48-hour hackathon. The stories are small and ordered so that each epic delivers something usable.
 
 **Owners:** none. The Tech Lead creates the issues and splits the tasks.
 
@@ -27,10 +27,10 @@ This is a draft breakdown of the PRD (FR-1 to FR-19, NFR-1 to NFR-6) and the arc
 |---|---|---|
 | E1 Decision engine | FR-5, FR-6, FR-8 to FR-12 | AD-2, AD-4 |
 | E2 Product API | FR-4, FR-7, FR-19, NFR-1, NFR-2, NFR-3, NFR-5 | AD-1, AD-4, AD-5, AD-7, AD-8 |
-| E3 Plain-language explanation | FR-13 | AD-3 |
-| E4 Telegram bot with voice | FR-1 to FR-3, FR-14 to FR-16, NFR-4, NFR-6 | AD-1, AD-6 |
-| E5 Producer dashboard and demo mode | FR-1, FR-17, FR-18, NFR-1 | AD-1 |
-| E6 Deploy and judge readiness | NFR-1, NFR-2, NFR-3, NFR-5 | AD-7, AD-8 |
+| E3 Plain-language explanation | FR-13 | AD-3, AD-9 |
+| E4 Telegram bot with voice | FR-1 to FR-3, FR-14 to FR-16, FR-20, NFR-4, NFR-6 | AD-1, AD-6, AD-9 |
+| E5 Producer dashboard and demo mode | FR-1, FR-17, FR-18, FR-21, NFR-1 | AD-1, AD-9 |
+| E6 Deploy and judge readiness | NFR-1, NFR-2, NFR-3, NFR-5 | AD-7, AD-8, AD-10 |
 
 ## Epic List
 
@@ -54,7 +54,7 @@ As a builder, I want typed Plot, Crop, Priority, Strategy, Diagnosis, Projection
 As a builder, I want crop profiles and thresholds in `src/engine/rules/*.yaml`, so that the team can tune the rules without changing code.
 
 **Acceptance criteria:**
-- **Given** the v1 crop list (open question 2), **when** the rules load, **then** each crop has its water need, its cycle length and its heat limit, each with a source citation.
+- **Given** the v1 crops (maize, beans and cassava), **when** the rules load, **then** each crop has its water need, its cycle length and its heat limit, each with a source citation.
 
 ### Story 1.3: Strategy generation and ranking
 As a farmer, I want at least three Strategies ranked by my Priority, so that I can choose what to do.
@@ -127,8 +127,9 @@ As a farmer, I want a short fixed-template text for every Recommendation, so tha
 As a farmer, I want the text in natural, simple language, so that I understand it.
 
 **Acceptance criteria:**
-- **Given** the AI provider's output, **when** it contains a number that is not in the Recommendation, **then** it is rejected and the template text from 3.1 is used (AD-3).
-- **And** the provider is configured by environment variable (open question 4).
+- **Given** the Vertex AI Gemini Flash output, **when** it contains a number that is not in the Recommendation, **then** it is rejected and the template text from 3.1 is used (AD-3).
+- **And** if the call errors or the quota runs out, the template text is used.
+- **And** the text is in the requested `lang`, either `pt-BR` or `en` (AD-9).
 
 ## Epic 4: Telegram bot with voice (`apps/bot`, `apps/tts`)
 
@@ -145,26 +146,36 @@ As a farmer, I want to choose the crop and the priority with buttons or text, so
 **Acceptance criteria:**
 - **Given** a crop on the v1 list and a priority, **then** the bot calls `POST /recommendation` and shows the three Strategy cards.
 
-### Story 4.3: Voice in (faster-whisper)
+### Story 4.3: Voice in (Google Speech-to-Text, faster-whisper fallback)
 As a farmer who has trouble reading, I want to say my crop in a voice note, so that I do not have to type.
 
 **Acceptance criteria:**
-- **Given** an OGG/Opus voice note in Brazilian Portuguese, **then** it is transcribed and mapped to a crop on the v1 list.
+- **Given** an OGG/Opus voice note in the chat's language, **then** Google Speech-to-Text transcribes it and maps it to a v1 crop.
+- **And** if Google errors or runs out of quota, faster-whisper is used instead (AD-6).
 - **And** if the mapping fails, the bot shows buttons.
 
-### Story 4.4: TTS service (Piper, GPL boundary)
-As a builder, I want `apps/tts` with `POST /tts` (text in, OGG/Opus out) in its own process or container, so that Piper is never imported into product code (AD-6).
+### Story 4.4: TTS fallback service (Piper, GPL boundary)
+As a builder, I want `apps/tts` with `POST /tts` (text in, OGG/Opus out) as its own Cloud Run service, so that Piper serves as the voice fallback and is never imported into product code (AD-6).
 
 **Acceptance criteria:**
 - **Given** a short text, **then** the service returns OGG/Opus that Telegram plays.
 - **And** the license and the voice's model card are recorded in the README.
 
-### Story 4.5: Voice out
+### Story 4.5: Voice out (Google Text-to-Speech, Piper fallback)
 As a farmer, I want a short voice reply with the text cards, so that I can listen to the advice.
 
 **Acceptance criteria:**
-- **Given** a Recommendation, **then** the bot sends one voice note and the cards.
-- **And** if TTS fails, the bot still sends the text.
+- **Given** a Recommendation, **then** the bot sends one voice note from Google Text-to-Speech in the chat's language, plus the cards.
+- **And** if Google fails, the bot falls back to `apps/tts`.
+- **And** if both fail, the bot still sends the text.
+
+### Story 4.6: Bot language (PT-BR default, English option)
+As a farmer or a judge, I want to switch the bot between Portuguese and English with `/language` or a button, so that I can use it in my language.
+
+**Acceptance criteria:**
+- **Given** a new chat, **then** the bot speaks PT-BR.
+- **When** the user picks English, **then** the texts, the voice in and the voice out all switch to `en` for that chat (AD-9).
+- **And** the chosen language is kept only in memory, never on disk.
 
 ## Epic 5: Producer dashboard and demo mode
 
@@ -183,13 +194,25 @@ As a judge, I want a public demo with the two pilot sites, one click each, so th
 - **Given** the public URL, **then** no login is asked.
 - **And** each pilot shows a full Recommendation from cache.
 
-## Epic 6: Deploy and judge readiness
-
-### Story 6.1: Product hosting
-As the team, I want the API, the bot and the TTS service online until Jan 26, 2027, so that the judges' links keep working.
+### Story 5.3: Dashboard language (English default, PT-BR button)
+As a producer, I want to switch the dashboard to PT-BR, so that I can read it in my language. Judges see English by default.
 
 **Acceptance criteria:**
-- **Given** the hosting decision (pending Ravi), **then** the services run with secrets from environment variables (AD-8), and the hosting does not depend on a trial that expires before Jan 26, 2027.
+- **Given** the dashboard opens, **then** it is in English.
+- **When** the user presses the PT-BR button, **then** every label, explanation and unit name switches, and the API is called with `lang=pt-BR`.
+
+## Epic 6: Deploy and judge readiness
+
+### Story 6.1: Google Cloud deployment (Cloud Run)
+As the team, I want the API, the bot and the TTS fallback on Cloud Run until Jan 26, 2027, so that the judges' links keep working.
+
+**Acceptance criteria:**
+- **Given** a merge, **then** GitHub Actions deploys to Cloud Run through Workload Identity Federation, with no JSON key.
+- **And** the secrets live in Secret Manager.
+- **And** the bot uses a Telegram webhook.
+- **And** no service uses a GPU.
+- **And** a US$ 50 budget alert is set (AD-10).
+- **And** the credit window is confirmed to cover Jan 26, 2027.
 
 ### Story 6.2: Credits and link check
 As a judge, I want every source and license credited and every link public, so that the submission follows the rules.
@@ -213,13 +236,15 @@ As a judge, I want every source and license credited and every link public, so t
 | API: recommendation endpoint | E2 | 1.3, 2.2, 2.3, 3.1 |
 | API: cache and pilot pre-warm | E2 | 2.4 |
 | Explain: template text | E3 | 1.1 |
-| Explain: AI rewrite with number check | E3 | 3.1, open question 4 |
+| Explain: Gemini Flash rewrite with number check | E3 | 3.1 |
 | Bot: skeleton, /start, location | E4 | — |
 | Bot: crop and priority | E4 | 4.1, 2.4 |
-| Bot: voice in (faster-whisper) | E4 | 4.2 |
-| TTS service (Piper, separate) | E4 | — |
-| Bot: voice out | E4 | 4.4, 2.4 |
+| Bot: voice in (Google STT, faster-whisper fallback) | E4 | 4.2 |
+| TTS fallback service (Piper, separate) | E4 | — |
+| Bot: voice out (Google TTS, Piper fallback) | E4 | 4.4, 2.4 |
+| Bot: language (PT-BR default, English option) | E4 | 4.2 |
 | Dashboard: plot view | E5 | 2.4, #12 |
 | Dashboard: demo mode | E5 | 5.1, 2.5 |
-| Deploy: product hosting | E6 | hosting decision |
+| Dashboard: language (English default, PT-BR button) | E5 | 5.1 |
+| Deploy: Google Cloud (Cloud Run, WIF, Secret Manager, budget alert) | E6 | 2.1, 4.1 |
 | Credits and link check | E6 | all |
