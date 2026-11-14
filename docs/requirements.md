@@ -1,6 +1,8 @@
 <!-- AI-assisted: generated with Antigravity, reviewed by Lucas Feitosa -->
 
-# Product Requirements Document — Field Shift: Adapting Farms with NASA Data
+# Draft requirements — Field Shift: Adapting Farms with NASA Data
+
+> **Draft proposal, idea not decided; front B is not built before the formal decision and the PRD.** Only [docs/team/decisions.md](team/decisions.md) counts as decided. Requirements for the farmer product (front B) are proposals for the PRD.
 
 > **Status:** Draft requirements gathered from team discovery sessions ([docs/team/CONTEXT.md](team/CONTEXT.md), [docs/team/brainstorm-log.md](team/brainstorm-log.md), and [docs/team/decisions.md](team/decisions.md)) to support formal product definition and BMad planning.
 
@@ -65,7 +67,7 @@ Each requirement is classified into one of four architectural pillars:
 | **REQ-PRED-03** | `[PRED]` | Alignment with Farmer Priorities | Weight and rank rotation scenarios according to the farmer's stated priority: **water conservation**, **soil health / organic matter recovery**, **erosion reduction**, **pest-cycle disruption**, or **supplemental income / animal forage**. |
 | **REQ-PRED-04** | `[PRED]` | Vulnerability & Bare-Field Window Detection | Automatically flag historical and seasonal windows when the field is typically left bare (low NDVI + high surface temperature) or when the current crop faces peak water/heat vulnerability. |
 | **REQ-PRED-05** | `[PRED]` | Spatial Plot Arrangement & Maintenance Guidance | Recommend how to arrange crops on the terrain (e.g., contour planting on slopes, intercropping/strip-cropping, mulching) and provide actionable maintenance tips based on slope, soil moisture, and evaporative demand. |
-| **REQ-PRED-06** | `[PRED]` | Seasonal Outlook & Forecast Integration | Combine historical NASA climate baselines and recent anomalies with short/medium-term weather forecast indicators so recommendations look forward rather than only reporting past rain. |
+| **REQ-PRED-06** | `[PRED]` | Seasonal Outlook & Forecast Integration | **Open question** (see [CONTEXT.md](team/CONTEXT.md)): NASA data is historical, and the source of forecasts is not decided. Proposal: combine historical NASA climate baselines and recent anomalies with short/medium-term weather forecast indicators so recommendations look forward rather than only reporting past rain. |
 | **REQ-PRED-07** | `[PRED]` | Plain-Language AI Explanation & Uncertainty Disclaimers | Use an LLM/NLP layer strictly to translate deterministic outputs and scientific indicators (NDVI, evapotranspiration, SMAP anomalies) into accessible rural Portuguese (and English for judges), explicitly stating evidence, information gaps, satellite vs. ground differences, and where local agronomic validation is required. |
 
 ---
