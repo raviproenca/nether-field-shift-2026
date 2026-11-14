@@ -7,19 +7,26 @@ umask 077  # files created here (~/.netrc) are readable by you only
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ ! -f "$root/.venv/bin/activate" ]]; then
-  echo "No .venv found. Run first: uv venv -p 3.12 .venv && uv pip install -r requirements.txt" >&2
+  echo "No .venv found. Run first: uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt" >&2
   exit 1
 fi
 # shellcheck disable=SC1091
 source "$root/.venv/bin/activate"
 
-python - <<'PY'
+# earthaccess asks for username/password on stdin, so stdin must be the terminal
+# (a heredoc here would feed it EOF instead).
+if [[ ! -t 0 ]]; then
+  echo "Run this script in an interactive terminal: it prompts for your Earthdata username and password." >&2
+  exit 1
+fi
+
+python -c '
 import earthaccess
 
 auth = earthaccess.login(strategy="interactive", persist=True)
 if not auth.authenticated:
     raise SystemExit("Earthdata Login failed: check your username and password.")
-PY
+'
 
 netrc="${NETRC:-$HOME/.netrc}"
 chmod 600 "$netrc"
