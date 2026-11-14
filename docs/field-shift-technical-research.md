@@ -1,5 +1,7 @@
 <!-- AI-assisted: generated with Antigravity, reviewed by Eduarda / Team Nether -->
 
+> **Background research, not a team decision.**
+
 # Technical Research Report — NASA Space Apps 2026: *Field Shift: Adapting Farms with NASA Data*
 
 > **Epistemological Note:** Throughout this document, we explicitly distinguish between **Officially documented facts** (specifications from space agencies and data maintainers), **Scientific findings** (established physical and agronomic relationships), **Technical interpretations** (analytical assessments of dataset suitability), and **Assumptions requiring local validation**. Where a specification could not be verified directly from official sources, this is stated explicitly.
@@ -16,7 +18,7 @@ The **[Field Shift: Adapting Farms with NASA Data](https://www.spaceappschalleng
 2. **Severe geographic asymmetry across the listed challenge resources:** Out of the 25 listed datasets, **12 are restricted to the United States (or North America)**—including all detailed soil surveys (Web Soil Survey, SSURGO/STATSGO2), historical crop classification maps (CDL/CropScape), fine-grained climate grids (PRISM), aerial imagery (NAIP), and market/agricultural statistics (AMS/NASS). Any system targeting regions outside the U.S. (such as Brazil or global deployments) must rely on **global NASA/ESA/ECMWF datasets** and, where appropriate, **regional open equivalents** (e.g., **SoilGrids**, **MapBiomas**, **CHIRPS**, **INMET**, **Embrapa/PronaSolos**).
 3. **Satellites do not directly measure soil fertility or nitrogen fixation:** Earth observation instruments measure surface reflectance, thermal radiance, microwave brightness temperature, and radar elevation. Agronomic properties such as biological nitrogen fixation, organic matter accumulation, rooting depth, and market suitability must come from **agronomic knowledge bases and farmer inputs**, coupled with **satellite-derived indicators** (water deficit, thermal/evaporative stress, bare-soil windows, and topographic erosion risk).
 4. **Clarification of *"SI techniques"*:** Within the official **2026 NASA Space Apps Challenge** context ([spaceappschallenge.org](https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/)), **SI** refers to **Super Intelligence**—the organization's umbrella term in 2026 guidelines and challenges for AI, large language models, and intelligent synthesis systems used to translate complex data into practical insights (as also used in other 2026 challenges such as *Flame in Freefall*). *(Outside Space Apps 2026 terminology, "SI" in remote sensing and agronomy commonly denotes Spectral Indices or Sustainable Intensification).*
-5. **Core technical feasibility:** A global analytical core built around multi-scale harmonization (field-scale optical/terrain 10–30 m + regional water/climate 9–50 km + soil profiles) can run rapidly via cloud-native APIs (**NASA POWER REST API**, **Google Earth Engine**, **STAC COGs**, and **USDA SDA** where applicable) without downloading full global archives.
+5. **Technical feasibility:** A global analytical core could combine field-scale optical/terrain data (10–30 m), regional water/climate data (9–50 km) and soil profiles. Cloud-native access options make it possible to do this without downloading full global archives, for example the **NASA POWER REST API**, **STAC** catalogs with COGs, **earthaccess** (already used in `src/data`), **Google Earth Engine**, or **USDA SDA** where applicable. Which tools to use is open.
 
 ---
 
@@ -340,8 +342,8 @@ Consolidated inventory of all **25 resources** listed in the challenge briefing 
 | **NASS QuickStats** (Ag stats) | **FAOSTAT / FAO GAEZ** | **CONAB** (via Python `agrobr`) + **IBGE PAM** |
 
 ### 7.3 Geographic Scope Considerations
-- A **global analytical core** powered exclusively by global datasets (**NASA POWER + GPM IMERG + SMAP L4 + Sentinel-2/Landsat + SRTM + SoilGrids 250 m**) operates anywhere on Earth without geographic failure.
-- Optional **regional adapters** can activate **CDL + SSURGO** when a polygon falls inside CONUS, or **MapBiomas** when inside Brazil.
+- One possibility is a **global analytical core** built only from global datasets (for example **NASA POWER, GPM IMERG, SMAP L4, Sentinel-2/Landsat, SRTM, SoilGrids 250 m**), which would not depend on regional availability.
+- **Regional adapters** could be added where regional data exist, for example **CDL + SSURGO** inside CONUS or **MapBiomas** inside Brazil.
 - **Explicit assumption:** Outside regions with annual species-level crop maps (CONUS CDL or specific MapBiomas classes), the farmer must specify their **current crop rotation**, which also improves accuracy over automated classification on small fields.
 
 ---
@@ -378,18 +380,20 @@ Consolidated inventory of all **25 resources** listed in the challenge briefing 
 
 > **Critical Resampling Caveat:** Resampling a 9 km SMAP pixel or ~50 km NASA POWER cell down to 10 m or 30 m **does not create new spatial information**. It merely duplicates or smoothly interpolates regional values onto smaller pixels. Therefore, coarse datasets must **never** be used to differentiate adjacent fields within the same farm; intra-farm differentiation must come strictly from 10–70 m sensors (Sentinel-2, Landsat, SRTM, ECOSTRESS, SSURGO).
 
-### 9.2 Ten-Stage Processing Pipeline & Selected Tools
+### 9.2 Example Processing Pipeline and Possible Tools
 
-1. **Acquisition:** **Google Earth Engine Python API (`earthengine-api`)** for Sentinel-2, Landsat, SMAP L4, GPM IMERG, SRTM, SoilGrids/CDL (eliminates multi-GB file downloads) + **REST (`httpx`/`requests`)** for NASA POWER and USDA SDA. *(Alternative without GEE: `pystac-client` on Planetary Computer + `earthaccess` for Earthdata Cloud COGs).*
+Illustrative only: the stages, thresholds and tools below are examples of what could be done, not choices made by the team.
+
+1. **Acquisition:** Options include `earthaccess` for NASA Earthdata (already used in `src/data`), `pystac-client` with STAC catalogs such as the Planetary Computer, the Google Earth Engine Python API (`earthengine-api`), and plain REST (`requests`/`httpx`) for NASA POWER and USDA SDA.
 2. **Preprocessing:** Scale/offset calibration, cloud/cirrus/shadow masking (`SCL`, `QA_PIXEL`).
-3. **Quality Control (QC):** Reject scenes with > 70% cloud cover over the field polygon; track valid-pixel fraction per month.
+3. **Quality Control (QC):** For example, reject scenes with a high cloud fraction over the field polygon and track the valid-pixel fraction per month.
 4. **Spatial Harmonization:** Zonal statistics (`mean`, `median`, `p10`, `p90`) inside the field GeoJSON for 10–30 m layers; centroid extraction for 9–50 km layers.
-5. **Temporal Harmonization:** Dekadal (10-day) and monthly alignment over 2016–2025 via `pandas` / `xarray`.
+5. **Temporal Harmonization:** Dekadal (10-day) and monthly alignment over several years, for example with `pandas` / `xarray`.
 6. **Feature Extraction:** NDVI, EVI, bare-soil/residue indices (BSI/NDTI), FAO-56 Penman-Monteith $ET_0$, GDD, standardized anomalies (Z-scores) for rain and root-zone soil moisture.
-7. **Indicator Generation:** Bare-soil duration (days/year with NDVI < 0.25), heat-stress windows, water-deficit windows ($P - ET_0$ and SMAP percentiles), relative topographic-pluvial erosion risk.
-8. **Analytical Modeling:** Transparent water-balance and agronomic rule scoring matching field indicators against curated crop profiles.
-9. **Explanation & Synthesis Layer ("SI"):** Structured JSON metrics passed to a grounded explanation generator to translate trade-offs, evidence, and uncertainty into plain language without fabricating numbers.
-10. **Visualization:** Interactive web map (**Leaflet / Mapbox GL**) + seasonal and scenario comparison charts (**ECharts / Plotly / Recharts**).
+7. **Indicator Generation:** Bare-soil duration (days/year below an NDVI threshold), heat-stress windows, water-deficit windows ($P - ET_0$ and SMAP percentiles), relative topographic-pluvial erosion risk.
+8. **Analytical Modeling:** A transparent water-balance and agronomic rule scoring could match field indicators against curated crop profiles.
+9. **Explanation layer:** One option is to pass structured JSON metrics to a grounded explanation generator (an "SI" component, in the Space Apps sense) that translates trade-offs, evidence and uncertainty into plain language without fabricating numbers.
+10. **Visualization:** Could be an interactive web map (for example Leaflet, MapLibre or Mapbox GL) plus seasonal and scenario comparison charts (for example ECharts, Plotly or Recharts).
 
 ### 9.3 Practical Access Summary
 
@@ -433,15 +437,12 @@ Consolidated inventory of all **25 resources** listed in the challenge briefing 
 
 ---
 
-## 11. Comparison of Possible Solution Approaches
+## 11. Possible Solution Approaches
 
-| Criterion | Approach A: Geospatial Monitoring + Rule-Based Engine | Approach B: Historical Time-Series + Predictive ML Modeling | Approach C: Integrated Explainable Decision-Support System (Multi-Criteria + SI) |
+Neutral descriptions of three kinds of approach, in no particular order and without ranking. They are background material; the team has not chosen among them.
+
+| | Approach A: Geospatial Monitoring + Rule-Based Engine | Approach B: Historical Time-Series + Predictive ML Modeling | Approach C: Multi-Criteria Decision Support with an Explanation Layer |
 |---|---|---|---|
-| **Mechanism** | Computes NASA indicators and applies deterministic `if-then` agronomic rules to flag risks and suggest crops | Trains ML models (Random Forest/XGBoost/LSTM) on historical crop maps + climate + county yields to predict suitability/yield | Extracts NASA field/regional profile (water, heat, erosion, bare soil), simulates water/phenology balance for **$\ge 3$ rotations** (Baseline vs. Alternatives), scores against **farmer priorities**, and uses **grounded SI** for plain-language explanation |
-| **Technical complexity** | Low–Medium | High (leakage/overfitting risks; lacks field-level yield labels outside limited U.S. regions) | Medium (modular, deterministic agroclimatic core + constrained explanation layer) |
-| **Data requirements** | Moderate (climate, soil, optical/terrain, crop trait table) | Very high (requires thousands of labeled fields with yield and rotation outcomes) | Moderate and auditable (same inputs as A + user priority weights + structured crop table) |
-| **Scientific reliability** | Medium-High (transparent FAO/literature rules, though rigid on trade-offs) | Low in a 48 h hackathon without local ground-truth yield calibration | **High**: transparent physical water balance ($P$ vs. $ET_c$), GDD, erosion exposure, and explicit uncertainty bounds |
-| **Development time** | Fast (8–12 h) | Slow (24–36 h for curation/training/validation) | Balanced for a 48 h hackathon (14–20 h for lean core) |
-| **Explainability** | High | Low–Medium (correlation-based feature importance, not causal agronomy) | **Very High** (every score traces back to a specific NASA metric and agronomic rule) |
-| **Potential impact** | Medium (static recommendations) | Medium-High in theory, fragile across unseen regions | **High**: empowers interactive trade-off exploration (water vs. soil vs. erosion vs. market) |
-| **Main limitations** | Fixed thresholds ignore farmer preference trade-offs | Cannot validate yield predictions globally where labeled datasets do not exist | Literature-based crop coefficients require local agronomic calibration before field execution |
+| **Mechanism** | Computes NASA indicators and applies deterministic `if-then` agronomic rules to flag risks and suggest crops | Trains ML models (for example Random Forest, XGBoost or LSTM) on historical crop maps, climate and county yields to predict suitability or yield | Extracts a NASA field/regional profile (water, heat, erosion, bare soil), simulates a water/phenology balance for $\ge 3$ rotations (baseline vs. alternatives), scores them against farmer priorities, and uses a grounded explanation layer for plain-language output |
+| **Data needed** | Climate, soil, optical/terrain data and a crop trait table | A large set of labeled fields with yield and rotation outcomes | The inputs of A, plus farmer priority weights and a structured crop table |
+| **Limitations** | Fixed thresholds do not capture trade-offs between farmer priorities | Labeled yield and rotation data are scarce outside a few regions; risk of leakage and overfitting; predictions are hard to validate where labels do not exist | Literature-based crop coefficients need local agronomic calibration before field use |
