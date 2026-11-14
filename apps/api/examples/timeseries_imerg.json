@@ -1,0 +1,255 @@
+{
+  "source": "imerg",
+  "variables": [
+    {
+      "name": "precipitation",
+      "long_name": "Daily precipitation (multi-satellite, gauge-calibrated Late run)",
+      "unit": "mm/day"
+    }
+  ],
+  "point": {
+    "lat": -10.91,
+    "lon": -37.07
+  },
+  "radius_km": 10,
+  "bbox": [
+    -37.1615,
+    -10.9998,
+    -36.9785,
+    -10.8202
+  ],
+  "aggregation": "cell_mean",
+  "cells_used": 4,
+  "resolution": "0.1° (~10 km)",
+  "period": {
+    "start": "2025-01-01",
+    "end": "2025-01-31"
+  },
+  "cached": false,
+  "series": [
+    {
+      "time": "2025-01-01",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-02",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-03",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-04",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-05",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-06",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-07",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-08",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-09",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-10",
+      "values": {
+        "precipitation": 19.84
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-11",
+      "values": {
+        "precipitation": 63.13
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-12",
+      "values": {
+        "precipitation": 46.79
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-13",
+      "values": {
+        "precipitation": 1.12
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-14",
+      "values": {
+        "precipitation": 1.48
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-15",
+      "values": {
+        "precipitation": 0.26
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-16",
+      "values": {
+        "precipitation": 0.68
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-17",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-18",
+      "values": {
+        "precipitation": 0.73
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-19",
+      "values": {
+        "precipitation": 0.28
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-20",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-21",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-22",
+      "values": {
+        "precipitation": 0.02
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-23",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-24",
+      "values": {
+        "precipitation": 0.03
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-25",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-26",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-27",
+      "values": {
+        "precipitation": 0.1
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-28",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-29",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-30",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-31",
+      "values": {
+        "precipitation": 0.0
+      },
+      "cells_valid": 4
+    }
+  ],
+  "attribution": {
+    "dataset": "GPM IMERG Late Precipitation L3 1 day 0.1 degree x 0.1 degree V07 (GPM_3IMERGDL)",
+    "doi": "10.5067/GPM/IMERGDL/DAY/07",
+    "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
+    "notice": null
+  },
+  "warnings": []
+}

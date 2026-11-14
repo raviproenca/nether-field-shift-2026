@@ -1,0 +1,584 @@
+# AI-assisted: generated with Claude Code, reviewed by Periélio (pending Ravi)
+openapi: 3.1.0
+info:
+  title: Nether data API
+  version: 0.1.0
+  summary: Read-only HTTP API over the NASA data toolkit (src/data).
+  description: |
+    Internal tool of Team Nether for looking at NASA data on a map (not a product decision). It exposes the
+    sources of `src/data` by **point, radius and period** and returns JSON time series.
+
+    **Contract first.** This file is the contract; the implementation (FastAPI, issue #16) follows it.
+    Mock responses for the front end are in `apps/api/examples/`.
+
+    ## Conventions
+
+    - **Read-only, no login.** There is no account or token on this API. Earthdata credentials live only on the
+      server (`~/.netrc`), never in a request or a response.
+    - **Region.** `lat`, `lon` and `radius_km` describe a **square box** of half-side `radius_km` around the
+      point (the same rule as `src/data`: 1 degree of latitude = 111.32 km, longitude corrected by cos(lat)).
+      `radius_km = 0` means "the cell or pixel that contains the point"; the response `bbox` is then the
+      degenerate box `[lon, lat, lon, lat]`.
+    - **Aggregation** (`aggregation` in the response):
+      - `cell_mean`: gridded sources (GLDAS, IMERG, SMAP). Mean of the valid grid cells whose centers fall inside
+        the box, one value per time step.
+      - `nearest_cell`: the single cell nearest to the point. Used when the box is smaller than one cell
+        (the toolkit's nearest-cell fallback), when `radius_km = 0`, and always for POWER (a point API: the
+        radius is ignored and a warning `radius_ignored` is returned).
+      - `window_mean`: **raster sources** (MODIS, VIIRS, HLS, Sentinel-2). Mean of the valid pixels in the box,
+        one value per acquisition date. Tiles of the same date are combined (pixel-weighted). See below.
+    - **Raster sources decision.** `GET /timeseries` accepts them and returns the **window mean** per acquisition
+      date, never pixels (maps of pixels are out of scope of this version). If every pixel of the window is
+      empty or masked for a date, that date is `null` (not an error). If no date has any valid pixel, the API
+      answers `422 no_data`. Radius and period are capped per source (`max_radius_km`, `max_period_days` in
+      `GET /sources`) because tiles are heavy; the first request for a period is slow (tens of seconds to
+      minutes) and later ones are served from the local cache (`cached: true`).
+    - **Units** are explicit per variable (`variables[].unit` in `GET /sources` and in every time series). Values
+      are physical: raster scale factors and fill values are already applied (reflectance and NDVI are
+      dimensionless; fill values become `null`).
+    - **Time.** `time` is a `YYYY-MM-DD` date for daily or coarser data, and an ISO 8601 UTC date-time
+      (`2025-01-10T03:00:00Z`) for sub-daily data (GLDAS). `period` is the requested range, inclusive on both
+      ends. Days after the source's `latest_date` simply have no entry; a `period_truncated` warning says so.
+    - **Errors** always use the same JSON body, `{"error": {"code", "message"}}`, never an HTML page or a stack
+      trace. See the `Error` schema for the codes.
+    - **CORS.** The server answers browser requests from the origins listed in the environment variable
+      `API_CORS_ORIGINS` (comma-separated). Default: `http://localhost:5173` (the Vite dev server) plus the
+      deploy domain once it exists. Only `GET` and `OPTIONS` are allowed; no credentials/cookies are used.
+    - **Attribution.** Every time series carries `attribution`; the front end must show it (README rule: credit
+      every dataset). Sentinel-2 is ESA/Copernicus data, **not NASA**: `nasa: false` and a `notice` to display.
+
+    ## Limits
+
+    | Limit | Value |
+    |---|---|
+    | `lat` | -89 to 89 (the toolkit rejects the poles) |
+    | `lon` | -180 to 180 |
+    | `radius_km` | 0 to 50 (HLS and Sentinel-2: 0 to 10) |
+    | Period | at most `max_period_days` of the source: 366 (POWER, IMERG), 31 (GLDAS, SMAP), 183 (MODIS, VIIRS), 92 (HLS, Sentinel-2) |
+    | `variable` | one name, except POWER, which takes up to 6 separated by commas |
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: http://localhost:8000
+    description: Local development. CORS allows http://localhost:5173 (override with API_CORS_ORIGINS).
+  - url: https://nether-api.example.invalid
+    description: Deploy (placeholder; the real URL is set when the API is deployed). CORS allows the origins in API_CORS_ORIGINS.
+tags:
+  - name: system
+    description: Liveness.
+  - name: data
+    description: Sources and time series.
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Liveness check
+      description: Returns immediately, without calling any NASA service.
+      responses:
+        "200":
+          description: The API is running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                ok:
+                  summary: Healthy
+                  externalValue: ./examples/health.json
+  /sources:
+    get:
+      tags: [data]
+      operationId: listSources
+      summary: List the data sources
+      description: |
+        The sources of `src/data` with the values measured on 2026-11-14 (see `src/data/README.md`). Static
+        metadata plus `latest_date`, which the server refreshes from the upstream catalogs (CMR, POWER) and
+        caches for a few hours; it is `null` when it could not be determined. Cheap and safe to call on page load.
+      responses:
+        "200":
+          description: All sources.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceList"
+              examples:
+                all:
+                  summary: The eight sources
+                  externalValue: ./examples/sources.json
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+  /timeseries:
+    get:
+      tags: [data]
+      operationId: getTimeseries
+      summary: Time series of one source around a point
+      description: |
+        One value per time step (per variable) for the box around `lat`/`lon`, aggregated as described in the
+        API description. Gridded sources need Earthdata credentials **on the server**; if they are missing the
+        API answers `503 server_not_configured`.
+
+        Validation order: `source` (404) → parameters (400) → data (422) → upstream (502/504).
+      parameters:
+        - name: source
+          in: query
+          required: true
+          description: |
+            Source id from `GET /sources`: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls`,
+            `planetary`. Deliberately not an enum, so that an unknown id gives `404 unknown_source` instead of 400.
+          schema:
+            type: string
+            examples: [power]
+        - name: lat
+          in: query
+          required: true
+          description: Latitude of the point, in degrees (WGS84).
+          schema:
+            type: number
+            minimum: -89
+            maximum: 89
+            examples: [-10.91]
+        - name: lon
+          in: query
+          required: true
+          description: Longitude of the point, in degrees (WGS84).
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+            examples: [-37.07]
+        - name: radius_km
+          in: query
+          required: false
+          description: |
+            Half-side of the square box around the point, in km. `0` selects the cell or pixel of the point.
+            Capped by `max_radius_km` of the source (50, or 10 for HLS and Sentinel-2).
+          schema:
+            type: number
+            minimum: 0
+            maximum: 50
+            default: 5
+        - name: start
+          in: query
+          required: true
+          description: First day, inclusive.
+          schema:
+            type: string
+            format: date
+            examples: ["2025-01-01"]
+        - name: end
+          in: query
+          required: true
+          description: Last day, inclusive. Must not be before `start`; the span is capped by `max_period_days`.
+          schema:
+            type: string
+            format: date
+            examples: ["2025-01-30"]
+        - name: variable
+          in: query
+          required: false
+          description: |
+            Variable name as listed in `GET /sources` (`variables[].name`). Defaults to the source's
+            `default_variable`. POWER accepts a comma-separated list of up to 6 (`T2M,PRECTOTCORR`); every
+            other source takes exactly one.
+          schema:
+            type: string
+            examples: ["T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN"]
+        - name: max_cloud
+          in: query
+          required: false
+          description: Sentinel-2 (`planetary`) only. Keep scenes with `eo:cloud_cover` below this percentage. Ignored by other sources.
+          schema:
+            type: number
+            exclusiveMinimum: 0
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: The time series (possibly with `null` values and `warnings`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timeseries"
+              examples:
+                power_aracaju:
+                  summary: POWER, three variables, Aracaju, January 2025 (real values)
+                  externalValue: ./examples/timeseries_power_aracaju.json
+                smap:
+                  summary: SMAP soil moisture with gap days (illustrative values)
+                  externalValue: ./examples/timeseries_smap.json
+                imerg:
+                  summary: IMERG daily precipitation, cell mean over 10 km (real values)
+                  externalValue: ./examples/timeseries_imerg.json
+        "400":
+          $ref: "#/components/responses/InvalidParameter"
+        "404":
+          $ref: "#/components/responses/UnknownSource"
+        "422":
+          $ref: "#/components/responses/NoData"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+        "503":
+          $ref: "#/components/responses/NotConfigured"
+        "504":
+          $ref: "#/components/responses/UpstreamTimeout"
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, version, time]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          const: ok
+        version:
+          type: string
+          description: API version (semantic version).
+          examples: [0.1.0]
+        time:
+          type: string
+          format: date-time
+          description: Server time, UTC.
+    Attribution:
+      type: object
+      required: [dataset, doi, url]
+      additionalProperties: false
+      description: Credit to show next to the data.
+      properties:
+        dataset:
+          type: string
+          description: Dataset name and version.
+        doi:
+          type: [string, "null"]
+          description: DOI (bare, e.g. `10.5067/E7TYRXPJKWOQ`); `null` when the provider has none (POWER).
+        url:
+          type: string
+          format: uri
+          description: Dataset page.
+        notice:
+          type: [string, "null"]
+          description: Attribution text the license requires you to display, when there is one (Sentinel-2).
+    Variable:
+      type: object
+      required: [name, long_name, unit]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          description: Name used in `variable` and as key in `series[].values`.
+          examples: [T2M]
+        long_name:
+          type: string
+          examples: [Air temperature at 2 m]
+        unit:
+          type: string
+          description: Physical unit of the returned values (UTF-8 text).
+          examples: ["°C"]
+    Source:
+      type: object
+      required:
+        - id
+        - name
+        - provider
+        - nasa
+        - kind
+        - spatial_resolution
+        - temporal_resolution
+        - latest_date
+        - requires_login
+        - variables
+        - default_variable
+        - max_radius_km
+        - max_period_days
+        - attribution
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          description: Value of the `source` parameter.
+          enum: [power, gldas, imerg, smap, modis, viirs, hls, planetary]
+        name:
+          type: string
+        provider:
+          type: string
+          description: Organization that publishes the data.
+        nasa:
+          type: boolean
+          description: "`false` for Sentinel-2 (ESA/Copernicus): never present it as NASA data."
+        kind:
+          type: string
+          enum: [timeseries, raster]
+          description: |
+            `timeseries`: native point or grid time series (POWER, GLDAS, IMERG, SMAP).
+            `raster`: native image tiles (MODIS, VIIRS, HLS, Sentinel-2); `GET /timeseries` returns the
+            window mean per date (`aggregation: window_mean`).
+        spatial_resolution:
+          type: string
+          examples: ["0.25° (~25 km)"]
+        temporal_resolution:
+          type: string
+          examples: [3-hourly]
+        latest_date:
+          type: [string, "null"]
+          format: date
+          description: Newest date available upstream (measured 2026-11-14 in the example). `null` if unknown.
+        requires_login:
+          type: boolean
+          description: Whether the server needs Earthdata credentials to read this source. The client never logs in.
+        variables:
+          type: array
+          items:
+            $ref: "#/components/schemas/Variable"
+        default_variable:
+          type: string
+          description: Name from `variables` used when `variable` is omitted.
+        max_radius_km:
+          type: number
+          description: Largest accepted `radius_km` for this source.
+        max_period_days:
+          type: integer
+          description: Largest accepted span between `start` and `end`, in days (inclusive).
+        attribution:
+          $ref: "#/components/schemas/Attribution"
+    SourceList:
+      type: object
+      required: [sources]
+      additionalProperties: false
+      properties:
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/Source"
+    Point:
+      type: object
+      required: [lat, lon]
+      additionalProperties: false
+      properties:
+        lat:
+          type: number
+        lon:
+          type: number
+    Period:
+      type: object
+      required: [start, end]
+      additionalProperties: false
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+    Warning:
+      type: object
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: |
+            Stable machine-readable code:
+            `radius_ignored` (POWER ignores the radius),
+            `nearest_cell` (box smaller than a cell),
+            `period_truncated` (the source ends before `end`),
+            `partial_data` (some dates have no valid data),
+            `no_cloud_mask` (HLS: clouds are not masked),
+            `cloud_filtered` (Sentinel-2: scenes above `max_cloud` were dropped).
+        message:
+          type: string
+          description: Plain-English text that can be shown to a person.
+    SeriesPoint:
+      type: object
+      required: [time, values]
+      additionalProperties: false
+      properties:
+        time:
+          description: Date (`YYYY-MM-DD`) for daily or coarser data; UTC date-time for sub-daily data.
+          oneOf:
+            - type: string
+              format: date
+            - type: string
+              format: date-time
+        values:
+          type: object
+          description: One entry per requested variable. `null` means no valid data for that time.
+          additionalProperties:
+            type: [number, "null"]
+        cells_valid:
+          type: [integer, "null"]
+          description: |
+            Grid cells or pixels that went into the mean at this time (single-variable requests; omitted for
+            POWER). Useful to show how reliable a mean is.
+    Timeseries:
+      type: object
+      required:
+        - source
+        - variables
+        - point
+        - radius_km
+        - bbox
+        - aggregation
+        - cells_used
+        - resolution
+        - period
+        - cached
+        - series
+        - attribution
+        - warnings
+      additionalProperties: false
+      properties:
+        source:
+          type: string
+          description: Source id.
+        variables:
+          type: array
+          minItems: 1
+          description: Requested variables with their units, in request order.
+          items:
+            $ref: "#/components/schemas/Variable"
+        point:
+          $ref: "#/components/schemas/Point"
+        radius_km:
+          type: number
+          description: Radius as requested (or the default).
+        bbox:
+          type: array
+          description: Box actually used, `[west, south, east, north]` in degrees.
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+        aggregation:
+          type: string
+          enum: [cell_mean, nearest_cell, window_mean]
+        cells_used:
+          type: integer
+          minimum: 1
+          description: |
+            Number of grid cells (or pixels, for `window_mean`) that fall in the box (the maximum over time;
+            `1` for `nearest_cell`).
+        resolution:
+          type: string
+          description: Native resolution of the source (same text as in `GET /sources`).
+        period:
+          $ref: "#/components/schemas/Period"
+        cached:
+          type: boolean
+          description: "`true` when the whole answer came from the server's local cache (`data/cache/`), with no upstream call."
+        series:
+          type: array
+          description: Ascending by `time`. May be empty only when `warnings` explains why; otherwise the API answers 422.
+          items:
+            $ref: "#/components/schemas/SeriesPoint"
+        attribution:
+          $ref: "#/components/schemas/Attribution"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Warning"
+    ErrorBody:
+      type: object
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          enum:
+            - invalid_parameter
+            - unknown_source
+            - no_data
+            - upstream_error
+            - upstream_timeout
+            - server_not_configured
+            - internal_error
+          description: |
+            `invalid_parameter` (400), `unknown_source` (404), `no_data` (422), `upstream_error` (502),
+            `upstream_timeout` (504), `server_not_configured` (503: Earthdata credentials missing on the server),
+            `internal_error` (500, a bug: the body is still JSON).
+        message:
+          type: string
+          description: Plain-English text, safe to show to a person. Never contains credentials, signed URLs or stack traces.
+        param:
+          type: [string, "null"]
+          description: Name of the offending query parameter, for `invalid_parameter`.
+    Error:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+  responses:
+    InvalidParameter:
+      description: A parameter is missing, malformed or out of range (lat/lon, radius, dates, period too long, unknown variable, too many variables, `end` before `start`).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            period_too_long:
+              value:
+                error:
+                  code: invalid_parameter
+                  message: "The period is 400 days; gldas allows at most 31 days. Shorten start/end."
+                  param: end
+    UnknownSource:
+      description: "`source` is not one of the ids in `GET /sources`."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            unknown:
+              value:
+                error:
+                  code: unknown_source
+                  message: "Unknown source 'modis2'. Valid sources: power, gldas, imerg, smap, modis, viirs, hls, planetary."
+                  param: source
+    NoData:
+      description: The request is valid but the source has no data for this box and period (outside the source's dates, swath gaps, all pixels empty).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            no_data:
+              externalValue: ./examples/error_422.json
+    UpstreamError:
+      description: NASA (or the Planetary Computer) failed or answered something unusable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            upstream:
+              value:
+                error:
+                  code: upstream_error
+                  message: "NASA POWER is unavailable after 3 attempts (HTTP 503). Try again later."
+    NotConfigured:
+      description: The server has no Earthdata credentials for a source that needs them. Not fixable by the client.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            not_configured:
+              value:
+                error:
+                  code: server_not_configured
+                  message: "This server has no Earthdata Login credentials, so it cannot read gldas. Ask the maintainer."
+    UpstreamTimeout:
+      description: The upstream service did not answer in time. A retry may succeed, often faster thanks to partial caching.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            timeout:
+              value:
+                error:
+                  code: upstream_timeout
+                  message: "The request to NASA took longer than 60 seconds. Try a smaller radius or a shorter period."

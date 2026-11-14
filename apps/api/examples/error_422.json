@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "no_data",
+    "message": "No smap data for this box between 2025-01-10 and 2025-01-10: the satellite did not cover it that day. Try other dates or a bigger radius.",
+    "param": null
+  }
+}

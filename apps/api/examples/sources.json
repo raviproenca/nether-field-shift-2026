@@ -1,0 +1,320 @@
+{
+  "sources": [
+    {
+      "id": "power",
+      "name": "NASA POWER",
+      "provider": "NASA Langley Research Center (POWER project)",
+      "nasa": true,
+      "kind": "timeseries",
+      "spatial_resolution": "0.5° x 0.625° (MERRA-2 meteorology), 1° (CERES solar)",
+      "temporal_resolution": "daily",
+      "latest_date": "2026-11-11",
+      "requires_login": false,
+      "variables": [
+        {
+          "name": "T2M",
+          "long_name": "Air temperature at 2 m (daily mean)",
+          "unit": "°C"
+        },
+        {
+          "name": "T2M_MAX",
+          "long_name": "Air temperature at 2 m, daily maximum",
+          "unit": "°C"
+        },
+        {
+          "name": "T2M_MIN",
+          "long_name": "Air temperature at 2 m, daily minimum",
+          "unit": "°C"
+        },
+        {
+          "name": "PRECTOTCORR",
+          "long_name": "Precipitation (bias-corrected)",
+          "unit": "mm/day"
+        },
+        {
+          "name": "ALLSKY_SFC_SW_DWN",
+          "long_name": "All-sky surface shortwave downward irradiance",
+          "unit": "MJ/m²/day"
+        },
+        {
+          "name": "RH2M",
+          "long_name": "Relative humidity at 2 m",
+          "unit": "%"
+        },
+        {
+          "name": "WS2M",
+          "long_name": "Wind speed at 2 m",
+          "unit": "m/s"
+        },
+        {
+          "name": "GWETTOP",
+          "long_name": "Surface soil wetness (0-5 cm)",
+          "unit": "1 (fraction, 0-1)"
+        },
+        {
+          "name": "GWETROOT",
+          "long_name": "Root zone soil wetness",
+          "unit": "1 (fraction, 0-1)"
+        }
+      ],
+      "default_variable": "T2M",
+      "max_radius_km": 50,
+      "max_period_days": 366,
+      "attribution": {
+        "dataset": "NASA POWER daily point API (MERRA-2 and CERES SYN1deg), community AG",
+        "doi": null,
+        "url": "https://power.larc.nasa.gov/",
+        "notice": null
+      }
+    },
+    {
+      "id": "gldas",
+      "name": "GLDAS Noah land surface model",
+      "provider": "NASA GSFC GES DISC",
+      "nasa": true,
+      "kind": "timeseries",
+      "spatial_resolution": "0.25° (~25 km)",
+      "temporal_resolution": "3-hourly",
+      "latest_date": "2026-07-31",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "SoilMoi0_10cm_inst",
+          "long_name": "Soil moisture, 0-10 cm layer",
+          "unit": "kg/m² (= mm of water)"
+        },
+        {
+          "name": "SoilMoi10_40cm_inst",
+          "long_name": "Soil moisture, 10-40 cm layer",
+          "unit": "kg/m² (= mm of water)"
+        },
+        {
+          "name": "Tair_f_inst",
+          "long_name": "Air temperature",
+          "unit": "K"
+        },
+        {
+          "name": "Rainf_tavg",
+          "long_name": "Rainfall rate (3-hour average)",
+          "unit": "kg/m²/s"
+        }
+      ],
+      "default_variable": "SoilMoi0_10cm_inst",
+      "max_radius_km": 50,
+      "max_period_days": 31,
+      "attribution": {
+        "dataset": "GLDAS Noah Land Surface Model L4 3 hourly 0.25 x 0.25 degree V2.1 (GLDAS_NOAH025_3H)",
+        "doi": "10.5067/E7TYRXPJKWOQ",
+        "url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_3H_2.1/summary",
+        "notice": null
+      }
+    },
+    {
+      "id": "imerg",
+      "name": "GPM IMERG precipitation (Late run)",
+      "provider": "NASA GSFC GES DISC",
+      "nasa": true,
+      "kind": "timeseries",
+      "spatial_resolution": "0.1° (~10 km)",
+      "temporal_resolution": "daily",
+      "latest_date": "2026-11-12",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "precipitation",
+          "long_name": "Daily precipitation (multi-satellite, gauge-calibrated Late run)",
+          "unit": "mm/day"
+        }
+      ],
+      "default_variable": "precipitation",
+      "max_radius_km": 50,
+      "max_period_days": 366,
+      "attribution": {
+        "dataset": "GPM IMERG Late Precipitation L3 1 day 0.1 degree x 0.1 degree V07 (GPM_3IMERGDL)",
+        "doi": "10.5067/GPM/IMERGDL/DAY/07",
+        "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
+        "notice": null
+      }
+    },
+    {
+      "id": "smap",
+      "name": "SMAP enhanced soil moisture",
+      "provider": "NASA NSIDC DAAC",
+      "nasa": true,
+      "kind": "timeseries",
+      "spatial_resolution": "9 km",
+      "temporal_resolution": "daily (gaps between orbits)",
+      "latest_date": "2026-11-12",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "soil_moisture",
+          "long_name": "Soil moisture, morning (6 a.m.) overpass",
+          "unit": "m³/m³"
+        },
+        {
+          "name": "soil_moisture_pm",
+          "long_name": "Soil moisture, evening (6 p.m.) overpass",
+          "unit": "m³/m³"
+        }
+      ],
+      "default_variable": "soil_moisture",
+      "max_radius_km": 50,
+      "max_period_days": 31,
+      "attribution": {
+        "dataset": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+        "doi": "10.5067/M20OXIZHY3RJ",
+        "url": "https://nsidc.org/data/spl3smp_e/versions/6",
+        "notice": null
+      }
+    },
+    {
+      "id": "modis",
+      "name": "MODIS vegetation indices (Terra, MOD13Q1)",
+      "provider": "NASA LP DAAC",
+      "nasa": true,
+      "kind": "raster",
+      "spatial_resolution": "250 m",
+      "temporal_resolution": "16-day composite",
+      "latest_date": "2026-10-16",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "NDVI",
+          "long_name": "Normalized Difference Vegetation Index",
+          "unit": "1 (dimensionless, -1 to 1)"
+        },
+        {
+          "name": "EVI",
+          "long_name": "Enhanced Vegetation Index",
+          "unit": "1 (dimensionless, -1 to 1)"
+        }
+      ],
+      "default_variable": "NDVI",
+      "max_radius_km": 50,
+      "max_period_days": 183,
+      "attribution": {
+        "dataset": "MODIS/Terra Vegetation Indices 16-Day L3 Global 250m SIN Grid V061 (MOD13Q1)",
+        "doi": "10.5067/MODIS/MOD13Q1.061",
+        "url": "https://lpdaac.usgs.gov/products/mod13q1v061/",
+        "notice": null
+      }
+    },
+    {
+      "id": "viirs",
+      "name": "VIIRS vegetation indices (VNP13A1)",
+      "provider": "NASA LP DAAC",
+      "nasa": true,
+      "kind": "raster",
+      "spatial_resolution": "500 m",
+      "temporal_resolution": "16-day composite, new every 8 days",
+      "latest_date": "2026-10-24",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "NDVI",
+          "long_name": "Normalized Difference Vegetation Index",
+          "unit": "1 (dimensionless, -1 to 1)"
+        },
+        {
+          "name": "EVI",
+          "long_name": "Enhanced Vegetation Index",
+          "unit": "1 (dimensionless, -1 to 1)"
+        }
+      ],
+      "default_variable": "NDVI",
+      "max_radius_km": 50,
+      "max_period_days": 183,
+      "attribution": {
+        "dataset": "VIIRS/NPP Vegetation Indices 16-Day L3 Global 500m SIN Grid V002 (VNP13A1)",
+        "doi": "10.5067/VIIRS/VNP13A1.002",
+        "url": "https://lpdaac.usgs.gov/products/vnp13a1v002/",
+        "notice": null
+      }
+    },
+    {
+      "id": "hls",
+      "name": "Harmonized Landsat Sentinel-2, Landsat (HLSL30)",
+      "provider": "NASA LP DAAC",
+      "nasa": true,
+      "kind": "raster",
+      "spatial_resolution": "30 m",
+      "temporal_resolution": "2-3 days (Landsat overpasses)",
+      "latest_date": "2026-11-05",
+      "requires_login": true,
+      "variables": [
+        {
+          "name": "B02",
+          "long_name": "Blue surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B03",
+          "long_name": "Green surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B04",
+          "long_name": "Red surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B05",
+          "long_name": "Near-infrared surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        }
+      ],
+      "default_variable": "B04",
+      "max_radius_km": 10,
+      "max_period_days": 92,
+      "attribution": {
+        "dataset": "HLS Landsat Operational Land Imager Surface Reflectance and TOA Brightness Daily Global 30m v2.0 (HLSL30)",
+        "doi": "10.5067/HLS/HLSL30.002",
+        "url": "https://lpdaac.usgs.gov/products/hlsl30v002/",
+        "notice": null
+      }
+    },
+    {
+      "id": "planetary",
+      "name": "Sentinel-2 L2A (ESA/Copernicus, via Planetary Computer)",
+      "provider": "ESA Copernicus, served by Microsoft Planetary Computer",
+      "nasa": false,
+      "kind": "raster",
+      "spatial_resolution": "10 m (B02, B03, B04, B08)",
+      "temporal_resolution": "~5 days",
+      "latest_date": "2026-11-10",
+      "requires_login": false,
+      "variables": [
+        {
+          "name": "B02",
+          "long_name": "Blue surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B03",
+          "long_name": "Green surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B04",
+          "long_name": "Red surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        },
+        {
+          "name": "B08",
+          "long_name": "Near-infrared surface reflectance",
+          "unit": "1 (reflectance, 0-1)"
+        }
+      ],
+      "default_variable": "B04",
+      "max_radius_km": 10,
+      "max_period_days": 92,
+      "attribution": {
+        "dataset": "Sentinel-2 MSI Level-2A surface reflectance (sentinel-2-l2a), served by the Microsoft Planetary Computer",
+        "doi": "10.5270/S2_-znk9xsj",
+        "url": "https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a",
+        "notice": "Contains modified Copernicus Sentinel data [year of acquisition]. Not NASA data."
+      }
+    }
+  ]
+}

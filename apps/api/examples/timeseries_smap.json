@@ -1,0 +1,253 @@
+{
+  "source": "smap",
+  "variables": [
+    {
+      "name": "soil_moisture",
+      "long_name": "Soil moisture, morning (6 a.m.) overpass",
+      "unit": "m³/m³"
+    }
+  ],
+  "point": {
+    "lat": -10.91,
+    "lon": -37.07
+  },
+  "radius_km": 15,
+  "bbox": [
+    -37.2072,
+    -11.0447,
+    -36.9328,
+    -10.7753
+  ],
+  "aggregation": "cell_mean",
+  "cells_used": 4,
+  "resolution": "9 km",
+  "period": {
+    "start": "2025-01-01",
+    "end": "2025-01-30"
+  },
+  "cached": false,
+  "series": [
+    {
+      "time": "2025-01-01",
+      "values": {
+        "soil_moisture": 0.287
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-02",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-03",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-04",
+      "values": {
+        "soil_moisture": 0.274
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-05",
+      "values": {
+        "soil_moisture": 0.262
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-06",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-07",
+      "values": {
+        "soil_moisture": 0.251
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-08",
+      "values": {
+        "soil_moisture": 0.243
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-09",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-10",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-11",
+      "values": {
+        "soil_moisture": 0.236
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-12",
+      "values": {
+        "soil_moisture": 0.229
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-13",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-14",
+      "values": {
+        "soil_moisture": 0.241
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-15",
+      "values": {
+        "soil_moisture": 0.318
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-16",
+      "values": {
+        "soil_moisture": 0.332
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-17",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-18",
+      "values": {
+        "soil_moisture": 0.305
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-19",
+      "values": {
+        "soil_moisture": 0.291
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-20",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-21",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-22",
+      "values": {
+        "soil_moisture": 0.276
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-23",
+      "values": {
+        "soil_moisture": 0.268
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-24",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-25",
+      "values": {
+        "soil_moisture": 0.259
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-26",
+      "values": {
+        "soil_moisture": 0.251
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-27",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-28",
+      "values": {
+        "soil_moisture": 0.244
+      },
+      "cells_valid": 4
+    },
+    {
+      "time": "2025-01-29",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    },
+    {
+      "time": "2025-01-30",
+      "values": {
+        "soil_moisture": null
+      },
+      "cells_valid": null
+    }
+  ],
+  "attribution": {
+    "dataset": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+    "doi": "10.5067/M20OXIZHY3RJ",
+    "url": "https://nsidc.org/data/spl3smp_e/versions/6",
+    "notice": null
+  },
+  "warnings": [
+    {
+      "code": "partial_data",
+      "message": "SMAP covers each place every 2-3 days: 14 of 30 days have no valid soil moisture in this box."
+    }
+  ]
+}
