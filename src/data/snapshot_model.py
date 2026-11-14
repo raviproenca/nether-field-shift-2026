@@ -18,6 +18,20 @@ class Region:
 
 
 @dataclass(frozen=True)
+class PilotSite:
+    """A named place with the same series as the grid points (pilot farming areas of the team)."""
+
+    id: str
+    name: str
+    zone: str
+    state: str
+    lat: float
+    lon: float
+    radius_km: float
+    region: str
+
+
+@dataclass(frozen=True)
 class Variable:
     name: str
     long_name: str
@@ -40,6 +54,7 @@ class SourceInfo:
     doi: str | None
     url: str
     notice: str | None = None
+    kind: str = "timeseries"
 
 
 @dataclass
@@ -50,4 +65,13 @@ class SourceData:
     times: list[str]
     values: np.ndarray
     latest_date: str | None
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass
+class StaticData:
+    """A layer without time (terrain): values[point, variable]."""
+
+    variables: list[Variable]
+    values: np.ndarray
     warnings: list[str] = field(default_factory=list)

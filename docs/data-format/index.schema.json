@@ -4,30 +4,79 @@
   "title": "Snapshot index (index.json)",
   "description": "Entry point of apps/web/public/data/: regions, sources (adapted from the Source schema of the API contract) and the files to load.",
   "type": "object",
-  "required": ["format_version", "generated_at", "regions", "sources", "warnings"],
+  "required": [
+    "format_version",
+    "generated_at",
+    "regions",
+    "sources",
+    "warnings"
+  ],
   "additionalProperties": false,
   "properties": {
-    "format_version": { "const": 1 },
-    "generated_at": { "type": "string", "format": "date-time", "description": "UTC." },
+    "format_version": {
+      "const": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC."
+    },
     "regions": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "bbox", "spacing_deg", "points", "points_file"],
+        "required": [
+          "id",
+          "name",
+          "bbox",
+          "spacing_deg",
+          "points",
+          "points_file",
+          "pilots",
+          "pilots_file"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
           "bbox": {
             "type": "array",
             "description": "[west, south, east, north] in degrees.",
-            "items": { "type": "number" },
+            "items": {
+              "type": "number"
+            },
             "minItems": 4,
             "maxItems": 4
           },
-          "spacing_deg": { "type": "number", "exclusiveMinimum": 0 },
-          "points": { "type": "integer", "minimum": 0, "description": "Grid points on land." },
-          "points_file": { "type": "string", "description": "Path relative to index.json." }
+          "spacing_deg": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Grid points on land."
+          },
+          "points_file": {
+            "type": "string",
+            "description": "Path relative to index.json."
+          },
+          "pilots": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Named pilot places of the region (Sergipe: 2)."
+          },
+          "pilots_file": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Path relative to index.json; null when the region has no pilots."
+          }
         }
       }
     },
@@ -36,27 +85,95 @@
       "items": {
         "type": "object",
         "required": [
-          "id", "name", "provider", "nasa", "status", "resolution", "temporal_resolution", "aggregation",
-          "attribution", "variables", "latest_date", "period", "files"
+          "id",
+          "name",
+          "provider",
+          "nasa",
+          "kind",
+          "status",
+          "resolution",
+          "temporal_resolution",
+          "aggregation",
+          "attribution",
+          "variables",
+          "latest_date",
+          "period",
+          "files"
         ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "provider": { "type": "string" },
-          "nasa": { "type": "boolean" },
-          "status": { "enum": ["ok", "failed"], "description": "failed: the source could not be read in this run; it has no files." },
-          "resolution": { "type": "string" },
-          "temporal_resolution": { "type": "string" },
-          "aggregation": { "enum": ["cell_mean", "nearest_cell", "window_mean"] },
-          "attribution": { "$ref": "series.schema.json#/$defs/attribution" },
-          "variables": { "type": "array", "items": { "$ref": "series.schema.json#/$defs/variable" } },
-          "latest_date": { "type": ["string", "null"], "format": "date", "description": "Newest date the source offered in this run." },
-          "period": { "oneOf": [{ "$ref": "series.schema.json#/$defs/period" }, { "type": "null" }] },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "nasa": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "failed"
+            ],
+            "description": "failed: the source could not be read in this run; it has no files."
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "temporal_resolution": {
+            "type": "string"
+          },
+          "aggregation": {
+            "enum": [
+              "cell_mean",
+              "nearest_cell",
+              "window_mean"
+            ]
+          },
+          "attribution": {
+            "$ref": "series.schema.json#/$defs/attribution"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "$ref": "series.schema.json#/$defs/variable"
+            }
+          },
+          "latest_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Newest date the source offered in this run."
+          },
+          "period": {
+            "oneOf": [
+              {
+                "$ref": "series.schema.json#/$defs/period"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "files": {
             "type": "object",
             "description": "Region id to the path of its series file, relative to index.json.",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "kind": {
+            "enum": [
+              "timeseries",
+              "static"
+            ],
+            "description": "static: one value per point and variable, without time (terrain)."
           }
         }
       }
@@ -65,12 +182,25 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["source", "code", "message"],
+        "required": [
+          "source",
+          "code",
+          "message"
+        ],
         "additionalProperties": false,
         "properties": {
-          "source": { "type": "string" },
-          "code": { "enum": ["source_failed", "partial_data"] },
-          "message": { "type": "string" }
+          "source": {
+            "type": "string"
+          },
+          "code": {
+            "enum": [
+              "source_failed",
+              "partial_data"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
         }
       }
     }

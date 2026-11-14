@@ -6,11 +6,13 @@ each file over HTTPS (cached as small .npz files), VIIRS/MODIS one tile download
 """
 
 import hashlib
+import json
 import math
+import threading
 from collections import defaultdict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from functools import partial
 from pathlib import Path
@@ -21,12 +23,12 @@ import pandas as pd
 import xarray as xr
 from pyproj import Transformer
 
-from . import clip, earthdata, power
+from . import clip, earthdata, et0, planetary, power, srtm
 from .dates import DateRange
 from .errors import DataToolkitError, InputError, RemoteDataError, describe_failure
-from .regions import BBox
+from .regions import BBox, point_to_bbox
 from .sampling import Layer, Point, sample_layer
-from .snapshot_model import SourceData, SourceInfo, Variable
+from .snapshot_model import SourceData, SourceInfo, StaticData, Variable
 
 SMAP_FILL = -9999.0
 SMAP_VALID = (0.02, 0.5)
@@ -49,6 +51,8 @@ class Context:
     gldas_months: int = 6
     ndvi_days: int = 60
     power_lag_days: int = 4
+    terrain_radius_km: float = 5.0
+    elevations: dict[str, float] = field(default_factory=dict)
     log: Callable[[str], None] = print
 
 
@@ -64,6 +68,20 @@ INFOS: dict[str, SourceInfo] = {
         "NASA POWER daily point API (MERRA-2 and CERES SYN1deg), community AG",
         None,
         "https://power.larc.nasa.gov/",
+    ),
+    "srtm": SourceInfo(
+        "srtm",
+        "NASADEM terrain (SRTM)",
+        "NASA JPL NASADEM, served by Microsoft Planetary Computer",
+        True,
+        "30 m (1 arc-second)",
+        "static (February 2000)",
+        "window_mean",
+        "NASADEM Merged DEM Global 1 arc-second V001 (NASADEM_HGT)",
+        "10.5067/MEASURES/NASADEM/NASADEM_HGT.001",
+        "https://planetarycomputer.microsoft.com/dataset/nasadem",
+        None,
+        "static",
     ),
     "gldas": SourceInfo(
         "gldas",
@@ -127,11 +145,23 @@ INFOS: dict[str, SourceInfo] = {
     ),
 }
 
+POWER_INPUTS = ["T2M", "T2M_MAX", "T2M_MIN", "PRECTOTCORR", "ALLSKY_SFC_SW_DWN", "RH2M", "WS2M", "GWETROOT"]
 POWER_VARIABLES = [
     Variable("T2M", "Air temperature at 2 m (daily mean)", "°C", 1),
+    Variable("T2M_MAX", "Air temperature at 2 m (daily maximum)", "°C", 1),
+    Variable("T2M_MIN", "Air temperature at 2 m (daily minimum)", "°C", 1),
     Variable("PRECTOTCORR", "Precipitation (bias-corrected)", "mm/day", 2),
     Variable("ALLSKY_SFC_SW_DWN", "All-sky surface shortwave downward irradiance", "MJ/m²/day", 1),
     Variable("GWETROOT", "Root zone soil wetness", "1 (fraction, 0-1)", 3),
+]
+ET0_VARIABLES = [
+    Variable("ET0_FAO56", "Reference evapotranspiration, FAO-56 Penman-Monteith (derived from POWER)", "mm/day", 2),
+    Variable("WATER_BALANCE", "Precipitation minus ET0 (derived from POWER)", "mm/day", 2),
+]
+TERRAIN_VARIABLES = [
+    Variable("elevation_m", "Mean elevation inside the terrain radius", "m", 1),
+    Variable("slope_mean_deg", "Mean slope inside the terrain radius", "°", 2),
+    Variable("slope_mean_pct", "Mean slope inside the terrain radius", "%", 2),
 ]
 GLDAS_VARIABLES = [
     Variable("SoilMoi0_10cm_inst", "Soil moisture, 0-10 cm layer", "kg/m² (= mm of water)", 1),
@@ -226,16 +256,29 @@ def _power_cell(lat: float, lon: float) -> tuple[float, float]:
     return round(round(lat / 0.5) * 0.5, 4), round(-180 + round((lon + 180) / 0.625) * 0.625, 4)
 
 
+def _derived_et0(ctx: Context, frame: pd.DataFrame, point: Point) -> np.ndarray | None:
+    """ET0 and water balance columns of one point, from the POWER inputs of its cell and the SRTM elevation."""
+    elevation = ctx.elevations.get(point.id)
+    if elevation is None:
+        return None
+    days = np.asarray(frame.index.dayofyear)
+    inputs = [frame[name].to_numpy(dtype="float64") for name in ("T2M_MAX", "T2M_MIN", "RH2M", "WS2M")]
+    et0_values = et0.et0_series(point.lat, elevation, days, *inputs, frame["ALLSKY_SFC_SW_DWN"].to_numpy("float64"))
+    return np.stack([et0_values, frame["PRECTOTCORR"].to_numpy("float64") - et0_values], axis=-1)
+
+
 def fetch_power(ctx: Context) -> SourceData:
-    """One POWER call per MERRA-2 cell (cached in data/cache/power), shared by the points inside it."""
+    """One POWER call per MERRA-2 cell (cached in data/cache/power), shared by the points inside it.
+
+    ET0 (FAO-56) and the water balance are derived per point from the cell's inputs and the point's elevation.
+    """
     dates = _window(ctx, ctx.power_lag_days)
-    names = [v.name for v in POWER_VARIABLES]
     cells = sorted({_power_cell(p.lat, p.lon) for p in ctx.points})
     ctx.log(f"  power: {len(cells)} cells for {len(ctx.points)} points")
 
     def one(cell):
         try:
-            frame = power.fetch_point(cell[0], cell[1], dates, names, cache_dir=ctx.cache_dir / "power")
+            frame = power.fetch_point(cell[0], cell[1], dates, POWER_INPUTS, cache_dir=ctx.cache_dir / "power")
             return cell, frame.reindex(pd.date_range(dates.start, dates.end)), None
         except DataToolkitError as exc:
             return cell, None, f"cell {cell[0]},{cell[1]}: {exc}"
@@ -247,13 +290,58 @@ def fetch_power(ctx: Context) -> SourceData:
     if not frames:
         raise RemoteDataError(f"POWER failed for every cell ({'; '.join(failed[:2])})")
     times = [_iso(d.date()) for d in pd.date_range(dates.start, dates.end)]
-    values = np.full((len(ctx.points), len(times), len(names)), np.nan)
+    published = POWER_VARIABLES + ET0_VARIABLES
+    values = np.full((len(ctx.points), len(times), len(published)), np.nan)
+    without_elevation = 0
     for row, point in enumerate(ctx.points):
         frame = frames.get(_power_cell(point.lat, point.lon))
-        if frame is not None:
-            values[row] = frame[names].to_numpy(dtype="float64")
+        if frame is None:
+            continue
+        values[row, :, : len(POWER_VARIABLES)] = frame[[v.name for v in POWER_VARIABLES]].to_numpy(dtype="float64")
+        derived = _derived_et0(ctx, frame, point)
+        if derived is None:
+            without_elevation += 1
+        else:
+            values[row, :, len(POWER_VARIABLES) :] = derived
     notes = [f"POWER failed for {len(failed)} cell(s): {'; '.join(failed[:2])}"] if failed else []
-    return SourceData(POWER_VARIABLES, times, values, times[-1], notes)
+    if without_elevation:
+        notes.append(f"ET0 and water balance are empty for {without_elevation} point(s) without SRTM elevation")
+    return SourceData(published, times, values, times[-1], notes)
+
+
+def _terrain_summary(bbox: BBox, client) -> list[float]:
+    summary = srtm.summarize_terrain(srtm.fetch_elevation(bbox, client=client))
+    return [summary["elevation_mean_m"], summary["slope_mean_deg"], summary["slope_mean_pct"]]
+
+
+def fetch_srtm(ctx: Context) -> StaticData:
+    """NASADEM elevation and mean slope inside `terrain_radius_km` of each point, read at 30 m (cached per point)."""
+    folder = ctx.cache_dir / "snapshots" / "srtm"
+    folder.mkdir(parents=True, exist_ok=True)
+    local = threading.local()
+
+    def one(point: Point):
+        path = folder / f"{point.lat:.4f}_{point.lon:.4f}_{ctx.terrain_radius_km:g}.json"
+        if path.is_file():
+            return point.id, json.loads(path.read_text()), None
+        try:
+            if not hasattr(local, "client"):
+                local.client = planetary.open_client()
+            summary = _terrain_summary(point_to_bbox(point.lat, point.lon, ctx.terrain_radius_km), local.client)
+        except Exception as exc:  # noqa: BLE001  a point without terrain must not stop the others
+            return point.id, None, f"{point.id}: {describe_failure(exc)}"
+        path.write_text(json.dumps(summary))
+        return point.id, summary, None
+
+    with ThreadPoolExecutor(max_workers=ctx.workers) as pool:
+        outcomes = list(pool.map(one, ctx.points))
+    failed = [text for _, _, text in outcomes if text]
+    if len(failed) == len(outcomes):
+        raise RemoteDataError(f"NASADEM failed for every point ({'; '.join(failed[:2])})")
+    values = np.array([row if row else [np.nan] * 3 for _, row, _ in outcomes], dtype="float64")
+    ctx.elevations = {pid: row[0] for pid, row, _ in outcomes if row}
+    notes = [f"NASADEM failed for {len(failed)} point(s): {'; '.join(failed[:2])}"] if failed else []
+    return StaticData(TERRAIN_VARIABLES, values, notes)
 
 
 def _gldas_window(domain: BBox) -> Callable:
@@ -413,6 +501,7 @@ def fetch_ndvi(ctx: Context, product: str) -> SourceData:
 
 FETCHERS: dict[str, Callable[[Context], SourceData]] = {
     "gldas": fetch_gldas,
+    "srtm": fetch_srtm,
     "power": fetch_power,
     "imerg": fetch_imerg,
     "smap": fetch_smap,

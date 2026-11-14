@@ -17,8 +17,8 @@ from src.data import snapshots
 from src.data.errors import InputError, SizeLimitError
 from src.data.regions import PRESETS, BBox
 from src.data.sampling import Layer, Point, grid_points, sample_layer
-from src.data.snapshot_model import Region, SourceData, Variable
-from src.data.snapshot_output import build_files, check_size, kept_times, write_files
+from src.data.snapshot_model import PilotSite, Region, SourceData, StaticData, Variable
+from src.data.snapshot_output import Bundle, build_files, check_size, kept_times, write_files
 
 SCHEMAS = Path(__file__).resolve().parents[1] / "docs" / "data-format"
 NOW = datetime(2026, 11, 14, 12, 0, tzinfo=UTC)
@@ -53,13 +53,22 @@ def fake_fetcher(land=None, **kwargs):
     return lambda ctx: fake_data(ctx.points, land=land, **kwargs)
 
 
-def run(tmp_path, names, fetchers, regions=TWO_REGIONS, max_bytes=5 * 1024 * 1024):
+def run(tmp_path, names, fetchers, regions=TWO_REGIONS, max_bytes=5 * 1024 * 1024, pilots=()):
     ctx_args = {"days": 2, "today": date(2026, 11, 14), "raw_dir": tmp_path / "raw", "cache_dir": tmp_path / "cache"}
     infos = {n: sources.INFOS["power"] for n in names}
     infos = {n: sources.INFOS.get(n, sources.INFOS["power"]) for n in names}
     out = tmp_path / "out"
     sizes = snapshots.generate(
-        regions, names, ctx_args, out, max_bytes, fetchers=fetchers, infos=infos, log=lambda m: None, now=lambda: NOW
+        regions,
+        names,
+        ctx_args,
+        out,
+        max_bytes,
+        fetchers=fetchers,
+        infos=infos,
+        pilots=pilots,
+        log=lambda m: None,
+        now=lambda: NOW,
     )
     return out, sizes
 
@@ -226,9 +235,8 @@ def test_build_files_keeps_unicode_units_readable():
     points = grid_points(PRESETS["sergipe"], 1.0, "SE")
     data = fake_data(points)
     data.variables = [Variable("T2M", "Air temperature", "°C", 1), Variable("B", "b", "m³/m³", 3)]
-    files = build_files(
-        NOW, TWO_REGIONS[:1], {"sergipe": points}, {"power": sources.INFOS["power"]}, {"power": data}, points, {}
-    )
+    bundle = Bundle(NOW, TWO_REGIONS[:1], points, [], {"power": sources.INFOS["power"]}, {"power": data}, {})
+    files = build_files(bundle)
     assert "°C".encode() in files["sergipe/power.json"] and b"\\u00b0" not in files["sergipe/power.json"]
 
 
@@ -261,8 +269,9 @@ def test_fetch_power_shares_one_call_between_points_of_the_same_cell(tmp_path, m
         points, snapshots.domain_of(TWO_REGIONS[:1]), 3, date(2026, 11, 14), tmp_path, tmp_path, log=print
     )
     data = sources.fetch_power(ctx)
-    assert len(calls) == len(set(calls)) < len(points) and data.values.shape == (len(points), 3, 4)
+    assert len(calls) == len(set(calls)) < len(points) and data.values.shape == (len(points), 3, 8)
     assert data.times == ["2026-11-08", "2026-11-09", "2026-11-10"] and np.isnan(data.values[:, -1]).all()
+    assert np.isnan(data.values[:, :, 6:]).all() and "without SRTM elevation" in data.warnings[-1]
 
 
 def test_fetch_power_fails_cleanly_when_every_cell_fails(tmp_path, monkeypatch):
@@ -308,3 +317,121 @@ def test_sinusoidal_boxes_scale_the_half_width_with_the_latitude():
     px, py, half_x, half_y = sources.sinusoidal_boxes(points)
     assert half_y[0] == pytest.approx(half_y[1]) and half_x[1] == pytest.approx(half_y[1] * 0.5, rel=1e-3)
     assert py[0] == pytest.approx(-10.0 * 111194.93, rel=1e-3) and px[0] < 0
+
+
+PILOT = PilotSite("sergipe_agreste_itabaiana", "Itabaiana (Agreste)", "Agreste", "SE", -10.685, -37.425, 5.0, "sergipe")
+
+
+def fake_terrain(ctx):
+    values = np.array([[100.0 + i, 1.0, 2.0] for i in range(len(ctx.points))])
+    ctx.elevations = {p.id: 100.0 + i for i, p in enumerate(ctx.points)}
+    return StaticData(sources.TERRAIN_VARIABLES, values)
+
+
+def test_pilots_get_their_own_geojson_series_and_terrain_in_the_same_files(tmp_path):
+    fetchers = {"srtm": fake_terrain, "power": fake_fetcher()}
+    infos_names = ["srtm", "power"]
+    out, sizes = run(tmp_path, infos_names, fetchers, regions=TWO_REGIONS[:1], pilots=(PILOT,))
+    assert "sergipe/pilots.geojson" in sizes
+    pilots = json.loads((out / "sergipe/pilots.geojson").read_text())
+    validator("pilots").validate(pilots)
+    assert pilots["features"][0]["properties"] == {
+        "id": "sergipe_agreste_itabaiana", "name": "Itabaiana (Agreste)", "zone": "Agreste", "state": "SE",
+        "lat": -10.685, "lon": -37.425, "radius_km": 5.0,
+    }  # fmt: skip
+    grid = json.loads((out / "sergipe/points.geojson").read_text())["features"]
+    assert PILOT.id not in {f["id"] for f in grid} and len(grid) == 64  # pilots are not grid points
+    series = json.loads((out / "sergipe/power.json").read_text())["points"]
+    assert PILOT.id in series and "SE001" in series
+    terrain = json.loads((out / "sergipe/srtm.json").read_text())
+    validator("static").validate(terrain)
+    assert terrain["points"][PILOT.id] == {"elevation_m": 164.0, "slope_mean_deg": 1.0, "slope_mean_pct": 2.0}
+    index = json.loads((out / "index.json").read_text())
+    validator("index").validate(index)
+    region = index["regions"][0]
+    assert region["pilots"] == 1 and region["pilots_file"] == "sergipe/pilots.geojson" and region["points"] == 64
+    kinds = {s["id"]: s["kind"] for s in index["sources"]}
+    assert kinds == {"srtm": "static", "power": "timeseries"}
+
+
+def test_a_pilot_in_a_region_that_is_not_generated_is_ignored(tmp_path):
+    out, sizes = run(tmp_path, ["power"], {"power": fake_fetcher()}, regions=TWO_REGIONS[1:], pilots=(PILOT,))
+    assert "nordeste/pilots.geojson" not in sizes and not (out / "sergipe").exists()
+    assert json.loads((out / "index.json").read_text())["regions"][0]["pilots_file"] is None
+
+
+def test_pilots_stay_even_when_the_land_mask_says_water(tmp_path):
+    seen = {}
+
+    def power(ctx):
+        seen["ids"] = [p.id for p in ctx.points]
+        return fake_data(ctx.points)
+
+    run(tmp_path, ["gldas", "power"], {"gldas": fake_fetcher(land={"SE001"}), "power": power},
+        regions=TWO_REGIONS[:1], pilots=(PILOT,))  # fmt: skip
+    assert seen["ids"] == ["SE001", PILOT.id]
+
+
+def test_terrain_comes_before_power_so_et0_can_use_the_elevation(tmp_path):
+    order = []
+
+    def terrain(ctx):
+        order.append("srtm")
+        return fake_terrain(ctx)
+
+    def power(ctx):
+        order.append("power")
+        assert ctx.elevations
+        return fake_data(ctx.points)
+
+    run(tmp_path, ["power", "srtm"], {"srtm": terrain, "power": power}, regions=TWO_REGIONS[:1])
+    assert order == ["srtm", "power"]
+
+
+def test_a_failing_terrain_source_is_reported_and_power_still_runs(tmp_path):
+    def broken(ctx):
+        raise RuntimeError("planetary down")
+
+    out, _ = run(tmp_path, ["srtm", "power"], {"srtm": broken, "power": fake_fetcher()}, regions=TWO_REGIONS[:1])
+    index = json.loads((out / "index.json").read_text())
+    assert {s["id"]: s["status"] for s in index["sources"]} == {"srtm": "failed", "power": "ok"}
+    assert not (out / "sergipe/srtm.json").exists()
+
+
+def test_fetch_power_derives_et0_and_water_balance_from_the_cell_and_the_elevation(tmp_path, monkeypatch):
+    def fake_fetch_point(lat, lon, dates, variables, cache_dir=None, **_):
+        days = pd.date_range(dates.start, dates.end)
+        base = {"T2M": 27.0, "T2M_MAX": 33.0, "T2M_MIN": 23.0, "PRECTOTCORR": 1.5, "ALLSKY_SFC_SW_DWN": 22.0}
+        base |= {"RH2M": 60.0, "WS2M": 2.5, "GWETROOT": 0.5}
+        return pd.DataFrame({v: np.full(len(days), base[v]) for v in variables}, index=days)
+
+    monkeypatch.setattr(sources.power, "fetch_point", fake_fetch_point)
+    points = [Point("P1", -10.685, -37.425, 0.05), Point("P2", -10.685, -37.425, 0.05)]
+    ctx = sources.Context(points, PRESETS["sergipe"], 2, date(2026, 11, 14), tmp_path, tmp_path)
+    ctx.elevations = {"P1": 180.0}  # P2 has none
+    data = sources.fetch_power(ctx)
+    names = [v.name for v in data.variables]
+    et0, balance = data.values[0, :, names.index("ET0_FAO56")], data.values[0, :, names.index("WATER_BALANCE")]
+    assert np.all((et0 > 3.0) & (et0 < 7.0)) and balance == pytest.approx(1.5 - et0)
+    assert np.isnan(data.values[1, :, names.index("ET0_FAO56")]).all()
+    assert names[:6] == [v.name for v in sources.POWER_VARIABLES]
+
+
+def test_fetch_srtm_summarizes_each_point_caches_it_and_survives_a_failing_point(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_summary(bbox, client):
+        calls.append(bbox.center)
+        if bbox.center[0] < -10.5:
+            raise RuntimeError("tile missing")
+        return [150.0, 3.0, 5.2]
+
+    monkeypatch.setattr(sources, "_terrain_summary", fake_summary)
+    monkeypatch.setattr(sources.planetary, "open_client", lambda: object())
+    points = [Point("A", -10.4, -37.0, 0.1), Point("B", -10.9, -37.0, 0.1)]
+    ctx = sources.Context(points, PRESETS["sergipe"], 1, date(2026, 11, 14), tmp_path, tmp_path, workers=1)
+    data = sources.fetch_srtm(ctx)
+    assert data.values[0].tolist() == [150.0, 3.0, 5.2] and np.isnan(data.values[1]).all()
+    assert ctx.elevations == {"A": 150.0} and "NASADEM failed for 1 point(s)" in data.warnings[0]
+    sources.fetch_srtm(ctx)
+    assert len(calls) == 3  # A is cached the second time; B failed, so it is tried again

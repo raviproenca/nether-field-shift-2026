@@ -18,18 +18,32 @@ import numpy as np
 from . import snapshot_sources as sources
 from .errors import DataToolkitError, InputError, describe_failure
 from .paths import CACHE_DIR, RAW_DIR, ROOT
-from .regions import PRESETS, BBox
+from .regions import KM_PER_DEGREE_LAT, PRESETS, BBox
 from .sampling import Point, grid_points
-from .snapshot_model import Region, SourceData, SourceInfo
-from .snapshot_output import MAX_TOTAL_BYTES, build_files, check_size, write_files
+from .snapshot_model import PilotSite, Region, SourceData, SourceInfo, StaticData
+from .snapshot_output import MAX_TOTAL_BYTES, Bundle, build_files, check_size, write_files
 
 DEFAULT_OUT = ROOT / "apps" / "web" / "public" / "data"
 DEFAULT_REGIONS = {
     "sergipe": Region("sergipe", "Sergipe", PRESETS["sergipe"], 0.25, "SE"),
     "nordeste": Region("nordeste", "Northeast Brazil (Nordeste)", PRESETS["nordeste"], 1.0, "NE"),
 }
-DEFAULT_SOURCES = ["gldas", "power", "imerg", "smap", "viirs"]
+PILOTS = (
+    PilotSite("sergipe_agreste_itabaiana", "Itabaiana (Agreste)", "Agreste", "SE", -10.685, -37.425, 5.0, "sergipe"),
+    PilotSite(
+        "sergipe_semiarido_ns_gloria",
+        "Nossa Senhora da Glória (Semiárido)",
+        "Semiárido",
+        "SE",
+        -10.218,
+        -37.42,
+        5.0,
+        "sergipe",
+    ),
+)
+DEFAULT_SOURCES = ["gldas", "srtm", "power", "imerg", "smap", "viirs"]
 LAND_MASK_SOURCE = "gldas"
+TERRAIN_SOURCE = "srtm"
 DOMAIN_MARGIN = 0.1
 
 
@@ -93,20 +107,23 @@ def domain_of(regions: list[Region]) -> BBox:
     )
 
 
-def land_points(points: list[Point], data: SourceData) -> list[Point]:
-    """Points where the land-mask source has a value at some time; the rest is open water."""
+def land_points(points: list[Point], data: SourceData, always: set[str]) -> list[Point]:
+    """Points where the land-mask source has a value at some time; the rest is open water. `always` are kept."""
     on_land = np.isfinite(data.values).any(axis=(1, 2))
-    return [point for point, keep in zip(points, on_land) if keep]
+    return [point for point, keep in zip(points, on_land) if keep or point.id in always]
+
+
+def pilot_point(pilot: PilotSite) -> Point:
+    return Point(pilot.id, pilot.lat, pilot.lon, pilot.radius_km / KM_PER_DEGREE_LAT)
 
 
 def run_sources(
     names: list[str], ctx: sources.Context, fetchers: dict[str, Callable], log: Callable[[str], None]
-) -> tuple[dict[str, SourceData], dict[str, str]]:
-    """Fetch every source; the land mask comes first and filters the points the other sources are asked for."""
-    results: dict[str, SourceData] = {}
+) -> tuple[dict[str, SourceData | StaticData], dict[str, str]]:
+    """Fetch each source in order. A source that fails is recorded and does not stop the others."""
+    results: dict[str, SourceData | StaticData] = {}
     failures: dict[str, str] = {}
-    ordered = sorted(names, key=lambda n: n != LAND_MASK_SOURCE)
-    for name in ordered:
+    for name in names:
         started = time.time()
         log(f"[{name}] fetching")
         try:
@@ -115,8 +132,18 @@ def run_sources(
             failures[name] = str(exc) if isinstance(exc, DataToolkitError) else describe_failure(exc)
             log(f"[{name}] FAILED: {failures[name]}")
             continue
-        log(f"[{name}] ok in {time.time() - started:.0f}s ({len(results[name].times)} times)")
+        log(f"[{name}] ok in {time.time() - started:.0f}s")
     return results, failures
+
+
+def apply_land_mask(ctx: sources.Context, results: dict, pilots: list[PilotSite], log: Callable[[str], None]) -> None:
+    """Drop open-water grid points (and their rows in the mask source) from ctx.points. Pilots always stay."""
+    data = results[LAND_MASK_SOURCE]
+    land = land_points(ctx.points, data, {p.id for p in pilots})
+    log(f"land mask ({LAND_MASK_SOURCE}): {len(land)} of {len(ctx.points)} points kept")
+    on_land = set(land)
+    data.values = data.values[[i for i, p in enumerate(ctx.points) if p in on_land]]
+    ctx.points = land
 
 
 def generate(
@@ -127,37 +154,36 @@ def generate(
     max_bytes: int,
     fetchers: dict[str, Callable] | None = None,
     infos: dict[str, SourceInfo] | None = None,
+    pilots: tuple[PilotSite, ...] = PILOTS,
     log: Callable[[str], None] = print,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> dict[str, int]:
     """Run the whole pipeline and write the files. Returns {relative path: size in bytes}."""
     fetchers, infos = fetchers or sources.FETCHERS, infos or sources.INFOS
-    all_points = [p for region in regions for p in grid_points(region.bbox, region.spacing, region.prefix)]
-    ctx = sources.Context(points=all_points, domain=domain_of(regions), log=log, **ctx_args)
+    chosen = [p for p in pilots if p.region in {r.id for r in regions}]
+    grid = [p for region in regions for p in grid_points(region.bbox, region.spacing, region.prefix)]
+    ctx = sources.Context(
+        points=grid + [pilot_point(p) for p in chosen], domain=domain_of(regions), log=log, **ctx_args
+    )
     for region in regions:
-        log(f"{region.id}: {sum(p.id.startswith(region.prefix) for p in all_points)} grid points")
-    results: dict[str, SourceData] = {}
+        log(f"{region.id}: {sum(p.id.startswith(region.prefix) for p in grid)} grid points")
+    results: dict[str, SourceData | StaticData] = {}
     failures: dict[str, str] = {}
-    if LAND_MASK_SOURCE in names:
-        mask_results, mask_failures = run_sources([LAND_MASK_SOURCE], ctx, fetchers, log)
-        results.update(mask_results)
-        failures.update(mask_failures)
-        if LAND_MASK_SOURCE in results:
-            land = land_points(all_points, results[LAND_MASK_SOURCE])
-            log(f"land mask ({LAND_MASK_SOURCE}): {len(land)} of {len(all_points)} points on land")
-            on_land = set(land)
-            kept_rows = [i for i, p in enumerate(all_points) if p in on_land]
-            results[LAND_MASK_SOURCE].values = results[LAND_MASK_SOURCE].values[kept_rows]
-            all_points, ctx.points = land, land
-        else:
+    for stage in (
+        [LAND_MASK_SOURCE],
+        [TERRAIN_SOURCE],
+        [n for n in names if n not in (LAND_MASK_SOURCE, TERRAIN_SOURCE)],
+    ):
+        stage_names = [n for n in stage if n in names]
+        stage_results, stage_failures = run_sources(stage_names, ctx, fetchers, log)
+        results.update(stage_results)
+        failures.update(stage_failures)
+        if stage == [LAND_MASK_SOURCE] and LAND_MASK_SOURCE in results:
+            apply_land_mask(ctx, results, chosen, log)
+        elif stage == [LAND_MASK_SOURCE] and LAND_MASK_SOURCE in names:
             log("land mask unavailable: keeping every grid point")
-    rest = [n for n in names if n != LAND_MASK_SOURCE]
-    more_results, more_failures = run_sources(rest, ctx, fetchers, log)
-    results.update(more_results)
-    failures.update(more_failures)
-    region_points = {r.id: [p for p in all_points if p.id.startswith(r.prefix)] for r in regions}
-    selected = {n: infos[n] for n in names}
-    files = build_files(now(), regions, region_points, selected, results, all_points, failures)
+    bundle = Bundle(now(), regions, ctx.points, chosen, {n: infos[n] for n in names}, results, failures)
+    files = build_files(bundle)
     total = check_size(files, max_bytes)
     write_files(out_dir, files)
     log(f"wrote {len(files)} files, {total / 1024:.0f} KB total, to {out_dir}")

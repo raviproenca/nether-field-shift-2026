@@ -4,6 +4,7 @@
 import json
 import math
 import shutil
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -11,10 +12,23 @@ import numpy as np
 
 from .errors import SizeLimitError
 from .sampling import Point
-from .snapshot_model import Region, SourceData, SourceInfo, Variable
+from .snapshot_model import PilotSite, Region, SourceData, SourceInfo, StaticData, Variable
 
 FORMAT_VERSION = 1
 MAX_TOTAL_BYTES = 5 * 1024 * 1024
+
+
+@dataclass
+class Bundle:
+    """Everything that goes into the files. `points` lists every point (grid and pilots) in the order of the arrays."""
+
+    generated_at: datetime
+    regions: list[Region]
+    points: list[Point]
+    pilots: list[PilotSite]
+    infos: dict[str, SourceInfo]
+    results: dict[str, SourceData | StaticData]
+    failures: dict[str, str]
 
 
 def _dump(payload: dict) -> bytes:
@@ -34,6 +48,27 @@ def points_geojson(points: list[Point]) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
+def pilots_geojson(pilots: list[PilotSite]) -> dict:
+    features = [
+        {
+            "type": "Feature",
+            "id": pilot.id,
+            "geometry": {"type": "Point", "coordinates": [pilot.lon, pilot.lat]},
+            "properties": {
+                "id": pilot.id,
+                "name": pilot.name,
+                "zone": pilot.zone,
+                "state": pilot.state,
+                "lat": pilot.lat,
+                "lon": pilot.lon,
+                "radius_km": pilot.radius_km,
+            },
+        }
+        for pilot in pilots
+    ]
+    return {"type": "FeatureCollection", "features": features}
+
+
 def _rounded(value: float, decimals: int) -> float | None:
     return None if not math.isfinite(value) else round(float(value), decimals)
 
@@ -42,13 +77,6 @@ def kept_times(data: SourceData) -> list[int]:
     """Indexes of the times where at least one point has a valid value (empty dates are not published)."""
     valid = np.isfinite(data.values).any(axis=(0, 2))
     return [index for index, flag in enumerate(valid) if flag]
-
-
-def _point_series(row: np.ndarray, times: list[str], keep: list[int], variables: list[Variable]) -> list[dict]:
-    return [
-        {"time": times[t], "values": {v.name: _rounded(row[t, i], v.decimals) for i, v in enumerate(variables)}}
-        for t in keep
-    ]
 
 
 def _variable_json(variable: Variable) -> dict:
@@ -64,7 +92,13 @@ def source_file(info: SourceInfo, data: SourceData, region: Region, points: list
     keep = kept_times(data)
     series = {}
     for point, row in zip(points, rows):
-        entries = _point_series(data.values[row], data.times, keep, data.variables)
+        entries = [
+            {
+                "time": data.times[t],
+                "values": {v.name: _rounded(data.values[row, t, i], v.decimals) for i, v in enumerate(data.variables)},
+            }
+            for t in keep
+        ]
         if any(v is not None for entry in entries for v in entry["values"].values()):
             series[point.id] = entries
     times = [data.times[t] for t in keep]
@@ -80,75 +114,100 @@ def source_file(info: SourceInfo, data: SourceData, region: Region, points: list
     }
 
 
-def build_files(
-    generated_at: datetime,
-    regions: list[Region],
-    region_points: dict[str, list[Point]],
-    infos: dict[str, SourceInfo],
-    results: dict[str, SourceData],
-    all_points: list[Point],
-    failures: dict[str, str],
-) -> dict[str, bytes]:
+def static_file(info: SourceInfo, data: StaticData, region: Region, points: list[Point], rows: list[int]) -> dict:
+    """The <region>/<source>.json payload of a layer without time: one value per variable and point."""
+    series = {}
+    for point, row in zip(points, rows):
+        values = {v.name: _rounded(data.values[row, i], v.decimals) for i, v in enumerate(data.variables)}
+        if any(value is not None for value in values.values()):
+            series[point.id] = values
+    return {
+        "source": info.id,
+        "region": region.id,
+        "variables": [_variable_json(v) for v in data.variables],
+        "aggregation": info.aggregation,
+        "resolution": info.resolution,
+        "attribution": attribution_json(info),
+        "points": series,
+    }
+
+
+def _index_source(info: SourceInfo, data: SourceData | StaticData | None, names: dict, times: list[str]) -> dict:
+    return {
+        "id": info.id,
+        "name": info.name,
+        "provider": info.provider,
+        "nasa": info.nasa,
+        "kind": info.kind,
+        "status": "ok" if data is not None else "failed",
+        "resolution": info.resolution,
+        "temporal_resolution": info.temporal_resolution,
+        "aggregation": info.aggregation,
+        "attribution": attribution_json(info),
+        "variables": [_variable_json(v) for v in data.variables] if data is not None else [],
+        "latest_date": data.latest_date if isinstance(data, SourceData) else None,
+        "period": {"start": times[0], "end": times[-1]} if times else None,
+        "files": names,
+    }
+
+
+def _region_entry(region: Region, grid: list[Point], pilots: list[PilotSite]) -> dict:
+    return {
+        "id": region.id,
+        "name": region.name,
+        "bbox": list(region.bbox.as_tuple),
+        "spacing_deg": region.spacing,
+        "points": len(grid),
+        "points_file": f"{region.id}/points.geojson",
+        "pilots": len(pilots),
+        "pilots_file": f"{region.id}/pilots.geojson" if pilots else None,
+    }
+
+
+def build_files(bundle: Bundle) -> dict[str, bytes]:
     """All output files as {relative path: bytes}, including index.json. Nothing is written here."""
-    position = {point.id: row for row, point in enumerate(all_points)}
+    row_of = {point.id: row for row, point in enumerate(bundle.points)}
+    pilot_ids = {pilot.id for pilot in bundle.pilots}
     files: dict[str, bytes] = {}
     index_regions, index_sources, warnings = [], [], []
-    for region in regions:
-        points = region_points[region.id]
-        files[f"{region.id}/points.geojson"] = _dump(points_geojson(points))
-        index_regions.append(
-            {
-                "id": region.id,
-                "name": region.name,
-                "bbox": list(region.bbox.as_tuple),
-                "spacing_deg": region.spacing,
-                "points": len(points),
-                "points_file": f"{region.id}/points.geojson",
-            }
-        )
-    for source_id, info in infos.items():
-        if source_id in failures:
-            index_sources.append(_index_source(info, None, "failed", {}))
-            warnings.append({"source": source_id, "code": "source_failed", "message": failures[source_id]})
+    members: dict[str, list[Point]] = {}
+    for region in bundle.regions:
+        region_pilots = [p for p in bundle.pilots if p.region == region.id]
+        own = {p.id for p in region_pilots}
+        members[region.id] = [
+            p for p in bundle.points if (p.id.startswith(region.prefix) and p.id not in pilot_ids) or p.id in own
+        ]
+        grid = [p for p in members[region.id] if p.id not in pilot_ids]
+        files[f"{region.id}/points.geojson"] = _dump(points_geojson(grid))
+        if region_pilots:
+            files[f"{region.id}/pilots.geojson"] = _dump(pilots_geojson(region_pilots))
+        index_regions.append(_region_entry(region, grid, region_pilots))
+    for source_id, info in bundle.infos.items():
+        if source_id in bundle.failures:
+            index_sources.append(_index_source(info, None, {}, []))
+            warnings.append({"source": source_id, "code": "source_failed", "message": bundle.failures[source_id]})
             continue
-        data = results[source_id]
-        names = {}
-        for region in regions:
-            points = region_points[region.id]
-            payload = source_file(info, data, region, points, [position[p.id] for p in points])
+        data = bundle.results[source_id]
+        names, times = {}, []
+        for region in bundle.regions:
+            points = members[region.id]
+            rows = [row_of[p.id] for p in points]
+            build = static_file if isinstance(data, StaticData) else source_file
             names[region.id] = f"{region.id}/{source_id}.json"
-            files[names[region.id]] = _dump(payload)
-        keep = kept_times(data)
-        index_sources.append(_index_source(info, data, "ok", names, [data.times[t] for t in keep]))
+            files[names[region.id]] = _dump(build(info, data, region, points, rows))
+        if isinstance(data, SourceData):
+            times = [data.times[t] for t in kept_times(data)]
+        index_sources.append(_index_source(info, data, names, times))
         warnings.extend({"source": source_id, "code": "partial_data", "message": text} for text in data.warnings)
     index = {
         "format_version": FORMAT_VERSION,
-        "generated_at": generated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": bundle.generated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "regions": index_regions,
         "sources": index_sources,
         "warnings": warnings,
     }
     files["index.json"] = _dump(index)
     return files
-
-
-def _index_source(info: SourceInfo, data: SourceData | None, status: str, names: dict, times: list[str] | None = None):
-    entry = {
-        "id": info.id,
-        "name": info.name,
-        "provider": info.provider,
-        "nasa": info.nasa,
-        "status": status,
-        "resolution": info.resolution,
-        "temporal_resolution": info.temporal_resolution,
-        "aggregation": info.aggregation,
-        "attribution": attribution_json(info),
-        "variables": [_variable_json(v) for v in data.variables] if data else [],
-        "latest_date": data.latest_date if data else None,
-        "period": {"start": times[0], "end": times[-1]} if times else None,
-        "files": names,
-    }
-    return entry
 
 
 def check_size(files: dict[str, bytes], limit: int = MAX_TOTAL_BYTES) -> int:
