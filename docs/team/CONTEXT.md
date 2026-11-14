@@ -2,13 +2,13 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 11:45 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 12:20 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
 - **Challenge:** Field Shift: Adapting Farms with NASA Data. Team Nether, Aracaju local event.
 - **Deadline:** Sun Nov 15, 2026, 23:59 BRT.
-- **Project idea:** **Confirmed (Nov 14):** Brazilian family farming in Sergipe (Agreste & Semiárido), two interfaces (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*. See [decisions.md](decisions.md). Unblocks `bmad-product-brief` and PRD.
+- **Project idea:** **Confirmed (Nov 14) by Ravi (Tech Lead) on behalf of the team; wording by Duda:** Brazilian family farming in Sergipe (Agreste & Semiárido), two interfaces (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*, with **projection and prescription** (what to do, not only how things are). See [decisions.md](decisions.md). PRD (BMad) in progress.
 
 ## 2. Three fronts
 
@@ -17,15 +17,17 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 | Front | What | Status |
 |---|---|---|
 | **A. Internal map** | Team tool to explore and validate data. No visual polish, **not judged**. Static site on Cloudflare Pages (`*.pages.dev`) with **pre-generated data and no API**; NASA GIBS layers live. | In progress (epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19)) |
-| **B. Farmer product** | A **Telegram bot** (family farmers, `request_location`) and a **producer web dashboard** (larger farms, MapLibre GL + OSM), both on the same API (`apps/api/` + Open-Meteo). Anything judges open works **without login**. | **Idea confirmed (Nov 14):** ready for `bmad-product-brief` and PRD before implementation |
+| **B. Farmer product** | A **Telegram bot** (family farmers, `request_location`) and a **producer web dashboard** (larger farms, MapLibre GL + OSM), both on the same API (`apps/api/` + Open-Meteo). Anything judges open works **without login**. | **Idea confirmed (Nov 14):** product brief → PRD → architecture → epics in progress (BMad); implementation after the PRD |
 | **C. Judges' delivery** | Project page on the Space Apps site (submission form), video ≤ 30 s or ≤ 7 slides, public links (demo, repo), all in English. | At the end; the checklist already exists |
 
-**Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts. The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
+**Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts (Open-Meteo only in the product API, not in the internal snapshots). The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
 
 **Notes for the PRD and architecture (front B, not built yet):**
-- Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice). No service with a trial or key that expires before Jan 26, 2027.
+- Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice) **as a separate service** because of its GPL-3.0 license. No service with a trial or key that expires before Jan 26, 2027.
 - Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
-- Voice adds CPU and RAM needs: include it in the hosting decision for front B.
+- Voice adds CPU and RAM needs: include it in the hosting decision for front B (proposed: Google Cloud from the Global Offers; see open question 12).
+- Forecasts: Open-Meteo in the demo; NASA GEOS-FP cited in the pitch. ZARC as a validation reference for planting windows.
+- Validation with farmers: skipped during the hackathon; "next step" in the pitch.
 
 ## 2b. Confirmed product direction
 
@@ -83,7 +85,9 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 - **Ravi:** Tech Lead; approves and merges every PR.
 - **Duda (Eduarda):** data (sources, organization, analysis).
 - **Chaves (Gabriel):** screens (internal dashboard first).
-- **Lucas (`@LucasFe3152`):** requirements and issues (`docs/requirements.md`).
+- **Lucas (`@LucasFe3152`):** leads requirements gathering (`docs/requirements.md`).
+- **Issues:** Ravi opens and coordinates them and splits tasks among teammates; AI agents only prepare drafts.
+- **Traffic light:** Ravi keeps [STATUS.md](STATUS.md) up to date.
 
 ## 6. Space Apps rules that matter
 
