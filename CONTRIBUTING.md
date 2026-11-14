@@ -1,6 +1,6 @@
 # Como contribuir (Equipe Nether)
 
-Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR para `dev`, e só o Tech Lead (Ravi) leva `dev` para `main`.
+Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR para `dev`, com a aprovação do Tech Lead (Ravi), que faz o merge. Só ele leva `dev` para `main`.
 
 ## Passo a passo
 
@@ -26,7 +26,7 @@ Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR p
    gh pr create --base dev --fill    # ou pelo site, escolhendo base: dev
    ```
    Preencha o template (o que muda, a história do BMad, como testar e o checklist).
-5. **Revisão:** precisa de 1 aprovação. Depois do merge, apague a branch e volte ao passo 2.
+5. **Revisão e merge:** o PR só entra com a aprovação do Ravi (CODEOWNER), e quem faz o merge é o Ravi. Não mescle o seu próprio PR. Depois do merge, apague a branch e volte ao passo 2.
 
 ## Lembretes do Space Apps
 
