@@ -22,6 +22,11 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 
 **Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts. The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
 
+**Notes for the PRD and architecture (front B, not built yet):**
+- Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice). No service with a trial or key that expires before Jan 26, 2027.
+- Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
+- Voice adds CPU and RAM needs: include it in the hosting decision for front B.
+
 ## 2b. Confirmed product direction
 
 - **Who:** Brazilian family farming (*agricultura familiar*) in Sergipe (Agreste & Semiárido) for the primary persona, plus larger farms/extension on the web dashboard.
