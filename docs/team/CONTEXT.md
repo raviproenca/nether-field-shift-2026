@@ -22,6 +22,11 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 
 **Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the idea decision, and can serve the same format. The internal map's layers and map component can be reused in the producer dashboard.
 
+**Notes for the PRD and architecture (front B, not built yet):**
+- Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice). No service with a trial or key that expires before Jan 26, 2027.
+- Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
+- Voice adds CPU and RAM needs: include it in the hosting decision for front B.
+
 ## 2b. Direction under discussion (repeated and supported out loud; not decided)
 
 - **Who:** family farming (agricultura familiar) in Brazil, with a well-defined persona.
@@ -70,7 +75,7 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 
 - **No API for the internal map** (decided Nov 14): the front end reads pre-generated JSON/GeoJSON files. The format (from the earlier API contract draft) is documented first, so the front end can build against it right away.
 - The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
-- Access (#17): no login inside the front end (it could not be verified). Options for Ravi: no login (unlisted URL, `noindex`) or Cloudflare Access.
+- Access (#17, closed): **no login**; unlisted `*.pages.dev` URL with `noindex`. Deploy (#18) via GitHub Actions to Ravi's Cloudflare account, project name neutral (e.g. `nether-field-map`).
 
 ## 5. Roles (as discussed; confirm in decisions.md)
 
