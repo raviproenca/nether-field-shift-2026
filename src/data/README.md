@@ -49,6 +49,18 @@ python -m src.data hls   --variable B04 --point -10.91,-37.07 --radius-km 2 --st
 
 `--variable` is always yours to choose: a POWER parameter list, a variable name inside the file, `group/variable` for SMAP, a band name for HLS (`B04`, `B8A`, `Fmask`) or a substring of the dataset name for MODIS/VIIRS (`NDVI`, `EVI`). `--short-name` and `--version` override the defaults below. Each source pins a default version (GLDAS 2.1, IMERG 07, SMAP 006, MOD13Q1 061, VNP13A1 002, HLS 2.0); it is used only with the default short_name, so pass `--version` yourself when you change `--short-name` to a product with another version scheme. For MODIS/VIIRS the text must match exactly one dataset in the tile (an exact name wins; otherwise an error lists the candidates).
 
+### ZARC (Tábua de Risco), third-party data
+
+Not NASA data (MAPA, CC BY). `python -m src.data.zarc` lists the open-data files and keeps only one UF and the crops you name, because the files are whole-country CSVs of 220 to 550 MB with no server-side filter (the file is streamed, nothing large is stored). Crop and file choices are yours; the columns and caveats are in [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md).
+
+```bash
+python -m src.data.zarc --list                                   # harvest-year files in the MAPA catalog
+python -m src.data.zarc --safra 2026/2027 --uf SE --crop milho --crop feij --out data/processed/zarc_se.csv
+python -m src.data.zarc --safra perene --uf SE --crop mandioca   # perennial file (cassava is only there)
+```
+
+`--crop` matches part of the crop name, ignoring case and accents. The filtered rows are cached in `data/cache/zarc/` (`--refresh` ignores the cache). Credit "ZARC, MAPA" with the harvest year and the portaria number.
+
 ## Where files go
 
 | Folder | Content | Git |
@@ -116,6 +128,17 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 - Output: one GeoTIFF per item in `data/processed/planetary/` (`<item id>_<asset>.tif`), in the item's UTM CRS. The lat/lon box is reprojected before clipping and only that window is downloaded. Reflectance values are raw digital numbers (scale 0.0001; products after processing baseline 04.00 also carry an offset of -0.1, see the item's `raster:bands`). Keep boxes small: a 10 m raster of a whole state is huge.
 - Real test (2026-11-14): `--point -10.91,-37.07 --radius-km 2`, `B04`, January 2025, cloud < 20% gave 2 items and two 404 x 401 pixel uint16 GeoTIFFs (EPSG:32724, 10 m, about 317 KiB each).
 - Sentinel-2 is ESA/Copernicus data: credit "Contains modified Copernicus Sentinel data [year]". Use `hls` for the NASA 30 m alternative.
+
+### IBGE SIDRA (Produção Agrícola Municipal), third-party data
+
+Not NASA data. `python -m src.data.sidra` downloads any SIDRA table for all municipalities of one UF (default Sergipe, code 28) through the public API, no login. The table, variable and product codes are yours to choose (see [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md)).
+
+```bash
+python -m src.data.sidra --table 5457 --variable 8331,216,214,112,215 --classification 782 \
+  --categories 40112,40119,40122 --period "last 1" --out data/processed/pam_sergipe.csv
+```
+
+Output is a tidy CSV/Parquet (one row per municipality, variable, year and category) with `value` as a number (`-` becomes 0, `X`, `..` and `...` become NaN) and the raw text in `symbol`. One call may return at most 100,000 values; the connector stops with a clear error above that. Raw answers are cached in `data/cache/sidra/` (`--refresh` ignores the cache). The IBGE licence was not verified (see the research note): credit "Fonte: IBGE, Pesquisa Agrícola Municipal".
 
 ## Snapshots for the internal map
 
