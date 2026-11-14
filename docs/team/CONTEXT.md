@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 12:30 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 12:40 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
@@ -82,14 +82,18 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 - The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
 - Access (#17, closed): **no login**; unlisted `*.pages.dev` URL with `noindex`. Deploy (#18) via GitHub Actions to Ravi's Cloudflare account, project name neutral (e.g. `nether-field-map`).
 
-## 5. Roles
+## 5. Roles and work split (Nov 14, by Ravi)
 
-- **Ravi:** Tech Lead; approves and merges every PR.
-- **Duda (Eduarda):** data (sources, organization, analysis).
-- **Chaves (Gabriel):** screens (internal dashboard first).
-- **Lucas (`@LucasFe3152`):** leads requirements gathering (`docs/requirements.md`). Owns the Google Cloud trial account and its setup.
+| Who | Area | Issues |
+|---|---|---|
+| **Ravi** (`@raviproenca`) | Tech Lead: approves and merges every PR, opens and assigns issues, keeps [STATUS.md](STATUS.md). Product API, producer dashboard, deploy, integration, and any gap | E2 [#39](https://github.com/raviproenca/nether-field-shift-2026/issues/39), [#49](https://github.com/raviproenca/nether-field-shift-2026/issues/49), [#50](https://github.com/raviproenca/nether-field-shift-2026/issues/50), [#53](https://github.com/raviproenca/nether-field-shift-2026/issues/53), [#54](https://github.com/raviproenca/nether-field-shift-2026/issues/54); E5 [#42](https://github.com/raviproenca/nether-field-shift-2026/issues/42), [#62](https://github.com/raviproenca/nether-field-shift-2026/issues/62), [#63](https://github.com/raviproenca/nether-field-shift-2026/issues/63), [#64](https://github.com/raviproenca/nether-field-shift-2026/issues/64); E6 [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43); co-assignee on [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56), [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59), [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66), [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16) |
+| **Gabriel** (`@gabrielchavesas`, Chaves) | Telegram bot and voice (STT/TTS), bot language; internal map front end | E4 [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56), [#57](https://github.com/raviproenca/nether-field-shift-2026/issues/57), [#58](https://github.com/raviproenca/nether-field-shift-2026/issues/58), [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59), [#60](https://github.com/raviproenca/nether-field-shift-2026/issues/60), [#61](https://github.com/raviproenca/nether-field-shift-2026/issues/61) (Ravi helps on API integration and bot deploy); internal map [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12), [#13](https://github.com/raviproenca/nether-field-shift-2026/issues/13), [#14](https://github.com/raviproenca/nether-field-shift-2026/issues/14), [#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) |
+| **Guilherme** (`@guilhermevbagio`) | Decision engine (strategies, ranking, ET0/water balance, ZARC as reference) and the plain-language explanation built on it | E1 [#38](https://github.com/raviproenca/nether-field-shift-2026/issues/38), [#44](https://github.com/raviproenca/nether-field-shift-2026/issues/44), [#45](https://github.com/raviproenca/nether-field-shift-2026/issues/45), [#46](https://github.com/raviproenca/nether-field-shift-2026/issues/46), [#47](https://github.com/raviproenca/nether-field-shift-2026/issues/47), [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48); E3 [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40), [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52), [#55](https://github.com/raviproenca/nether-field-shift-2026/issues/55) |
+| **Duda** (`@dudxyz`, Eduarda) | Data: `src/data`, connectors (SRTM, Open-Meteo), snapshots with the AI agents, Brazil data research (ZARC, MapBiomas, IBGE) | [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16); co-assignee on [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66) |
+| **Lucas** (`@LucasFe3152`, Feitosa) | Requirements (`docs/requirements.md`); owns the Google Cloud trial account and its setup ([gcp-setup.md](../infra/gcp-setup.md)) | [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65) (with Ravi) |
+
 - **Issues:** Ravi opens and coordinates them and splits tasks among teammates; AI agents only prepare drafts.
-- **Traffic light:** Ravi keeps [STATUS.md](STATUS.md) up to date.
+- Milestone **Submission** marks the demo's critical path.
 
 ## 6. Space Apps rules that matter
 
