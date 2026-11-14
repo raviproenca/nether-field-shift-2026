@@ -50,7 +50,7 @@ class Context:
     workers: int = 4
     gldas_months: int = 6
     ndvi_days: int = 60
-    power_lag_days: int = 4
+    power_lag_days: int = 7
     terrain_radius_km: float = 5.0
     elevations: dict[str, float] = field(default_factory=dict)
     log: Callable[[str], None] = print

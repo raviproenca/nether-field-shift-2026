@@ -270,7 +270,7 @@ def test_fetch_power_shares_one_call_between_points_of_the_same_cell(tmp_path, m
     )
     data = sources.fetch_power(ctx)
     assert len(calls) == len(set(calls)) < len(points) and data.values.shape == (len(points), 3, 8)
-    assert data.times == ["2026-11-08", "2026-11-09", "2026-11-10"] and np.isnan(data.values[:, -1]).all()
+    assert data.times == ["2026-11-05", "2026-11-06", "2026-11-07"] and np.isnan(data.values[:, -1]).all()
     assert np.isnan(data.values[:, :, 6:]).all() and "without SRTM elevation" in data.warnings[-1]
 
 
