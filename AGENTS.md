@@ -4,6 +4,10 @@ Instructions for every AI coding agent (Claude Code, Codex, Cursor, Copilot, etc
 
 Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms with NASA Data**. Local event: Aracaju, Brazil. Submission deadline: **Sun Nov 15, 2026, 23:59 BRT (UTC-3)**.
 
+## 0. Read first
+
+**Before any task, read [docs/team/CONTEXT.md](docs/team/CONTEXT.md) and [docs/team/decisions.md](docs/team/decisions.md).** CONTEXT is the current state (direction under discussion, what exists, roles, open questions); only decisions.md counts as decided.
+
 ## 1. Hard rules (read before doing anything)
 
 1. **Never commit directly to `dev` or `main`.** Always work on your own branch and open a PR to `dev`. Both branches are protected.
@@ -48,6 +52,18 @@ Folder layout (adjust once the stack is chosen, keep it flat and simple):
 ```
 
 Large data files (`*.nc`, `*.nc4`, `*.h5`, `*.hdf`, `*.tif`, `*.zip`) never go into Git: write a script that downloads them.
+
+### Data toolkit (already in the repo)
+
+`src/data/` downloads and clips NASA data (details in [src/data/README.md](src/data/README.md)):
+
+```bash
+uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt   # setup
+scripts/earthdata-login.sh                                         # once, in your own terminal
+.venv/bin/python -m src.data <source> [--bbox sergipe|nordeste|W,S,E,N | --point LAT,LON --radius-km N] --start YYYY-MM-DD --end YYYY-MM-DD --variable NAME [--out PATH] [--search-only]
+```
+
+Sources: `power` (no login), `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls` (Earthdata Login) and `planetary` (Sentinel-2, ESA/Copernicus, not NASA). Current status per source: [docs/team/CONTEXT.md](docs/team/CONTEXT.md#3-what-already-exists). Raw files go to `data/raw/` and outputs to `data/processed/` (both git-ignored).
 
 ## 3. Code standards
 
