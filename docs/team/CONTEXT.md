@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 11:20 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 11:29 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
@@ -47,14 +47,26 @@ Tested against the real services (Nov 14, Sergipe):
 
 Earthdata Login: each person runs `scripts/earthdata-login.sh` in their own terminal. Never share or commit credentials.
 
-## 4. Roles (as discussed; confirm in decisions.md)
+## 4. Work split: internal data map (team tool, not the product decision)
+
+Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). The internal map is a tool for the team to look at the data; it is **not** the product decision.
+
+| Issues | Area | Who |
+|---|---|---|
+| [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12)–[#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) | Front end (`apps/web/`): setup, base map, NASA GIBS layers, point side panel | **Gabriel (Chaves)** |
+| [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16)–[#18](https://github.com/raviproenca/nether-field-shift-2026/issues/18) | API (`apps/api/`), shared login, deploy | **Ravi**, with AI agents |
+
+- The API **contract (OpenAPI) comes first**, in a small PR, so the front end can build against it (with mocks) right away.
+- The front-end setup (#12) is Gabriel's: the API side does not touch `apps/web/`.
+
+## 5. Roles (as discussed; confirm in decisions.md)
 
 - **Ravi:** Tech Lead; approves and merges every PR.
 - **Duda (Eduarda):** data (sources, organization, analysis).
 - **Chaves (Gabriel):** screens (internal dashboard first).
 - **Requirements and issues:** one person gathers requirements and opens the issues (name to confirm).
 
-## 5. Space Apps rules that matter
+## 6. Space Apps rules that matter
 
 - The idea and decisions are the team's. AI must not come up with the idea.
 - Everything public in English (video may be spoken in Portuguese with English subtitles).
@@ -63,11 +75,11 @@ Earthdata Login: each person runs `scripts/earthdata-login.sh` in their own term
 - Hosting for the demo and page: something that does not expire (GitHub Pages, Cloudflare Pages). Do not host it on trials such as Azure (30 days) or depend on offers that end with the hackathon (Meteomatics).
 - Credit all NASA and third-party data, code and images; mark AI-generated content.
 
-## 6. Global Offers (partner resources, read on Nov 14)
+## 7. Global Offers (partner resources, read on Nov 14)
 
 - **Useful:** Microsoft Planetary Computer (free, no account, STAC: Sentinel-2, Landsat, MODIS); free domain with 1 year of hosting and SSL; Google Cloud US$ 300 for 90 days (asks for a card, no auto-charge).
 - **Risky for the Jan 26, 2027 rule:** Azure (US$ 200 for 30 days), Meteomatics (hackathon only).
 
-## 7. Open questions
+## 8. Open questions
 
 See [open-questions.md](open-questions.md).
