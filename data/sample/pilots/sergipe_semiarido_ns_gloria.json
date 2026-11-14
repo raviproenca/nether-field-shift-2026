@@ -1,0 +1,1753 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at_utc": "2026-11-14T14:52:31Z",
+  "pilot": {
+    "id": "sergipe_semiarido_ns_gloria",
+    "name": "Nossa Senhora da Glória — Alto Sertão (Semiárido)",
+    "zone": "Semiárido",
+    "state": "SE",
+    "point": {
+      "lat": -10.218,
+      "lon": -37.42
+    },
+    "radius_km": 5.0,
+    "bbox": [
+      -37.46564,
+      -10.26292,
+      -37.37436,
+      -10.17308
+    ],
+    "typical_system": "Sorghum / drought-tolerant maize + cowpea (feijão-caupi), forage palm"
+  },
+  "terrain_srtm": {
+    "source": "srtm",
+    "collection": "nasadem",
+    "resolution": "30 m (1 arc-second)",
+    "valid_pixels": 106596,
+    "elevation_min_m": 180.0,
+    "elevation_mean_m": 249.21,
+    "elevation_max_m": 318.0,
+    "elevation_range_m": 138.0,
+    "slope_mean_deg": 4.21,
+    "slope_max_deg": 21.6,
+    "slope_mean_pct": 7.39,
+    "slope_max_pct": 39.59,
+    "slope_class": "gently_undulating",
+    "erosion_risk": "moderate",
+    "contour_planting_recommended": true,
+    "nasa": true,
+    "attribution": "NASA JPL NASADEM Merged DEM Global 1 arc-second v001 (DOI: 10.5067/MEASURES/NASADEM/NASADEM_HGT.001), served by Microsoft Planetary Computer"
+  },
+  "historical_power_fao56": {
+    "source": "power",
+    "nasa": true,
+    "period": {
+      "start": "2025-11-14",
+      "end": "2026-11-09"
+    },
+    "summary_30d": {
+      "days": 30,
+      "precip_mm": 10.2,
+      "et0_fao56_mm": 231.29,
+      "water_balance_mm": -221.09,
+      "aridity_ratio": 0.044,
+      "max_dry_spell_days": 11,
+      "heat_stress_days_ge_34c": 29,
+      "t2m_mean_c": 29.72
+    },
+    "summary_90d": {
+      "days": 90,
+      "precip_mm": 50.28,
+      "et0_fao56_mm": 585.83,
+      "water_balance_mm": -535.55,
+      "aridity_ratio": 0.086,
+      "max_dry_spell_days": 22,
+      "heat_stress_days_ge_34c": 72,
+      "t2m_mean_c": 27.49
+    },
+    "summary_365d": {
+      "days": 359,
+      "precip_mm": 400.68,
+      "et0_fao56_mm": 2069.73,
+      "water_balance_mm": -1669.05,
+      "aridity_ratio": 0.194,
+      "max_dry_spell_days": 49,
+      "heat_stress_days_ge_34c": 218,
+      "t2m_mean_c": 27.17
+    },
+    "monthly_365d": [
+      {
+        "month": "2025-11",
+        "days": 17,
+        "precip_mm": 6.16,
+        "et0_fao56_mm": 129.41,
+        "water_balance_mm": -123.25,
+        "t2m_mean_c": 28.82,
+        "t2m_max_c": 39.88,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2025-12",
+        "days": 31,
+        "precip_mm": 1.54,
+        "et0_fao56_mm": 234.18,
+        "water_balance_mm": -232.64,
+        "t2m_mean_c": 29.07,
+        "t2m_max_c": 40.25,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-01",
+        "days": 31,
+        "precip_mm": 12.87,
+        "et0_fao56_mm": 218.27,
+        "water_balance_mm": -205.4,
+        "t2m_mean_c": 28.98,
+        "t2m_max_c": 39.91,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-02",
+        "days": 28,
+        "precip_mm": 46.1,
+        "et0_fao56_mm": 169.53,
+        "water_balance_mm": -123.43,
+        "t2m_mean_c": 28.33,
+        "t2m_max_c": 39.85,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-03",
+        "days": 31,
+        "precip_mm": 42.04,
+        "et0_fao56_mm": 195.46,
+        "water_balance_mm": -153.42,
+        "t2m_mean_c": 28.61,
+        "t2m_max_c": 39.22,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-04",
+        "days": 30,
+        "precip_mm": 69.33,
+        "et0_fao56_mm": 142.37,
+        "water_balance_mm": -73.04,
+        "t2m_mean_c": 27.14,
+        "t2m_max_c": 36.17,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-05",
+        "days": 31,
+        "precip_mm": 75.76,
+        "et0_fao56_mm": 123.04,
+        "water_balance_mm": -47.28,
+        "t2m_mean_c": 25.47,
+        "t2m_max_c": 33.89,
+        "bare_soil_risk": false
+      },
+      {
+        "month": "2026-06",
+        "days": 30,
+        "precip_mm": 53.7,
+        "et0_fao56_mm": 105.11,
+        "water_balance_mm": -51.41,
+        "t2m_mean_c": 24.65,
+        "t2m_max_c": 34.16,
+        "bare_soil_risk": false
+      },
+      {
+        "month": "2026-07",
+        "days": 31,
+        "precip_mm": 35.68,
+        "et0_fao56_mm": 124.37,
+        "water_balance_mm": -88.69,
+        "t2m_mean_c": 24.02,
+        "t2m_max_c": 35.68,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-08",
+        "days": 31,
+        "precip_mm": 25.6,
+        "et0_fao56_mm": 149.46,
+        "water_balance_mm": -123.86,
+        "t2m_mean_c": 25.03,
+        "t2m_max_c": 35.19,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-09",
+        "days": 29,
+        "precip_mm": 19.08,
+        "et0_fao56_mm": 183.15,
+        "water_balance_mm": -164.07,
+        "t2m_mean_c": 26.9,
+        "t2m_max_c": 38.18,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-10",
+        "days": 31,
+        "precip_mm": 11.29,
+        "et0_fao56_mm": 229.62,
+        "water_balance_mm": -218.33,
+        "t2m_mean_c": 29.04,
+        "t2m_max_c": 42.03,
+        "bare_soil_risk": true
+      },
+      {
+        "month": "2026-11",
+        "days": 8,
+        "precip_mm": 1.53,
+        "et0_fao56_mm": 65.76,
+        "water_balance_mm": -64.23,
+        "t2m_mean_c": 30.22,
+        "t2m_max_c": 42.05,
+        "bare_soil_risk": true
+      }
+    ],
+    "daily_last_90d": [
+      {
+        "time": "2026-08-10",
+        "values": {
+          "T2M": 25.83,
+          "T2M_MAX": 33.8,
+          "T2M_MIN": 20.97,
+          "PRECTOTCORR": 0.34,
+          "ALLSKY_SFC_SW_DWN": 20.59,
+          "RH2M": 69.91,
+          "WS2M": 3.06,
+          "ET0_FAO56": 5.11,
+          "WATER_BALANCE": -4.77
+        }
+      },
+      {
+        "time": "2026-08-11",
+        "values": {
+          "T2M": 24.6,
+          "T2M_MAX": 31.61,
+          "T2M_MIN": 20.64,
+          "PRECTOTCORR": 1.59,
+          "ALLSKY_SFC_SW_DWN": 19.17,
+          "RH2M": 71.83,
+          "WS2M": 3.46,
+          "ET0_FAO56": 4.72,
+          "WATER_BALANCE": -3.13
+        }
+      },
+      {
+        "time": "2026-08-12",
+        "values": {
+          "T2M": 24.28,
+          "T2M_MAX": 31.55,
+          "T2M_MIN": 19.61,
+          "PRECTOTCORR": 2.06,
+          "ALLSKY_SFC_SW_DWN": 16.4,
+          "RH2M": 73.76,
+          "WS2M": 3.2,
+          "ET0_FAO56": 4.15,
+          "WATER_BALANCE": -2.09
+        }
+      },
+      {
+        "time": "2026-08-13",
+        "values": {
+          "T2M": 24.76,
+          "T2M_MAX": 31.95,
+          "T2M_MIN": 20.6,
+          "PRECTOTCORR": 1.84,
+          "ALLSKY_SFC_SW_DWN": 12.66,
+          "RH2M": 76.69,
+          "WS2M": 2.75,
+          "ET0_FAO56": 3.45,
+          "WATER_BALANCE": -1.61
+        }
+      },
+      {
+        "time": "2026-08-14",
+        "values": {
+          "T2M": 24.78,
+          "T2M_MAX": 32.43,
+          "T2M_MIN": 19.86,
+          "PRECTOTCORR": 3.74,
+          "ALLSKY_SFC_SW_DWN": 20.19,
+          "RH2M": 73.91,
+          "WS2M": 2.22,
+          "ET0_FAO56": 4.46,
+          "WATER_BALANCE": -0.72
+        }
+      },
+      {
+        "time": "2026-08-15",
+        "values": {
+          "T2M": 24.67,
+          "T2M_MAX": 32.76,
+          "T2M_MIN": 19.38,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 21.71,
+          "RH2M": 70.72,
+          "WS2M": 3.01,
+          "ET0_FAO56": 5.04,
+          "WATER_BALANCE": -5.02
+        }
+      },
+      {
+        "time": "2026-08-16",
+        "values": {
+          "T2M": 24.61,
+          "T2M_MAX": 31.46,
+          "T2M_MIN": 19.7,
+          "PRECTOTCORR": 0.56,
+          "ALLSKY_SFC_SW_DWN": 18.25,
+          "RH2M": 73.01,
+          "WS2M": 3.34,
+          "ET0_FAO56": 4.47,
+          "WATER_BALANCE": -3.91
+        }
+      },
+      {
+        "time": "2026-08-17",
+        "values": {
+          "T2M": 24.53,
+          "T2M_MAX": 31.51,
+          "T2M_MIN": 20.34,
+          "PRECTOTCORR": 3.07,
+          "ALLSKY_SFC_SW_DWN": 19.72,
+          "RH2M": 76.32,
+          "WS2M": 3.61,
+          "ET0_FAO56": 4.55,
+          "WATER_BALANCE": -1.48
+        }
+      },
+      {
+        "time": "2026-08-18",
+        "values": {
+          "T2M": 24.13,
+          "T2M_MAX": 30.83,
+          "T2M_MIN": 20.24,
+          "PRECTOTCORR": 2.78,
+          "ALLSKY_SFC_SW_DWN": 14.58,
+          "RH2M": 75.24,
+          "WS2M": 3.63,
+          "ET0_FAO56": 3.93,
+          "WATER_BALANCE": -1.15
+        }
+      },
+      {
+        "time": "2026-08-19",
+        "values": {
+          "T2M": 24.39,
+          "T2M_MAX": 32.24,
+          "T2M_MIN": 19.33,
+          "PRECTOTCORR": 0.23,
+          "ALLSKY_SFC_SW_DWN": 16.7,
+          "RH2M": 69.82,
+          "WS2M": 3.04,
+          "ET0_FAO56": 4.43,
+          "WATER_BALANCE": -4.2
+        }
+      },
+      {
+        "time": "2026-08-20",
+        "values": {
+          "T2M": 23.45,
+          "T2M_MAX": 31.58,
+          "T2M_MIN": 17.79,
+          "PRECTOTCORR": 0.31,
+          "ALLSKY_SFC_SW_DWN": 18.26,
+          "RH2M": 70.97,
+          "WS2M": 2.93,
+          "ET0_FAO56": 4.42,
+          "WATER_BALANCE": -4.11
+        }
+      },
+      {
+        "time": "2026-08-21",
+        "values": {
+          "T2M": 24.05,
+          "T2M_MAX": 33.12,
+          "T2M_MIN": 16.3,
+          "PRECTOTCORR": 0.04,
+          "ALLSKY_SFC_SW_DWN": 16.85,
+          "RH2M": 64.27,
+          "WS2M": 2.08,
+          "ET0_FAO56": 4.3,
+          "WATER_BALANCE": -4.26
+        }
+      },
+      {
+        "time": "2026-08-22",
+        "values": {
+          "T2M": 25.51,
+          "T2M_MAX": 34.99,
+          "T2M_MIN": 17.21,
+          "PRECTOTCORR": 0.03,
+          "ALLSKY_SFC_SW_DWN": 23.6,
+          "RH2M": 61.25,
+          "WS2M": 1.75,
+          "ET0_FAO56": 5.32,
+          "WATER_BALANCE": -5.29
+        }
+      },
+      {
+        "time": "2026-08-23",
+        "values": {
+          "T2M": 26.18,
+          "T2M_MAX": 34.35,
+          "T2M_MIN": 20.85,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 19.84,
+          "RH2M": 66.86,
+          "WS2M": 3.18,
+          "ET0_FAO56": 5.34,
+          "WATER_BALANCE": -5.34
+        }
+      },
+      {
+        "time": "2026-08-24",
+        "values": {
+          "T2M": 25.15,
+          "T2M_MAX": 33.19,
+          "T2M_MIN": 19.86,
+          "PRECTOTCORR": 0.03,
+          "ALLSKY_SFC_SW_DWN": 20.75,
+          "RH2M": 69.16,
+          "WS2M": 3.56,
+          "ET0_FAO56": 5.28,
+          "WATER_BALANCE": -5.25
+        }
+      },
+      {
+        "time": "2026-08-25",
+        "values": {
+          "T2M": 24.8,
+          "T2M_MAX": 32.39,
+          "T2M_MIN": 19.89,
+          "PRECTOTCORR": 0.09,
+          "ALLSKY_SFC_SW_DWN": 21.7,
+          "RH2M": 64.31,
+          "WS2M": 3.6,
+          "ET0_FAO56": 5.63,
+          "WATER_BALANCE": -5.54
+        }
+      },
+      {
+        "time": "2026-08-26",
+        "values": {
+          "T2M": 25.79,
+          "T2M_MAX": 34.45,
+          "T2M_MIN": 19.54,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 20.24,
+          "RH2M": 60.41,
+          "WS2M": 2.87,
+          "ET0_FAO56": 5.57,
+          "WATER_BALANCE": -5.57
+        }
+      },
+      {
+        "time": "2026-08-27",
+        "values": {
+          "T2M": 26.22,
+          "T2M_MAX": 35.19,
+          "T2M_MIN": 19.38,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 20.88,
+          "RH2M": 65.79,
+          "WS2M": 3.03,
+          "ET0_FAO56": 5.52,
+          "WATER_BALANCE": -5.52
+        }
+      },
+      {
+        "time": "2026-08-28",
+        "values": {
+          "T2M": 26.23,
+          "T2M_MAX": 34.62,
+          "T2M_MIN": 20.71,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 21.17,
+          "RH2M": 62.52,
+          "WS2M": 3.45,
+          "ET0_FAO56": 5.93,
+          "WATER_BALANCE": -5.93
+        }
+      },
+      {
+        "time": "2026-08-29",
+        "values": {
+          "T2M": 25.58,
+          "T2M_MAX": 34.37,
+          "T2M_MIN": 18.92,
+          "PRECTOTCORR": 0.04,
+          "ALLSKY_SFC_SW_DWN": 20.9,
+          "RH2M": 64.91,
+          "WS2M": 3.2,
+          "ET0_FAO56": 5.54,
+          "WATER_BALANCE": -5.5
+        }
+      },
+      {
+        "time": "2026-08-30",
+        "values": {
+          "T2M": 26.01,
+          "T2M_MAX": 35.06,
+          "T2M_MIN": 18.89,
+          "PRECTOTCORR": 0.29,
+          "ALLSKY_SFC_SW_DWN": 18.26,
+          "RH2M": 66.49,
+          "WS2M": 2.99,
+          "ET0_FAO56": 5.09,
+          "WATER_BALANCE": -4.8
+        }
+      },
+      {
+        "time": "2026-08-31",
+        "values": {
+          "T2M": 26.62,
+          "T2M_MAX": 34.18,
+          "T2M_MIN": 21.72,
+          "PRECTOTCORR": 1.32,
+          "ALLSKY_SFC_SW_DWN": 17.55,
+          "RH2M": 68.87,
+          "WS2M": 3.47,
+          "ET0_FAO56": 5.07,
+          "WATER_BALANCE": -3.75
+        }
+      },
+      {
+        "time": "2026-09-01",
+        "values": {
+          "T2M": 26.96,
+          "T2M_MAX": 35.45,
+          "T2M_MIN": 20.36,
+          "PRECTOTCORR": 0.11,
+          "ALLSKY_SFC_SW_DWN": 22.1,
+          "RH2M": 66.71,
+          "WS2M": 3.02,
+          "ET0_FAO56": 5.72,
+          "WATER_BALANCE": -5.61
+        }
+      },
+      {
+        "time": "2026-09-02",
+        "values": {
+          "T2M": 28.82,
+          "T2M_MAX": 38.18,
+          "T2M_MIN": 22.12,
+          "PRECTOTCORR": 0.08,
+          "ALLSKY_SFC_SW_DWN": 24.06,
+          "RH2M": 61.17,
+          "WS2M": 2.86,
+          "ET0_FAO56": 6.63,
+          "WATER_BALANCE": -6.55
+        }
+      },
+      {
+        "time": "2026-09-03",
+        "values": {
+          "T2M": 27.9,
+          "T2M_MAX": 36.94,
+          "T2M_MIN": 21.23,
+          "PRECTOTCORR": 0.1,
+          "ALLSKY_SFC_SW_DWN": 20.46,
+          "RH2M": 66.9,
+          "WS2M": 3.66,
+          "ET0_FAO56": 5.96,
+          "WATER_BALANCE": -5.86
+        }
+      },
+      {
+        "time": "2026-09-04",
+        "values": {
+          "T2M": 27.62,
+          "T2M_MAX": 36.53,
+          "T2M_MIN": 21.95,
+          "PRECTOTCORR": 0.55,
+          "ALLSKY_SFC_SW_DWN": 23.91,
+          "RH2M": 63.75,
+          "WS2M": 3.28,
+          "ET0_FAO56": 6.47,
+          "WATER_BALANCE": -5.92
+        }
+      },
+      {
+        "time": "2026-09-05",
+        "values": {
+          "T2M": 27.34,
+          "T2M_MAX": 36.08,
+          "T2M_MIN": 21.4,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 24.38,
+          "RH2M": 61.17,
+          "WS2M": 3.37,
+          "ET0_FAO56": 6.64,
+          "WATER_BALANCE": -6.63
+        }
+      },
+      {
+        "time": "2026-09-06",
+        "values": {
+          "T2M": 28.07,
+          "T2M_MAX": 37.43,
+          "T2M_MIN": 21.23,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 24.51,
+          "RH2M": 60.76,
+          "WS2M": 2.96,
+          "ET0_FAO56": 6.65,
+          "WATER_BALANCE": -6.65
+        }
+      },
+      {
+        "time": "2026-09-08",
+        "values": {
+          "T2M": 26.72,
+          "T2M_MAX": 34.48,
+          "T2M_MIN": 21.86,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 24.26,
+          "RH2M": 57.42,
+          "WS2M": 4.06,
+          "ET0_FAO56": 7.02,
+          "WATER_BALANCE": -7.0
+        }
+      },
+      {
+        "time": "2026-09-09",
+        "values": {
+          "T2M": 26.72,
+          "T2M_MAX": 35.33,
+          "T2M_MIN": 20.19,
+          "PRECTOTCORR": 0.19,
+          "ALLSKY_SFC_SW_DWN": 22.3,
+          "RH2M": 55.81,
+          "WS2M": 3.51,
+          "ET0_FAO56": 6.63,
+          "WATER_BALANCE": -6.45
+        }
+      },
+      {
+        "time": "2026-09-10",
+        "values": {
+          "T2M": 26.62,
+          "T2M_MAX": 34.97,
+          "T2M_MIN": 21.25,
+          "PRECTOTCORR": 0.23,
+          "ALLSKY_SFC_SW_DWN": 24.67,
+          "RH2M": 63.03,
+          "WS2M": 3.71,
+          "ET0_FAO56": 6.59,
+          "WATER_BALANCE": -6.36
+        }
+      },
+      {
+        "time": "2026-09-11",
+        "values": {
+          "T2M": 26.6,
+          "T2M_MAX": 35.03,
+          "T2M_MIN": 20.57,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 21.27,
+          "RH2M": 59.25,
+          "WS2M": 3.68,
+          "ET0_FAO56": 6.36,
+          "WATER_BALANCE": -6.35
+        }
+      },
+      {
+        "time": "2026-09-12",
+        "values": {
+          "T2M": 27.37,
+          "T2M_MAX": 36.4,
+          "T2M_MIN": 21.39,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 21.38,
+          "RH2M": 62.82,
+          "WS2M": 3.62,
+          "ET0_FAO56": 6.32,
+          "WATER_BALANCE": -6.3
+        }
+      },
+      {
+        "time": "2026-09-13",
+        "values": {
+          "T2M": 26.78,
+          "T2M_MAX": 36.04,
+          "T2M_MIN": 20.99,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 24.99,
+          "RH2M": 58.68,
+          "WS2M": 3.54,
+          "ET0_FAO56": 6.97,
+          "WATER_BALANCE": -6.97
+        }
+      },
+      {
+        "time": "2026-09-14",
+        "values": {
+          "T2M": 25.9,
+          "T2M_MAX": 34.77,
+          "T2M_MIN": 19.95,
+          "PRECTOTCORR": 0.31,
+          "ALLSKY_SFC_SW_DWN": 22.7,
+          "RH2M": 59.21,
+          "WS2M": 3.35,
+          "ET0_FAO56": 6.33,
+          "WATER_BALANCE": -6.02
+        }
+      },
+      {
+        "time": "2026-09-15",
+        "values": {
+          "T2M": 26.33,
+          "T2M_MAX": 35.84,
+          "T2M_MIN": 18.89,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 24.39,
+          "RH2M": 59.71,
+          "WS2M": 3.19,
+          "ET0_FAO56": 6.54,
+          "WATER_BALANCE": -6.52
+        }
+      },
+      {
+        "time": "2026-09-16",
+        "values": {
+          "T2M": 26.79,
+          "T2M_MAX": 36.61,
+          "T2M_MIN": 20.55,
+          "PRECTOTCORR": 0.48,
+          "ALLSKY_SFC_SW_DWN": 25.41,
+          "RH2M": 63.96,
+          "WS2M": 3.42,
+          "ET0_FAO56": 6.71,
+          "WATER_BALANCE": -6.23
+        }
+      },
+      {
+        "time": "2026-09-17",
+        "values": {
+          "T2M": 26.53,
+          "T2M_MAX": 35.09,
+          "T2M_MIN": 20.81,
+          "PRECTOTCORR": 3.9,
+          "ALLSKY_SFC_SW_DWN": 17.62,
+          "RH2M": 69.05,
+          "WS2M": 3.99,
+          "ET0_FAO56": 5.35,
+          "WATER_BALANCE": -1.45
+        }
+      },
+      {
+        "time": "2026-09-18",
+        "values": {
+          "T2M": 25.78,
+          "T2M_MAX": 32.85,
+          "T2M_MIN": 21.62,
+          "PRECTOTCORR": 5.32,
+          "ALLSKY_SFC_SW_DWN": 22.13,
+          "RH2M": 71.15,
+          "WS2M": 4.22,
+          "ET0_FAO56": 5.65,
+          "WATER_BALANCE": -0.33
+        }
+      },
+      {
+        "time": "2026-09-19",
+        "values": {
+          "T2M": 25.47,
+          "T2M_MAX": 32.91,
+          "T2M_MIN": 20.71,
+          "PRECTOTCORR": 1.46,
+          "ALLSKY_SFC_SW_DWN": 17.8,
+          "RH2M": 70.71,
+          "WS2M": 3.98,
+          "ET0_FAO56": 5.02,
+          "WATER_BALANCE": -3.56
+        }
+      },
+      {
+        "time": "2026-09-20",
+        "values": {
+          "T2M": 25.74,
+          "T2M_MAX": 33.45,
+          "T2M_MIN": 20.47,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 20.01,
+          "RH2M": 65.8,
+          "WS2M": 3.56,
+          "ET0_FAO56": 5.56,
+          "WATER_BALANCE": -5.55
+        }
+      },
+      {
+        "time": "2026-09-21",
+        "values": {
+          "T2M": 26.06,
+          "T2M_MAX": 34.51,
+          "T2M_MIN": 20.38,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 23.52,
+          "RH2M": 64.04,
+          "WS2M": 3.19,
+          "ET0_FAO56": 6.1,
+          "WATER_BALANCE": -6.1
+        }
+      },
+      {
+        "time": "2026-09-22",
+        "values": {
+          "T2M": 26.58,
+          "T2M_MAX": 35.61,
+          "T2M_MIN": 20.16,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 24.19,
+          "RH2M": 60.81,
+          "WS2M": 2.93,
+          "ET0_FAO56": 6.38,
+          "WATER_BALANCE": -6.38
+        }
+      },
+      {
+        "time": "2026-09-23",
+        "values": {
+          "T2M": 27.52,
+          "T2M_MAX": 37.78,
+          "T2M_MIN": 19.2,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 25.36,
+          "RH2M": 58.4,
+          "WS2M": 2.57,
+          "ET0_FAO56": 6.7,
+          "WATER_BALANCE": -6.7
+        }
+      },
+      {
+        "time": "2026-09-24",
+        "values": {
+          "T2M": 27.02,
+          "T2M_MAX": 36.14,
+          "T2M_MIN": 21.12,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 21.7,
+          "RH2M": 63.5,
+          "WS2M": 3.67,
+          "ET0_FAO56": 6.33,
+          "WATER_BALANCE": -6.32
+        }
+      },
+      {
+        "time": "2026-09-25",
+        "values": {
+          "T2M": 26.66,
+          "T2M_MAX": 35.68,
+          "T2M_MIN": 20.68,
+          "PRECTOTCORR": 0.17,
+          "ALLSKY_SFC_SW_DWN": 19.94,
+          "RH2M": 64.36,
+          "WS2M": 3.4,
+          "ET0_FAO56": 5.84,
+          "WATER_BALANCE": -5.67
+        }
+      },
+      {
+        "time": "2026-09-26",
+        "values": {
+          "T2M": 26.98,
+          "T2M_MAX": 36.03,
+          "T2M_MIN": 20.82,
+          "PRECTOTCORR": 0.3,
+          "ALLSKY_SFC_SW_DWN": 24.06,
+          "RH2M": 62.79,
+          "WS2M": 3.49,
+          "ET0_FAO56": 6.6,
+          "WATER_BALANCE": -6.3
+        }
+      },
+      {
+        "time": "2026-09-27",
+        "values": {
+          "T2M": 26.66,
+          "T2M_MAX": 35.25,
+          "T2M_MIN": 21.5,
+          "PRECTOTCORR": 1.27,
+          "ALLSKY_SFC_SW_DWN": 24.76,
+          "RH2M": 67.24,
+          "WS2M": 3.73,
+          "ET0_FAO56": 6.44,
+          "WATER_BALANCE": -5.17
+        }
+      },
+      {
+        "time": "2026-09-28",
+        "values": {
+          "T2M": 26.93,
+          "T2M_MAX": 35.37,
+          "T2M_MIN": 21.28,
+          "PRECTOTCORR": 4.31,
+          "ALLSKY_SFC_SW_DWN": 22.36,
+          "RH2M": 67.45,
+          "WS2M": 3.33,
+          "ET0_FAO56": 5.96,
+          "WATER_BALANCE": -1.65
+        }
+      },
+      {
+        "time": "2026-09-29",
+        "values": {
+          "T2M": 27.73,
+          "T2M_MAX": 36.34,
+          "T2M_MIN": 22.14,
+          "PRECTOTCORR": 0.2,
+          "ALLSKY_SFC_SW_DWN": 22.38,
+          "RH2M": 64.34,
+          "WS2M": 3.54,
+          "ET0_FAO56": 6.4,
+          "WATER_BALANCE": -6.2
+        }
+      },
+      {
+        "time": "2026-09-30",
+        "values": {
+          "T2M": 27.88,
+          "T2M_MAX": 37.41,
+          "T2M_MIN": 21.55,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.32,
+          "RH2M": 61.47,
+          "WS2M": 3.57,
+          "ET0_FAO56": 7.27,
+          "WATER_BALANCE": -7.27
+        }
+      },
+      {
+        "time": "2026-10-01",
+        "values": {
+          "T2M": 28.87,
+          "T2M_MAX": 37.75,
+          "T2M_MIN": 23.33,
+          "PRECTOTCORR": 0.3,
+          "ALLSKY_SFC_SW_DWN": 26.56,
+          "RH2M": 58.73,
+          "WS2M": 3.35,
+          "ET0_FAO56": 7.51,
+          "WATER_BALANCE": -7.21
+        }
+      },
+      {
+        "time": "2026-10-02",
+        "values": {
+          "T2M": 29.11,
+          "T2M_MAX": 38.23,
+          "T2M_MIN": 22.92,
+          "PRECTOTCORR": 0.03,
+          "ALLSKY_SFC_SW_DWN": 26.97,
+          "RH2M": 53.79,
+          "WS2M": 3.26,
+          "ET0_FAO56": 7.85,
+          "WATER_BALANCE": -7.82
+        }
+      },
+      {
+        "time": "2026-10-03",
+        "values": {
+          "T2M": 28.27,
+          "T2M_MAX": 37.34,
+          "T2M_MIN": 21.5,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 25.13,
+          "RH2M": 58.84,
+          "WS2M": 3.71,
+          "ET0_FAO56": 7.34,
+          "WATER_BALANCE": -7.32
+        }
+      },
+      {
+        "time": "2026-10-04",
+        "values": {
+          "T2M": 27.52,
+          "T2M_MAX": 35.18,
+          "T2M_MIN": 23.15,
+          "PRECTOTCORR": 0.06,
+          "ALLSKY_SFC_SW_DWN": 24.93,
+          "RH2M": 54.71,
+          "WS2M": 4.12,
+          "ET0_FAO56": 7.6,
+          "WATER_BALANCE": -7.54
+        }
+      },
+      {
+        "time": "2026-10-05",
+        "values": {
+          "T2M": 26.68,
+          "T2M_MAX": 34.92,
+          "T2M_MIN": 20.55,
+          "PRECTOTCORR": 0.75,
+          "ALLSKY_SFC_SW_DWN": 23.71,
+          "RH2M": 61.95,
+          "WS2M": 3.22,
+          "ET0_FAO56": 6.36,
+          "WATER_BALANCE": -5.61
+        }
+      },
+      {
+        "time": "2026-10-06",
+        "values": {
+          "T2M": 27.08,
+          "T2M_MAX": 34.56,
+          "T2M_MIN": 21.57,
+          "PRECTOTCORR": 0.78,
+          "ALLSKY_SFC_SW_DWN": 21.89,
+          "RH2M": 62.52,
+          "WS2M": 3.48,
+          "ET0_FAO56": 6.2,
+          "WATER_BALANCE": -5.42
+        }
+      },
+      {
+        "time": "2026-10-07",
+        "values": {
+          "T2M": 27.25,
+          "T2M_MAX": 36.16,
+          "T2M_MIN": 21.74,
+          "PRECTOTCORR": 0.07,
+          "ALLSKY_SFC_SW_DWN": 26.57,
+          "RH2M": 58.71,
+          "WS2M": 3.4,
+          "ET0_FAO56": 7.25,
+          "WATER_BALANCE": -7.18
+        }
+      },
+      {
+        "time": "2026-10-08",
+        "values": {
+          "T2M": 27.53,
+          "T2M_MAX": 36.08,
+          "T2M_MIN": 21.81,
+          "PRECTOTCORR": 0.32,
+          "ALLSKY_SFC_SW_DWN": 25.69,
+          "RH2M": 58.98,
+          "WS2M": 3.12,
+          "ET0_FAO56": 6.97,
+          "WATER_BALANCE": -6.65
+        }
+      },
+      {
+        "time": "2026-10-09",
+        "values": {
+          "T2M": 27.99,
+          "T2M_MAX": 36.4,
+          "T2M_MIN": 23.16,
+          "PRECTOTCORR": 0.29,
+          "ALLSKY_SFC_SW_DWN": 22.06,
+          "RH2M": 56.0,
+          "WS2M": 3.58,
+          "ET0_FAO56": 7.01,
+          "WATER_BALANCE": -6.72
+        }
+      },
+      {
+        "time": "2026-10-10",
+        "values": {
+          "T2M": 27.33,
+          "T2M_MAX": 36.34,
+          "T2M_MIN": 20.25,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.51,
+          "RH2M": 54.54,
+          "WS2M": 3.1,
+          "ET0_FAO56": 7.27,
+          "WATER_BALANCE": -7.27
+        }
+      },
+      {
+        "time": "2026-10-11",
+        "values": {
+          "T2M": 27.35,
+          "T2M_MAX": 36.58,
+          "T2M_MIN": 20.26,
+          "PRECTOTCORR": 0.31,
+          "ALLSKY_SFC_SW_DWN": 22.76,
+          "RH2M": 58.5,
+          "WS2M": 3.15,
+          "ET0_FAO56": 6.6,
+          "WATER_BALANCE": -6.29
+        }
+      },
+      {
+        "time": "2026-10-12",
+        "values": {
+          "T2M": 27.75,
+          "T2M_MAX": 36.78,
+          "T2M_MIN": 20.92,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 23.05,
+          "RH2M": 56.36,
+          "WS2M": 3.45,
+          "ET0_FAO56": 6.99,
+          "WATER_BALANCE": -6.97
+        }
+      },
+      {
+        "time": "2026-10-13",
+        "values": {
+          "T2M": 27.97,
+          "T2M_MAX": 37.34,
+          "T2M_MIN": 20.52,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 25.45,
+          "RH2M": 56.96,
+          "WS2M": 3.42,
+          "ET0_FAO56": 7.33,
+          "WATER_BALANCE": -7.33
+        }
+      },
+      {
+        "time": "2026-10-14",
+        "values": {
+          "T2M": 28.9,
+          "T2M_MAX": 38.49,
+          "T2M_MIN": 21.18,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.99,
+          "RH2M": 53.14,
+          "WS2M": 2.98,
+          "ET0_FAO56": 7.69,
+          "WATER_BALANCE": -7.69
+        }
+      },
+      {
+        "time": "2026-10-15",
+        "values": {
+          "T2M": 30.02,
+          "T2M_MAX": 39.78,
+          "T2M_MIN": 22.7,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 27.2,
+          "RH2M": 52.22,
+          "WS2M": 2.98,
+          "ET0_FAO56": 8.03,
+          "WATER_BALANCE": -8.02
+        }
+      },
+      {
+        "time": "2026-10-16",
+        "values": {
+          "T2M": 30.73,
+          "T2M_MAX": 40.81,
+          "T2M_MIN": 23.23,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.9,
+          "RH2M": 52.17,
+          "WS2M": 3.21,
+          "ET0_FAO56": 8.34,
+          "WATER_BALANCE": -8.34
+        }
+      },
+      {
+        "time": "2026-10-17",
+        "values": {
+          "T2M": 30.81,
+          "T2M_MAX": 40.12,
+          "T2M_MIN": 23.44,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 27.08,
+          "RH2M": 52.61,
+          "WS2M": 3.33,
+          "ET0_FAO56": 8.33,
+          "WATER_BALANCE": -8.33
+        }
+      },
+      {
+        "time": "2026-10-18",
+        "values": {
+          "T2M": 31.62,
+          "T2M_MAX": 40.8,
+          "T2M_MIN": 24.79,
+          "PRECTOTCORR": 0.06,
+          "ALLSKY_SFC_SW_DWN": 22.81,
+          "RH2M": 47.41,
+          "WS2M": 2.97,
+          "ET0_FAO56": 7.86,
+          "WATER_BALANCE": -7.8
+        }
+      },
+      {
+        "time": "2026-10-19",
+        "values": {
+          "T2M": 31.3,
+          "T2M_MAX": 40.25,
+          "T2M_MIN": 24.51,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 22.56,
+          "RH2M": 50.59,
+          "WS2M": 3.2,
+          "ET0_FAO56": 7.75,
+          "WATER_BALANCE": -7.75
+        }
+      },
+      {
+        "time": "2026-10-20",
+        "values": {
+          "T2M": 29.31,
+          "T2M_MAX": 38.68,
+          "T2M_MIN": 23.34,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 25.68,
+          "RH2M": 54.94,
+          "WS2M": 4.19,
+          "ET0_FAO56": 8.29,
+          "WATER_BALANCE": -8.29
+        }
+      },
+      {
+        "time": "2026-10-21",
+        "values": {
+          "T2M": 28.15,
+          "T2M_MAX": 35.93,
+          "T2M_MIN": 23.74,
+          "PRECTOTCORR": 1.0,
+          "ALLSKY_SFC_SW_DWN": 22.7,
+          "RH2M": 61.6,
+          "WS2M": 4.1,
+          "ET0_FAO56": 6.96,
+          "WATER_BALANCE": -5.96
+        }
+      },
+      {
+        "time": "2026-10-22",
+        "values": {
+          "T2M": 27.51,
+          "T2M_MAX": 33.03,
+          "T2M_MIN": 23.65,
+          "PRECTOTCORR": 2.69,
+          "ALLSKY_SFC_SW_DWN": 19.86,
+          "RH2M": 65.74,
+          "WS2M": 3.78,
+          "ET0_FAO56": 5.8,
+          "WATER_BALANCE": -3.11
+        }
+      },
+      {
+        "time": "2026-10-23",
+        "values": {
+          "T2M": 28.5,
+          "T2M_MAX": 36.16,
+          "T2M_MIN": 23.36,
+          "PRECTOTCORR": 1.34,
+          "ALLSKY_SFC_SW_DWN": 23.46,
+          "RH2M": 63.4,
+          "WS2M": 3.6,
+          "ET0_FAO56": 6.73,
+          "WATER_BALANCE": -5.39
+        }
+      },
+      {
+        "time": "2026-10-24",
+        "values": {
+          "T2M": 28.71,
+          "T2M_MAX": 37.89,
+          "T2M_MIN": 21.9,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 25.81,
+          "RH2M": 59.24,
+          "WS2M": 3.33,
+          "ET0_FAO56": 7.35,
+          "WATER_BALANCE": -7.33
+        }
+      },
+      {
+        "time": "2026-10-25",
+        "values": {
+          "T2M": 30.41,
+          "T2M_MAX": 39.93,
+          "T2M_MIN": 22.03,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.86,
+          "RH2M": 51.64,
+          "WS2M": 2.52,
+          "ET0_FAO56": 7.66,
+          "WATER_BALANCE": -7.66
+        }
+      },
+      {
+        "time": "2026-10-26",
+        "values": {
+          "T2M": 33.0,
+          "T2M_MAX": 41.88,
+          "T2M_MIN": 24.99,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 23.97,
+          "RH2M": 44.69,
+          "WS2M": 2.66,
+          "ET0_FAO56": 8.04,
+          "WATER_BALANCE": -8.04
+        }
+      },
+      {
+        "time": "2026-10-27",
+        "values": {
+          "T2M": 32.46,
+          "T2M_MAX": 42.03,
+          "T2M_MIN": 26.09,
+          "PRECTOTCORR": 1.79,
+          "ALLSKY_SFC_SW_DWN": 23.9,
+          "RH2M": 47.3,
+          "WS2M": 3.41,
+          "ET0_FAO56": 8.67,
+          "WATER_BALANCE": -6.88
+        }
+      },
+      {
+        "time": "2026-10-28",
+        "values": {
+          "T2M": 29.54,
+          "T2M_MAX": 37.64,
+          "T2M_MIN": 24.66,
+          "PRECTOTCORR": 1.14,
+          "ALLSKY_SFC_SW_DWN": 22.41,
+          "RH2M": 56.75,
+          "WS2M": 3.92,
+          "ET0_FAO56": 7.47,
+          "WATER_BALANCE": -6.33
+        }
+      },
+      {
+        "time": "2026-10-29",
+        "values": {
+          "T2M": 28.97,
+          "T2M_MAX": 37.73,
+          "T2M_MIN": 22.89,
+          "PRECTOTCORR": 0.22,
+          "ALLSKY_SFC_SW_DWN": 24.67,
+          "RH2M": 59.72,
+          "WS2M": 3.2,
+          "ET0_FAO56": 7.12,
+          "WATER_BALANCE": -6.9
+        }
+      },
+      {
+        "time": "2026-10-30",
+        "values": {
+          "T2M": 29.32,
+          "T2M_MAX": 38.11,
+          "T2M_MIN": 23.63,
+          "PRECTOTCORR": 0.07,
+          "ALLSKY_SFC_SW_DWN": 25.42,
+          "RH2M": 56.17,
+          "WS2M": 3.17,
+          "ET0_FAO56": 7.51,
+          "WATER_BALANCE": -7.44
+        }
+      },
+      {
+        "time": "2026-10-31",
+        "values": {
+          "T2M": 30.3,
+          "T2M_MAX": 39.63,
+          "T2M_MIN": 22.92,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 25.3,
+          "RH2M": 52.91,
+          "WS2M": 3.02,
+          "ET0_FAO56": 7.75,
+          "WATER_BALANCE": -7.75
+        }
+      },
+      {
+        "time": "2026-11-01",
+        "values": {
+          "T2M": 30.1,
+          "T2M_MAX": 39.66,
+          "T2M_MIN": 24.34,
+          "PRECTOTCORR": 0.02,
+          "ALLSKY_SFC_SW_DWN": 27.02,
+          "RH2M": 55.65,
+          "WS2M": 3.84,
+          "ET0_FAO56": 8.45,
+          "WATER_BALANCE": -8.43
+        }
+      },
+      {
+        "time": "2026-11-02",
+        "values": {
+          "T2M": 29.56,
+          "T2M_MAX": 37.96,
+          "T2M_MIN": 24.48,
+          "PRECTOTCORR": 0.35,
+          "ALLSKY_SFC_SW_DWN": 25.7,
+          "RH2M": 56.51,
+          "WS2M": 4.2,
+          "ET0_FAO56": 8.15,
+          "WATER_BALANCE": -7.8
+        }
+      },
+      {
+        "time": "2026-11-03",
+        "values": {
+          "T2M": 29.36,
+          "T2M_MAX": 37.7,
+          "T2M_MIN": 23.96,
+          "PRECTOTCORR": 0.3,
+          "ALLSKY_SFC_SW_DWN": 24.9,
+          "RH2M": 58.56,
+          "WS2M": 3.62,
+          "ET0_FAO56": 7.51,
+          "WATER_BALANCE": -7.21
+        }
+      },
+      {
+        "time": "2026-11-04",
+        "values": {
+          "T2M": 29.97,
+          "T2M_MAX": 39.09,
+          "T2M_MIN": 23.41,
+          "PRECTOTCORR": 0.04,
+          "ALLSKY_SFC_SW_DWN": 26.11,
+          "RH2M": 53.22,
+          "WS2M": 3.52,
+          "ET0_FAO56": 8.14,
+          "WATER_BALANCE": -8.1
+        }
+      },
+      {
+        "time": "2026-11-06",
+        "values": {
+          "T2M": 30.1,
+          "T2M_MAX": 39.59,
+          "T2M_MIN": 22.19,
+          "PRECTOTCORR": 0.0,
+          "ALLSKY_SFC_SW_DWN": 26.76,
+          "RH2M": 54.25,
+          "WS2M": 3.61,
+          "ET0_FAO56": 8.25,
+          "WATER_BALANCE": -8.25
+        }
+      },
+      {
+        "time": "2026-11-07",
+        "values": {
+          "T2M": 30.25,
+          "T2M_MAX": 39.51,
+          "T2M_MIN": 23.9,
+          "PRECTOTCORR": 0.03,
+          "ALLSKY_SFC_SW_DWN": 27.98,
+          "RH2M": 54.47,
+          "WS2M": 3.71,
+          "ET0_FAO56": 8.55,
+          "WATER_BALANCE": -8.52
+        }
+      },
+      {
+        "time": "2026-11-08",
+        "values": {
+          "T2M": 31.01,
+          "T2M_MAX": 40.64,
+          "T2M_MIN": 22.86,
+          "PRECTOTCORR": 0.01,
+          "ALLSKY_SFC_SW_DWN": 27.86,
+          "RH2M": 52.3,
+          "WS2M": 2.68,
+          "ET0_FAO56": 8.06,
+          "WATER_BALANCE": -8.05
+        }
+      },
+      {
+        "time": "2026-11-09",
+        "values": {
+          "T2M": 31.38,
+          "T2M_MAX": 42.05,
+          "T2M_MIN": 24.57,
+          "PRECTOTCORR": 0.78,
+          "ALLSKY_SFC_SW_DWN": 26.94,
+          "RH2M": 54.27,
+          "WS2M": 3.41,
+          "ET0_FAO56": 8.64,
+          "WATER_BALANCE": -7.86
+        }
+      }
+    ],
+    "attribution": "NASA POWER API (MERRA-2 + CERES SYN1deg), FAO-56 Penman-Monteith ET0"
+  },
+  "forecast_open_meteo": {
+    "source": "open-meteo",
+    "model": "best_match",
+    "nasa": false,
+    "notice": "Weather forecast from Open-Meteo (ECMWF/GFS), not NASA satellite observations.",
+    "attribution": "Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS), CC BY 4.0 (https://open-meteo.com/)",
+    "variables": [
+      {
+        "name": "temperature_2m_max",
+        "long_name": "Maximum air temperature at 2 m",
+        "unit": "°C"
+      },
+      {
+        "name": "temperature_2m_min",
+        "long_name": "Minimum air temperature at 2 m",
+        "unit": "°C"
+      },
+      {
+        "name": "precipitation_sum",
+        "long_name": "Daily precipitation sum",
+        "unit": "mm/day"
+      },
+      {
+        "name": "precipitation_probability_max",
+        "long_name": "Maximum daily precipitation probability",
+        "unit": "%"
+      },
+      {
+        "name": "et0_fao_evapotranspiration",
+        "long_name": "FAO-56 reference evapotranspiration (ET0)",
+        "unit": "mm/day"
+      },
+      {
+        "name": "shortwave_radiation_sum",
+        "long_name": "Daily shortwave solar radiation sum",
+        "unit": "MJ/m²/day"
+      },
+      {
+        "name": "wind_speed_10m_max",
+        "long_name": "Maximum wind speed at 10 m",
+        "unit": "km/h"
+      }
+    ],
+    "point": {
+      "lat": -10.218,
+      "lon": -37.42
+    },
+    "period": {
+      "start": "2026-11-14",
+      "end": "2026-11-28"
+    },
+    "cached": false,
+    "series": [
+      {
+        "time": "2026-11-14",
+        "values": {
+          "temperature_2m_max": 35.5,
+          "temperature_2m_min": 22.9,
+          "precipitation_sum": 0.3,
+          "precipitation_probability_max": 4.0,
+          "et0_fao_evapotranspiration": 6.67,
+          "shortwave_radiation_sum": 25.56,
+          "wind_speed_10m_max": 25.7
+        }
+      },
+      {
+        "time": "2026-11-15",
+        "values": {
+          "temperature_2m_max": 37.4,
+          "temperature_2m_min": 23.3,
+          "precipitation_sum": 0.6,
+          "precipitation_probability_max": 92.0,
+          "et0_fao_evapotranspiration": 6.78,
+          "shortwave_radiation_sum": 26.6,
+          "wind_speed_10m_max": 23.3
+        }
+      },
+      {
+        "time": "2026-11-16",
+        "values": {
+          "temperature_2m_max": 33.3,
+          "temperature_2m_min": 23.5,
+          "precipitation_sum": 11.4,
+          "precipitation_probability_max": 78.0,
+          "et0_fao_evapotranspiration": 3.51,
+          "shortwave_radiation_sum": 14.05,
+          "wind_speed_10m_max": 15.3
+        }
+      },
+      {
+        "time": "2026-11-17",
+        "values": {
+          "temperature_2m_max": 36.4,
+          "temperature_2m_min": 24.3,
+          "precipitation_sum": 1.1,
+          "precipitation_probability_max": 45.0,
+          "et0_fao_evapotranspiration": 6.57,
+          "shortwave_radiation_sum": 25.83,
+          "wind_speed_10m_max": 25.5
+        }
+      },
+      {
+        "time": "2026-11-18",
+        "values": {
+          "temperature_2m_max": 36.7,
+          "temperature_2m_min": 24.1,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 8.0,
+          "et0_fao_evapotranspiration": 6.9,
+          "shortwave_radiation_sum": 26.41,
+          "wind_speed_10m_max": 23.4
+        }
+      },
+      {
+        "time": "2026-11-19",
+        "values": {
+          "temperature_2m_max": 37.2,
+          "temperature_2m_min": 22.6,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 0.0,
+          "et0_fao_evapotranspiration": 7.49,
+          "shortwave_radiation_sum": 28.4,
+          "wind_speed_10m_max": 25.1
+        }
+      },
+      {
+        "time": "2026-11-20",
+        "values": {
+          "temperature_2m_max": 37.4,
+          "temperature_2m_min": 22.3,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 10.0,
+          "et0_fao_evapotranspiration": 7.41,
+          "shortwave_radiation_sum": 27.59,
+          "wind_speed_10m_max": 18.0
+        }
+      },
+      {
+        "time": "2026-11-21",
+        "values": {
+          "temperature_2m_max": 37.7,
+          "temperature_2m_min": 23.2,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 6.0,
+          "et0_fao_evapotranspiration": 7.14,
+          "shortwave_radiation_sum": 26.52,
+          "wind_speed_10m_max": 18.1
+        }
+      },
+      {
+        "time": "2026-11-22",
+        "values": {
+          "temperature_2m_max": 38.5,
+          "temperature_2m_min": 23.9,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 10.0,
+          "et0_fao_evapotranspiration": 7.58,
+          "shortwave_radiation_sum": 27.22,
+          "wind_speed_10m_max": 16.2
+        }
+      },
+      {
+        "time": "2026-11-23",
+        "values": {
+          "temperature_2m_max": 38.3,
+          "temperature_2m_min": 24.0,
+          "precipitation_sum": 0.5,
+          "precipitation_probability_max": 10.0,
+          "et0_fao_evapotranspiration": 7.46,
+          "shortwave_radiation_sum": 26.29,
+          "wind_speed_10m_max": 17.6
+        }
+      },
+      {
+        "time": "2026-11-24",
+        "values": {
+          "temperature_2m_max": 37.7,
+          "temperature_2m_min": 24.8,
+          "precipitation_sum": 0.1,
+          "precipitation_probability_max": 8.0,
+          "et0_fao_evapotranspiration": 7.46,
+          "shortwave_radiation_sum": 26.4,
+          "wind_speed_10m_max": 18.1
+        }
+      },
+      {
+        "time": "2026-11-25",
+        "values": {
+          "temperature_2m_max": 37.9,
+          "temperature_2m_min": 23.9,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 12.0,
+          "et0_fao_evapotranspiration": 7.45,
+          "shortwave_radiation_sum": 26.14,
+          "wind_speed_10m_max": 18.3
+        }
+      },
+      {
+        "time": "2026-11-26",
+        "values": {
+          "temperature_2m_max": 38.6,
+          "temperature_2m_min": 23.6,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 12.0,
+          "et0_fao_evapotranspiration": 7.45,
+          "shortwave_radiation_sum": 25.35,
+          "wind_speed_10m_max": 19.6
+        }
+      },
+      {
+        "time": "2026-11-27",
+        "values": {
+          "temperature_2m_max": 38.2,
+          "temperature_2m_min": 24.8,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 21.0,
+          "et0_fao_evapotranspiration": 7.93,
+          "shortwave_radiation_sum": 27.33,
+          "wind_speed_10m_max": 19.1
+        }
+      },
+      {
+        "time": "2026-11-28",
+        "values": {
+          "temperature_2m_max": 38.1,
+          "temperature_2m_min": 24.4,
+          "precipitation_sum": 0.0,
+          "precipitation_probability_max": 16.0,
+          "et0_fao_evapotranspiration": 7.83,
+          "shortwave_radiation_sum": 25.98,
+          "wind_speed_10m_max": 20.7
+        }
+      }
+    ],
+    "summary_7d": {
+      "precip_mm": 13.4,
+      "et0_fao56_mm": 45.33,
+      "t2m_max_c": 37.4
+    },
+    "summary_15d": {
+      "precip_mm": 14.0,
+      "et0_fao56_mm": 105.63,
+      "water_balance_mm": -91.63,
+      "t2m_max_c": 38.6
+    }
+  },
+  "earthdata_cmr_availability": {
+    "smap": {
+      "short_name": "SPL3SMP_E",
+      "resolution": "9 km, daily",
+      "granules_last_30d": 34,
+      "latest_granule": "2026-11-12"
+    },
+    "imerg": {
+      "short_name": "GPM_3IMERGDL",
+      "resolution": "0.1 deg, daily",
+      "granules_last_30d": 30,
+      "latest_granule": "2026-11-13"
+    },
+    "gldas": {
+      "short_name": "GLDAS_NOAH025_3H",
+      "resolution": "0.25 deg, 3-hourly",
+      "error": "no GLDAS_NOAH025_3H granules for this box and period (try another --short-name or dates)"
+    },
+    "hls": {
+      "short_name": "HLSL30",
+      "resolution": "30 m, 2-3 days",
+      "granules_last_30d": 3,
+      "latest_granule": "2026-11-04"
+    },
+    "modis": {
+      "short_name": "MOD13Q1",
+      "resolution": "250 m, 16-day",
+      "granules_last_30d": 2,
+      "latest_granule": "2026-10-16"
+    }
+  },
+  "earthdata_grids_embedded": false,
+  "earthdata_pending_note": "Run scripts/earthdata-login.sh and query SMAP/IMERG/GLDAS via `python -m src.data` to populate live soil-moisture and 0.1 deg precipitation grid cells."
+}

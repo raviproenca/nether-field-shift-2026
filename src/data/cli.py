@@ -2,13 +2,14 @@
 """Command line: python -m src.data <source> --bbox|--point ... --start ... --end ... --variable ... [--out ...]."""
 
 import argparse
+import json
 import sys
 import warnings
 from pathlib import Path
 
 import pandas as pd
 
-from . import earthdata, planetary, power
+from . import earthdata, open_meteo, planetary, power, srtm
 from .clip import NearestCellWarning, OutOfRangeWarning
 from .dates import DateRange, parse_range
 from .errors import DataToolkitError, InputError, remote_errors
@@ -16,7 +17,8 @@ from .paths import CACHE_DIR, PROCESSED_DIR, RAW_DIR, safe_filename
 from .regions import BBox, parse_point, resolve_region
 
 TABLE_SUFFIXES = (".csv", ".parquet")
-SOURCE_CHOICES = ["power", *earthdata.SOURCES, "planetary"]
+FORECAST_SUFFIXES = (*TABLE_SUFFIXES, ".json")
+SOURCE_CHOICES = ["power", *earthdata.SOURCES, "planetary", "srtm", "open-meteo"]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,26 +26,42 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("source", choices=SOURCE_CHOICES)
     place = parser.add_mutually_exclusive_group()
     place.add_argument("--bbox", help="'W,S,E,N' or a preset: sergipe (default), nordeste")
-    place.add_argument("--point", help="'LAT,LON'; needs --radius-km (except for power, which uses the point itself)")
+    place.add_argument(
+        "--point", help="'LAT,LON'; needs --radius-km (except for power and open-meteo, which use the point itself)"
+    )
     parser.add_argument("--radius-km", type=float, help="half-side of the box around --point, in km")
-    parser.add_argument("--start", required=True, help="YYYY-MM-DD")
-    parser.add_argument("--end", required=True, help="YYYY-MM-DD")
-    parser.add_argument("--variable", help="POWER: comma list (T2M,PRECTOTCORR). Others: variable or band name")
+    parser.add_argument("--start", help="YYYY-MM-DD (required for historical sources)")
+    parser.add_argument("--end", help="YYYY-MM-DD (required for historical sources)")
+    parser.add_argument(
+        "--variable",
+        help="POWER/Open-Meteo: comma list. SRTM: elevation|slope_deg|slope_pct|all. Others: variable or band name",
+    )
     parser.add_argument("--collection", default=planetary.DEFAULT_COLLECTION, help="planetary: STAC collection")
     parser.add_argument(
         "--max-cloud", type=float, default=planetary.DEFAULT_MAX_CLOUD, help="planetary: eo:cloud_cover < N"
     )
     parser.add_argument(
-        "--max-pixels", type=int, default=planetary.DEFAULT_MAX_PIXELS, help="planetary: max pixels per band and item"
+        "--max-pixels", type=int, default=planetary.DEFAULT_MAX_PIXELS, help="planetary/srtm: max pixels per item"
+    )
+    parser.add_argument(
+        "--forecast-days",
+        type=int,
+        default=open_meteo.DEFAULT_FORECAST_DAYS,
+        help="open-meteo: forecast horizon in days (1..16)",
+    )
+    parser.add_argument(
+        "--model",
+        default=open_meteo.DEFAULT_MODEL,
+        help=f"open-meteo: {', '.join(open_meteo.SUPPORTED_MODELS)}",
     )
     parser.add_argument("--short-name", help="override the default NASA short_name of the source")
     parser.add_argument(
         "--version", help="collection version (default: the version of the source's default short_name)"
     )
-    parser.add_argument("--out", type=Path, help=".csv/.parquet table, or a folder for GeoTIFF sources")
+    parser.add_argument("--out", type=Path, help=".csv/.parquet/.json table, or a folder for GeoTIFF sources")
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR, help="downloaded granules (default data/raw)")
     parser.add_argument("--cache-dir", type=Path, default=CACHE_DIR, help="API response cache (default data/cache)")
-    parser.add_argument("--search-only", action="store_true", help="count granules and show the latest date; no login")
+    parser.add_argument("--search-only", action="store_true", help="count granules/tiles without downloading data")
     parser.add_argument(
         "--download", action="store_true", help="GLDAS/IMERG: download full files instead of lazy reads"
     )
@@ -52,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="GLDAS/IMERG/SMAP: keep values outside the variable's valid_min/valid_max (fill values are still dropped)",
     )
-    parser.add_argument("--refresh", action="store_true", help="POWER: ignore the local cache")
+    parser.add_argument("--refresh", action="store_true", help="POWER/Open-Meteo: ignore the local cache")
     return parser
 
 
@@ -85,7 +103,7 @@ def default_out(source: str, variable: str, dates: DateRange) -> Path:
 
 
 def power_point(args: argparse.Namespace) -> tuple[float, float]:
-    """POWER is a point API: --point is used as is (no radius needed); a box becomes its center."""
+    """Point APIs (POWER, Open-Meteo): --point is used as is (no radius needed); a box becomes its center."""
     if args.point is not None:
         return parse_point(args.point)
     if args.radius_km is not None:
@@ -97,9 +115,17 @@ def check_out_extension(args: argparse.Namespace) -> None:
     """Fail before any search or download when --out does not fit the source."""
     if args.out is None:
         return
+    suffix = args.out.suffix.lower()
+    if args.source == "srtm":
+        if suffix in (*TABLE_SUFFIXES, ".tif"):
+            raise InputError(f"srtm writes GeoTIFF files into a folder or a .json summary: invalid --out '{args.out}'")
+        return
+    if args.source == "open-meteo":
+        if suffix not in FORECAST_SUFFIXES:
+            raise InputError(f"unsupported --out '{args.out}': use a .csv, .parquet or .json file")
+        return
     spec = earthdata.SOURCES.get(args.source)
     folder_output = args.source == "planetary" or (spec is not None and spec.kind == "file_raster")
-    suffix = args.out.suffix.lower()
     if folder_output and suffix in (*TABLE_SUFFIXES, ".tif"):
         raise InputError(f"{args.source} writes GeoTIFF files into a folder: --out '{args.out}' should be a folder")
     if not folder_output and suffix not in TABLE_SUFFIXES:
@@ -114,6 +140,60 @@ def run_power(args: argparse.Namespace, dates: DateRange) -> None:
     write_table(frame.reset_index(), out)
     valid = frame.dropna(how="all")
     print(f"POWER point {lat:.4f},{lon:.4f}: {len(frame)} days, last day with data {valid.index[-1].date()} -> {out}")
+
+
+def run_open_meteo(args: argparse.Namespace) -> None:
+    variables = open_meteo.parse_variables(args.variable)
+    lat, lon = power_point(args)
+    frame = open_meteo.fetch_forecast(
+        lat,
+        lon,
+        variables=variables,
+        forecast_days=args.forecast_days,
+        model=args.model,
+        cache_dir=args.cache_dir / "open_meteo",
+        refresh=args.refresh,
+    )
+    start_str = frame.index.min().strftime("%Y-%m-%d")
+    end_str = frame.index.max().strftime("%Y-%m-%d")
+    out = args.out or (PROCESSED_DIR / f"open_meteo_{args.model}_{start_str}_{end_str}.json")
+    if out.suffix.lower() == ".json":
+        with remote_errors(f"writing {out.name}"):
+            out.parent.mkdir(parents=True, exist_ok=True)
+            payload = open_meteo.to_api_response(frame, lat, lon, model=args.model)
+            out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    else:
+        write_table(frame.reset_index(), out)
+    print(f"Open-Meteo ({args.model}) {lat:.4f},{lon:.4f}: {len(frame)} forecast days ({start_str}..{end_str}) -> {out}")
+
+
+def run_srtm(args: argparse.Namespace, bbox: BBox) -> None:
+    client = planetary.open_client()
+    items = srtm.search_tiles(client, bbox)
+    print(f"nasadem: {len(items)} tile(s): {', '.join(item.id for item in items)}")
+    if args.search_only:
+        return
+    if args.out is not None and args.out.suffix.lower() == ".json":
+        elevation = srtm.fetch_elevation(bbox, client=client, max_pixels=args.max_pixels)
+        summary = srtm.summarize_terrain(elevation)
+        with remote_errors(f"writing {args.out.name}"):
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(
+            f"NASADEM summary: elev {summary['elevation_min_m']}..{summary['elevation_max_m']} m, "
+            f"mean slope {summary['slope_mean_pct']}% ({summary['slope_class']}) -> {args.out}"
+        )
+        return
+    out = args.out or PROCESSED_DIR / "srtm"
+    written, summary = srtm.write_rasters(
+        bbox, out, variable=args.variable or "elevation", client=client, max_pixels=args.max_pixels
+    )
+    summary_path = out / "srtm_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(
+        f"wrote {len(written)} GeoTIFF file(s) and summary (mean slope {summary['slope_mean_pct']}%, "
+        f"{summary['slope_class']}) to {out}"
+    )
 
 
 def run_earthdata(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> None:
@@ -175,8 +255,19 @@ def main(argv: list[str] | None = None) -> int:
             warnings.simplefilter("default", NearestCellWarning)
             warnings.simplefilter("default", OutOfRangeWarning)
             warnings.showwarning = lambda message, *_: print(f"warning: {message}", file=sys.stderr)
-            dates = parse_range(args.start, args.end)
             check_out_extension(args)
+            if args.source == "open-meteo":
+                if args.search_only:
+                    raise InputError("--search-only applies to satellite granule sources, not open-meteo")
+                run_open_meteo(args)
+                return 0
+            if args.source == "srtm":
+                bbox = resolve_region(args.bbox, args.point, args.radius_km)
+                run_srtm(args, bbox)
+                return 0
+            if not args.start or not args.end:
+                raise InputError(f"--start and --end are required for {args.source}")
+            dates = parse_range(args.start, args.end)
             if args.source == "power":
                 if args.search_only:
                     raise InputError("--search-only applies to Earthdata sources, not POWER")

@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at_utc": "2026-11-14T14:52:40Z",
+  "region": "Sergipe, Brazil",
+  "pilots": [
+    {
+      "id": "sergipe_agreste_itabaiana",
+      "name": "Itabaiana — Agreste Central Sergipano",
+      "zone": "Agreste",
+      "point": {
+        "lat": -10.685,
+        "lon": -37.425
+      },
+      "file": "sergipe_agreste_itabaiana.json",
+      "elevation_mean_m": 181.74,
+      "slope_mean_pct": 4.77,
+      "forecast_15d_precip_mm": 12.1,
+      "historical_90d_water_balance_mm": -465.31
+    },
+    {
+      "id": "sergipe_semiarido_ns_gloria",
+      "name": "Nossa Senhora da Glória — Alto Sertão (Semiárido)",
+      "zone": "Semiárido",
+      "point": {
+        "lat": -10.218,
+        "lon": -37.42
+      },
+      "file": "sergipe_semiarido_ns_gloria.json",
+      "elevation_mean_m": 249.21,
+      "slope_mean_pct": 7.39,
+      "forecast_15d_precip_mm": 14.0,
+      "historical_90d_water_balance_mm": -535.55
+    }
+  ]
+}
