@@ -49,6 +49,18 @@ python -m src.data hls   --variable B04 --point -10.91,-37.07 --radius-km 2 --st
 
 `--variable` is always yours to choose: a POWER parameter list, a variable name inside the file, `group/variable` for SMAP, a band name for HLS (`B04`, `B8A`, `Fmask`) or a substring of the dataset name for MODIS/VIIRS (`NDVI`, `EVI`). `--short-name` and `--version` override the defaults below. Each source pins a default version (GLDAS 2.1, IMERG 07, SMAP 006, MOD13Q1 061, VNP13A1 002, HLS 2.0); it is used only with the default short_name, so pass `--version` yourself when you change `--short-name` to a product with another version scheme. For MODIS/VIIRS the text must match exactly one dataset in the tile (an exact name wins; otherwise an error lists the candidates).
 
+### ZARC (Tábua de Risco), third-party data
+
+Not NASA data (MAPA, CC BY). `python -m src.data.zarc` lists the open-data files and keeps only one UF and the crops you name, because the files are whole-country CSVs of 220 to 550 MB with no server-side filter (the file is streamed, nothing large is stored). Crop and file choices are yours; the columns and caveats are in [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md).
+
+```bash
+python -m src.data.zarc --list                                   # harvest-year files in the MAPA catalog
+python -m src.data.zarc --safra 2026/2027 --uf SE --crop milho --crop feij --out data/processed/zarc_se.csv
+python -m src.data.zarc --safra perene --uf SE --crop mandioca   # perennial file (cassava is only there)
+```
+
+`--crop` matches part of the crop name, ignoring case and accents. The filtered rows are cached in `data/cache/zarc/` (`--refresh` ignores the cache). Credit "ZARC, MAPA" with the harvest year and the portaria number.
+
 ## Where files go
 
 | Folder | Content | Git |
