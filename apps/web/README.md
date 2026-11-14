@@ -1,4 +1,4 @@
-<!-- AI-assisted: generated with Claude Code, reviewed by <pending Gabriel> -->
+<!-- AI-assisted: generated with Claude Code, reviewed by Ravi -->
 # Internal data map (apps/web)
 
 Team tool to explore and validate data (front A, not judged). Static site built with Vite, React, TypeScript and MapLibre GL JS, deployed to Cloudflare Pages by [`.github/workflows/deploy-internal-map.yml`](../../.github/workflows/deploy-internal-map.yml). No API and no login: the app reads pre-generated files from `public/data/`.

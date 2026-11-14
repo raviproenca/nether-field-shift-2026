@@ -1,4 +1,4 @@
-// AI-assisted: generated with Claude Code, reviewed by <pending Gabriel>
+// AI-assisted: generated with Claude Code, reviewed by Ravi
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";

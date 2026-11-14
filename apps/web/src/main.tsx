@@ -1,4 +1,4 @@
-// AI-assisted: generated with Claude Code, reviewed by <pending Gabriel>
+// AI-assisted: generated with Claude Code, reviewed by Ravi
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";

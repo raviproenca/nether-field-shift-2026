@@ -1,4 +1,4 @@
-// AI-assisted: generated with Claude Code, reviewed by <pending Gabriel>
+// AI-assisted: generated with Claude Code, reviewed by Ravi
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 

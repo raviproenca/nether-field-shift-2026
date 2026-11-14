@@ -1,4 +1,4 @@
-// AI-assisted: generated with Claude Code, reviewed by <pending Gabriel>
+// AI-assisted: generated with Claude Code, reviewed by Ravi
 export default function App() {
   return (
     <div className="app">
