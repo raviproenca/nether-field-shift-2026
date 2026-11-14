@@ -276,3 +276,30 @@ def test_point_smaller_than_a_cell_warns_on_stderr(tmp_path, monkeypatch, capsys
     assert cli.main(argv) == 0
     assert "warning: the box is smaller than a grid cell" in capsys.readouterr().err
     assert len(pd.read_csv(out)) == 1
+
+
+def test_granules_without_dates_give_a_short_error(monkeypatch, capsys):
+    monkeypatch.setattr(earthdata, "search", lambda *args: [FakeGranule("x") | {"umm": {}}])
+    assert cli.main(["gldas", "--search-only", "--start", "2025-01-01", "--end", "2025-01-02"]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("error: reading the granule dates failed: KeyError") and "Traceback" not in err
+
+
+def test_unwritable_output_gives_a_short_error(tmp_path, monkeypatch, capsys):
+    fake_power(monkeypatch)
+    (tmp_path / "out.csv").mkdir()
+    argv = ["power", "--point", "-10,-37", "--start", "2025-01-01", "--end", "2025-01-01", "--variable", "T2M"]
+    assert cli.main([*argv, "--out", str(tmp_path / "out.csv")]) == 1
+    assert capsys.readouterr().err.startswith("error: writing out.csv failed: IsADirectoryError")
+
+
+def test_parquet_write_failure_is_wrapped(tmp_path, monkeypatch, capsys):
+    fake_power(monkeypatch)
+
+    def broken(self, *args, **kwargs):
+        raise ValueError("arrow says no")
+
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", broken)
+    argv = ["power", "--point", "-10,-37", "--start", "2025-01-01", "--end", "2025-01-01", "--variable", "T2M"]
+    assert cli.main([*argv, "--out", str(tmp_path / "o.parquet")]) == 1
+    assert "writing o.parquet failed: ValueError: arrow says no" in capsys.readouterr().err

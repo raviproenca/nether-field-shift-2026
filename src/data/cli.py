@@ -11,7 +11,7 @@ import pandas as pd
 from . import earthdata, planetary, power
 from .clip import NearestCellWarning
 from .dates import DateRange, parse_range
-from .errors import DataToolkitError, InputError
+from .errors import DataToolkitError, InputError, remote_errors
 from .paths import CACHE_DIR, PROCESSED_DIR, RAW_DIR, safe_filename
 from .regions import BBox, parse_point, resolve_region
 
@@ -52,13 +52,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def write_table(frame: pd.DataFrame, out: Path) -> None:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if out.suffix == ".csv":
-        frame.to_csv(out, index=False, date_format="%Y-%m-%d")
-    elif out.suffix == ".parquet":
-        frame.to_parquet(out, index=False)
-    else:
+    if out.suffix not in TABLE_SUFFIXES:
         raise InputError(f"unsupported output '{out.suffix}': use .csv or .parquet")
+    with remote_errors(f"writing {out.name}"):
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if out.suffix == ".csv":
+            frame.to_csv(out, index=False, date_format="%Y-%m-%d")
+        else:
+            frame.to_parquet(out, index=False)
 
 
 def default_out(source: str, variable: str, dates: DateRange) -> Path:
@@ -105,7 +106,9 @@ def run_earthdata(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> Non
     source = earthdata.SOURCES[args.source]
     short_name, version = earthdata.collection_query(source, args.short_name, args.version)
     granules = earthdata.search(short_name, bbox, dates, version)
-    print(f"{short_name}: {len(granules)} granules, latest start {earthdata.latest_granule_date(granules).date()}")
+    with remote_errors("reading the granule dates"):
+        latest = earthdata.latest_granule_date(granules).date()
+    print(f"{short_name}: {len(granules)} granules, latest start {latest}")
     if args.search_only:
         return
     if not args.variable:
