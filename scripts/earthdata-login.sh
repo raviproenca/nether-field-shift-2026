@@ -3,6 +3,7 @@
 # One-time NASA Earthdata Login. Run it in your own terminal: it asks for your
 # username and password and stores them in ~/.netrc (never in this repo).
 set -euo pipefail
+umask 077  # files created here (~/.netrc) are readable by you only
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ ! -f "$root/.venv/bin/activate" ]]; then
