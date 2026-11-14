@@ -37,10 +37,15 @@ def _warn_nearest(what: str) -> None:
 
 
 def _within_extent(values: np.ndarray, low: float, high: float) -> bool:
-    """True when [low, high] touches the span of the axis values (with half a cell of margin)."""
-    values = values[np.isfinite(values)]
-    margin = float(np.abs(np.diff(values)).max()) / 2 if values.size > 1 else 0.0
-    return low <= values.max() + margin and high >= values.min() - margin
+    """True when [low, high] touches the span of the values (1-D axis or 2-D lat/lon array), plus half a cell.
+
+    The cell size is the largest step between neighbours along each array axis, so the jump between the end of
+    one row and the start of the next in a 2-D array never counts as a step.
+    """
+    finite = values[np.isfinite(values)]
+    steps = [np.nanmax(np.abs(np.diff(values, axis=axis))) for axis in range(values.ndim) if values.shape[axis] > 1]
+    margin = max(steps, default=0.0) / 2
+    return low <= finite.max() + margin and high >= finite.min() - margin
 
 
 def _axis_slice(values: np.ndarray, low: float, high: float) -> slice:

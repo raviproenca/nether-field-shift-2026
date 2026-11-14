@@ -190,3 +190,15 @@ def test_inverted_scale_factor_is_reported(tmp_path):
         clip.read_sinusoidal_tile(path, "NDVI")
     _write_h5(path, ["500 m 16 days other"], scale=10000.0)
     assert clip.read_sinusoidal_tile(path, "other").shape == (20, 20)
+
+
+def test_extent_margin_ignores_the_jump_between_rows_of_a_2d_grid():
+    lat, lon = np.meshgrid(np.arange(0.0, 11.0), np.arange(0.0, 11.0), indexing="ij")
+    ds = xr.Dataset(
+        {"v": (("r", "c"), np.ones(lat.shape))}, coords={"latitude": (("r", "c"), lat), "longitude": (("r", "c"), lon)}
+    )
+    with pytest.raises(InputError, match="no grid cell"):
+        clip.clip_curvilinear(ds, "v", BBox(12.0, 4.0, 12.1, 4.1))
+    with pytest.raises(InputError, match="no grid cell"):
+        clip.clip_curvilinear(ds, "v", BBox(4.0, 12.0, 4.1, 12.1))
+    assert clip._within_extent(lon, 10.4, 10.6) and not clip._within_extent(lon, 10.6, 10.7)
