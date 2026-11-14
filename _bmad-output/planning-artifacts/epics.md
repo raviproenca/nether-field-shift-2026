@@ -13,7 +13,7 @@ inputDocuments:
 
 ## Overview
 
-This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the architecture spine (AD-1 to AD-10). It was revised on Nov 14 for Google Cloud, languages and the v1 crops. into stories for the 48-hour hackathon. The stories are small and ordered so that each epic delivers something usable.
+This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the architecture spine (AD-1 to AD-10). It was revised on Nov 14 for Google Cloud, languages and the v1 crops, and again on Nov 14 for the new priority order. It is split into stories for the 48-hour hackathon. The stories are small and ordered so that each epic delivers something usable.
 
 **Owners:** none. The Tech Lead creates the issues and splits the tasks.
 
@@ -21,11 +21,23 @@ This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the arc
 - the data adapters in `src/data`;
 - the snapshot generator #16 (SRTM, ET0, pilots).
 
+## Priority order (decided Nov 14)
+
+After a mentor's feedback, and because the judging criteria weigh validity and relevance (`docs/team/decisions.md`, `docs/scope.md`):
+
+1. **E1 Decision engine:** stories 1.1 to 1.4 (#44 to #47).
+2. **Validation:** story 1.5 ZARC check (#48) and story 1.6 historical backtest (#79).
+3. **E2 Product API**, only what the dashboard needs (#49, #50, #51, #53, #54).
+4. **E5 Producer dashboard and demo mode** (#62, #63, #64).
+5. **E3 Plain-language explanation** (#52, #55).
+6. **E6 Deploy and judge readiness** (#65, #66).
+7. **E4 Telegram bot with voice: after the engine is validated** (#56 to #58, #60, #61, then the Piper service #59 last). The channel and the audience are decided then.
+
 ## FR Coverage Map
 
 | Epic | FRs / NFRs | ADs |
 |---|---|---|
-| E1 Decision engine | FR-5, FR-6, FR-8 to FR-12 | AD-2, AD-4 |
+| E1 Decision engine | FR-5, FR-6, FR-8 to FR-12, FR-22 | AD-2, AD-4 |
 | E2 Product API | FR-4, FR-7, FR-19, NFR-1, NFR-2, NFR-3, NFR-5 | AD-1, AD-4, AD-5, AD-7, AD-8 |
 | E3 Plain-language explanation | FR-13 | AD-3, AD-9 |
 | E4 Telegram bot with voice | FR-1 to FR-3, FR-14 to FR-16, FR-20, NFR-4, NFR-6 | AD-1, AD-6, AD-9 |
@@ -34,12 +46,14 @@ This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the arc
 
 ## Epic List
 
-1. **E1 Decision engine.** Takes a Diagnosis and a Projection and produces at least three ranked Strategies, deterministically.
-2. **E2 Product API.** One FastAPI service serves the Recommendation, Diagnosis and Forecast to every client.
-3. **E3 Plain-language explanation.** Rewrites a Recommendation as short text without changing a number.
-4. **E4 Telegram bot with voice.** Location, crop and priority go in by voice, text or button. A voice reply and cards come out.
-5. **E5 Producer dashboard and demo mode.** Shows the same Recommendation with its evidence on a map. Judges get one-click pilots.
-6. **E6 Deploy and judge readiness.** Public, no login, online until Jan 26, 2027, credits complete.
+Listed in priority order (Nov 14). The E numbers are kept so they match the issues.
+
+1. **E1 Decision engine.** Takes a Diagnosis and a Projection and produces at least three ranked Strategies, deterministically. Includes the validation stories (ZARC check and historical backtest).
+2. **E2 Product API.** One FastAPI service serves the Recommendation, Diagnosis and Forecast to every client. Only what the dashboard needs comes before E5.
+3. **E5 Producer dashboard and demo mode.** Shows the same Recommendation with its evidence on a map. Judges get one-click pilots.
+4. **E3 Plain-language explanation.** Rewrites a Recommendation as short text without changing a number.
+5. **E6 Deploy and judge readiness.** Public, no login, online until Jan 26, 2027, credits complete.
+6. **E4 Telegram bot with voice (after the engine is validated).** Location, crop and priority go in by voice, text or button. A voice reply and cards come out.
 
 ## Epic 1: Decision engine (`src/engine`)
 
@@ -76,7 +90,16 @@ As an extension worker, I want the planting window compared with ZARC, so that a
 
 **Acceptance criteria:**
 - **Given** ZARC reference data for the crop and the municipality, **when** the window differs, **then** the Validation note says so.
-- This story depends on the ZARC research (Satélite).
+- This story depends on the ZARC research and connector (PRs #73 and #74, merged).
+
+### Story 1.6: Historical backtest in Sergipe (wet year and dry year)
+As the team, I want the engine run on 2 or 3 real past Sergipe years, at least one wet and one dry, so that we can show how each Strategy would have done. Issue #79.
+
+**Acceptance criteria:**
+- **Given** the chosen years, **when** the backtest runs with one documented command, **then** it uses only real data from those years (POWER, GLDAS, IMERG).
+- **And** at least one year is wet and one is dry, justified by the observed rain.
+- **And** for each year the report shows how each Strategy would have done, compared with the IBGE PAM (SIDRA) reference.
+- **And** every source used is listed in the README with a link.
 
 ## Epic 2: Product API (`apps/api`)
 
@@ -132,6 +155,8 @@ As a farmer, I want the text in natural, simple language, so that I understand i
 - **And** the text is in the requested `lang`, either `pt-BR` or `en` (AD-9).
 
 ## Epic 4: Telegram bot with voice (`apps/bot`, `apps/tts`)
+
+> **After the engine is validated (decided Nov 14).** The channel and the audience are decided then; these stories are kept, at the end of the Backlog.
 
 ### Story 4.1: Bot skeleton, `/start` and location
 As a farmer, I want to start the bot with no account and share my location with one tap, so that onboarding takes seconds.
@@ -221,7 +246,9 @@ As a judge, I want every source and license credited and every link public, so t
 - **Given** the README and the UI footers, **then** every NASA and third-party source used is listed with its license, including Open-Meteo as non-commercial and not NASA, and Piper as GPL as a separate service.
 - **And** every submitted link opens without login.
 
-## Issue-ready list (for the Tech Lead; not created)
+## Issue list (created by the Tech Lead)
+
+Issue numbers were added on Nov 14. The board order follows "Priority order" above.
 
 | Draft title | Epic | Depends on |
 |---|---|---|
@@ -229,7 +256,8 @@ As a judge, I want every source and license credited and every link public, so t
 | Engine: rules and crop profiles as data | E1 | 1.1, open question 2 |
 | Engine: strategy generation and ranking | E1 | 1.1, 1.2 |
 | Engine: actions, uncertainty and validation notes | E1 | 1.3 |
-| Engine: ZARC check | E1 | 1.3, ZARC research |
+| Engine: ZARC check (#48) | E1 | 1.3, ZARC research |
+| Validation: historical backtest (#79) | E1 | 1.1 to 1.5, data connectors |
 | API: skeleton, health, sources, errors | E2 | — |
 | API: diagnosis endpoint | E2 | 2.1, #16 |
 | API: forecast endpoint (Open-Meteo) | E2 | 2.1 |

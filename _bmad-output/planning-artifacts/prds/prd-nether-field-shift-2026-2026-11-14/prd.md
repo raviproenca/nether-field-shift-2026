@@ -3,7 +3,7 @@ title: "PRD: Field Shift decision support for family farming in Sergipe"
 status: draft
 created: 2026-11-14
 updated: 2026-11-14
-revision: 'Nov 14 (2): Google Cloud hosting, languages, v1 crops'
+revision: 'Nov 14 (3): priority change: engine first, then validation, then dashboard; bot after validation'
 ---
 
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad PRD, headless fast path) from the team's brief, docs/requirements.md and docs/team/*; pending review by Ravi (Tech Lead). The idea is the team's (docs/team/decisions.md). -->
@@ -22,11 +22,13 @@ It builds on:
 
 Technology choices live in `addendum.md` and in the architecture document. Inferred points carry an `[ASSUMPTION]` tag; they are listed in §9.
 
+> **Priority change (Nov 14, Ravi, Tech Lead):** the decision engine comes first, then its validation (ZARC and a historical backtest), then the producer dashboard. The Telegram bot with voice is no longer the core of v1: the channel and the audience are decided after the engine is validated. Details in `addendum.md` and in `docs/scope.md`.
+
 ## 1. Vision
 
-A family farmer in Sergipe sends a location and a crop and gets back **what to do next**. The answer compares at least three strategies for the plot, ranked by what the farmer cares about most. It is based on NASA observations of the recent past plus a short-term forecast. It is said in plain Portuguese, by voice or text, and states its uncertainty honestly.
+A family farmer in Sergipe sends a location and a crop and gets back **what to do next**. The answer compares at least three strategies for the plot, ranked by what the farmer cares about most. It is based on NASA observations of the recent past plus a short-term forecast. It is said in plain language and states its uncertainty honestly.
 
-Larger producers and extension workers see the same answer, with its evidence, in a web dashboard. The product goes **from projection to prescription**. Its calculations are deterministic, and AI only explains them.
+The first interface is the **producer web dashboard**, which shows the strategy comparison with its evidence and has a demo mode for judges. The engine is **validated** first, against ZARC and in a historical backtest on real Sergipe years. A channel for the farmer, such as a Telegram bot with voice, is decided after the engine is validated. The product goes **from projection to prescription**. Its calculations are deterministic, and AI only explains them.
 
 ## 2. Target User
 
@@ -41,7 +43,7 @@ Larger producers and extension workers see the same answer, with its evidence, i
 - Agronomists who want a full agronomic model. This product gives guidance and points to local validation.
 
 ### 2.3 Key User Journeys
-- **UJ-1. A smallholder in Itabaiana (Agreste) asks by voice whether to plant beans now.**
+- **UJ-1. A smallholder in Itabaiana (Agreste) asks by voice whether to plant beans now.** *After engine validation: this journey depends on the channel decision (Nov 14).*
   1. The farmer opens the bot with no account, taps **Share location** and records "I want to plant beans".
   2. The bot asks for a priority with buttons: water, soil, erosion or income.
   3. Within seconds `[ASSUMPTION]`, the farmer gets a short audio reply plus three short text cards: keep the current practice, a soil and water option, and an income or forage option. Each card says what to do this week and why, in one line each.
@@ -53,8 +55,8 @@ Larger producers and extension workers see the same answer, with its evidence, i
   - The dashboard shows the three strategies side by side, with recent rain and soil moisture, the 15-day forecast, the water balance and the terrain, all on a map.
   - Each number names its data source.
 - **UJ-3. A judge tries the demo.**
-  - The judge opens the dashboard in demo mode and clicks a pre-loaded pilot. They see the same comparison.
-  - The judge then sends `/start` to the bot and gets a sample reply.
+  - The judge opens the dashboard in demo mode and clicks a pre-loaded pilot. They see the strategy comparison with its evidence.
+  - Sending `/start` to the bot is optional: it applies only if the bot ships after the engine is validated.
   - No step asks for a login.
 
 ## 3. Glossary
@@ -117,6 +119,8 @@ The system adds a 15-day **Forecast** (rain, temperature, ET0) for the **Plot**.
 ### 4.4 Prescription: strategy comparison
 **Description:** deterministic rules turn the **Diagnosis** and the **Projection** into a **Recommendation**. REQ-PRED-01, 02, 03, 05.
 
+**Engine inputs and outputs (decided Nov 14):** in go the farmer's crops, the soil, the region, the season and the previous crops; out come the rotation options with their trade-offs, the planting schedule and dates per crop, the water demand and the pest-cycle break. How these map onto FR-8 to FR-12 is open question 5 (§8).
+
 #### FR-8: At least three strategies
 The system returns at least three **Strategies** for the **Plot** and **Crop**: **Current practice**, **Soil and water conservation** (for example intercropping or cover crops) and **Resilient income or forage**.
 
@@ -132,6 +136,9 @@ The planting window advice is compared with ZARC (MAPA/Embrapa) for the crop and
 #### FR-12: Uncertainty and validation
 Every **Recommendation** includes an **Uncertainty note** and a **Validation note**.
 
+#### FR-22: Historical backtest (added Nov 14)
+The engine is run on 2 or 3 real past years in Sergipe, at least one wet and one dry, with historical NASA data. The result shows how each **Strategy** would have done in each year. Issue #79.
+
 ### 4.5 Plain-language explanation
 #### FR-13: Explain, never decide
 An AI layer only rewrites the deterministic **Recommendation** in short, plain language in the user's **Language**. It must not change numbers or **Strategies**. REQ-PRED-07.
@@ -140,7 +147,10 @@ An AI layer only rewrites the deterministic **Recommendation** in short, plain l
 - The numbers in the text equal the numbers in the structured output.
 - If the AI layer fails, the bot sends a fixed template text instead.
 
-### 4.6 Telegram bot with voice
+### 4.6 Telegram bot with voice (after engine validation)
+
+The bot is a channel decided after the engine is validated (Nov 14). FR-14, FR-15, FR-16 and FR-20 stay as written for when it ships.
+
 #### FR-14: Open bot, no account
 Anyone can start the bot with `/start`. There is no login or registration. REQ-DEV-BE-04.
 
@@ -193,13 +203,17 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 
 ## 6. MVP Scope
 ### 6.1 In Scope
-- FR-1 to FR-21 for Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava).
-- The bot with voice.
-- The dashboard with demo mode.
-- The shared API.
-- Cached pilot data.
+For Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava), in this order (Nov 14):
+1. The decision engine (FR-5, FR-6, FR-8 to FR-12).
+2. Its validation: the ZARC check (FR-11) and the historical backtest (FR-22).
+3. The shared API, only what the dashboard needs (FR-4, FR-7, FR-19), with cached pilot data.
+4. The dashboard with demo mode (FR-17, FR-18, FR-21).
+5. The plain-language explanation (FR-13).
+6. Deploy and judge readiness (NFR-1 to NFR-5).
+7. **After the engine is validated:** the bot with voice (FR-1 to FR-3 in the bot, FR-14 to FR-16, FR-20). The channel and the audience are decided then.
 
 ### 6.2 Out of Scope for MVP
+- **Crop photos** (decided Nov 14).
 - **Validation with real farmers.** It is skipped in the hackathon and is the next step in the pitch.
 - **Other states.**
 - **Languages other than PT-BR and English.**
@@ -207,7 +221,8 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 - **ANA HidroWeb, SoilGrids and MapBiomas integration.** Planned; research is in progress.
 
 ## 7. Success Metrics
-- **SM-1:** a judge completes UJ-3 (dashboard demo plus bot `/start`) without login or help. Validates FR-14, FR-18.
+- **SM-1:** a judge completes UJ-3 in the dashboard demo mode without login or help. The bot is optional. Validates FR-18.
+- **SM-4:** the historical backtest shows, for at least one wet and one dry year in Sergipe, how each **Strategy** would have done, and the ZARC check is reported. Validates FR-11, FR-22.
 - **SM-2:** both **Pilot sites** return a full **Recommendation** (at least 3 **Strategies**, evidence, an **Uncertainty note** and a **Validation note**), including when NASA services are offline, from the cache. Validates FR-8 to FR-12, FR-19.
 - **SM-3:** every number shown traces to a named source. Validates FR-4, FR-5, FR-7, FR-13.
 - **SM-C1 (counter-metric):** do not add strategies, crops or features at the cost of explainability. Every action must keep its one-line evidence. Counterbalances SM-2.
@@ -218,12 +233,15 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
 3. **Piper `pt_BR` voice license.** Piper is only the fallback now. See open question 10 in `docs/team/open-questions.md`.
 4. **Cloud credit window.** The Global Offers credits last 90 days from activation. If they are activated on Nov 14, they end around Feb 12, 2027, which covers Jan 26, 2027. Confirm the activation date. Owner: Ravi.
 
+5. **Engine inputs and outputs (Nov 14).** The soil and the previous crops are new inputs, and the pest-cycle break, the planting schedule and the water demand per crop are new outputs. Which soil source, how previous crops are entered, and whether stories #44 to #47 change? Owner: Ravi, with the engine owner.
+
 **Decided Nov 14 (Ravi), no longer open:**
 - Hosting on Google Cloud.
 - Vertex AI Gemini Flash for the explanations.
 - Google Speech-to-Text and Text-to-Speech, with Piper and faster-whisper as the fallback.
 - The bot in PT-BR with an English option, and the dashboard in English with a PT-BR toggle.
 - The v1 crops: maize, beans and cassava.
+- Priority: engine, then validation, then dashboard; the bot after validation; crop photos out.
 
 ## 9. Assumptions Index
 - §4.1 FR-3: the default **Priority** is water.

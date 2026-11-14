@@ -4,6 +4,8 @@
 
 _Last updated: Nov 14, 2026, 12:40 BRT. Read this and [decisions.md](decisions.md) before any task._
 
+**Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out.
+
 ## 1. Where we are
 
 - **Challenge:** Field Shift: Adapting Farms with NASA Data. Team Nether, Aracaju local event.
