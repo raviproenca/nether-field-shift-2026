@@ -1,13 +1,16 @@
 # AI-assisted: generated with Claude Code, reviewed by Periélio (pending Ravi)
 """SMAP-like files: 2-D latitude/longitude with undeclared -9999 holes (found in the first real run)."""
 
+import warnings
+
 import h5py
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 
-from src.data import clip, earthdata
-from src.data.errors import RemoteDataError
+from src.data import cli, clip, earthdata
+from src.data.errors import InputError
 from src.data.regions import PRESETS, BBox
 
 SERGIPE = PRESETS["sergipe"]
@@ -30,24 +33,31 @@ def ease_like_arrays(seed=0):
     return rows, cols, lat, lon
 
 
-def write_smap_like(path, soil_moisture, lat, lon):
+def write_smap_like(path, soil_moisture, lat, lon, half="AM"):
+    """The PM group names its datasets with a _pm suffix (latitude_pm, soil_moisture_pm), as the real file does."""
+    suffix = "_pm" if half == "PM" else ""
     with h5py.File(path, "w") as h5:
-        group = h5.create_group("Soil_Moisture_Retrieval_Data_AM")
-        group.create_dataset("latitude", data=lat)  # no _FillValue attribute, like the real product
-        group.create_dataset("longitude", data=lon)
-        sm = group.create_dataset("soil_moisture", data=soil_moisture)
+        group = h5.create_group(f"Soil_Moisture_Retrieval_Data_{half}")
+        group.create_dataset(f"latitude{suffix}", data=lat)  # no _FillValue attribute, like the real product
+        group.create_dataset(f"longitude{suffix}", data=lon)
+        sm = group.create_dataset(f"soil_moisture{suffix}", data=soil_moisture)
         sm.attrs["_FillValue"] = np.float32(-9999)
         sm.attrs["valid_min"] = np.float32(0.02)
         sm.attrs["valid_max"] = np.float32(0.5)
 
 
-def fetch(tmp_path, monkeypatch, soil_moisture, lat, lon, bbox=SERGIPE):
+def stub_download(tmp_path, monkeypatch, soil_moisture, lat, lon, half="AM"):
     path = tmp_path / "SMAP_L3_SM_P_E_20250110.h5"
-    write_smap_like(path, soil_moisture, lat, lon)
+    write_smap_like(path, soil_moisture, lat, lon, half)
     monkeypatch.setattr(earthdata, "require_login", lambda: None)
     monkeypatch.setattr(earthdata.earthaccess, "download", lambda granules, local_path=None: [path])
-    variable = "Soil_Moisture_Retrieval_Data_AM/soil_moisture"
-    return earthdata.fetch_grid(earthdata.SOURCES["smap"], [FakeGranule()], variable, bbox, tmp_path)
+
+
+def fetch(tmp_path, monkeypatch, soil_moisture, lat, lon, bbox=SERGIPE, half="AM", **options):
+    stub_download(tmp_path, monkeypatch, soil_moisture, lat, lon, half)
+    suffix = "_pm" if half == "PM" else ""
+    variable = f"Soil_Moisture_Retrieval_Data_{half}/soil_moisture{suffix}"
+    return earthdata.fetch_grid(earthdata.SOURCES["smap"], [FakeGranule()], variable, bbox, tmp_path, **options)
 
 
 def test_fill_values_in_coordinates_do_not_leak_into_the_clip(tmp_path, monkeypatch):
@@ -67,13 +77,14 @@ def test_cells_with_fill_or_outside_the_valid_range_are_dropped(tmp_path, monkey
     values = np.full(lat.shape, 0.3, dtype="float32")
     values[::2, :] = -9999
     values[1::4, ::3] = 0.9  # above valid_max
-    frame = fetch(tmp_path, monkeypatch, values, lat, lon)
+    with pytest.warns(clip.OutOfRangeWarning):
+        frame = fetch(tmp_path, monkeypatch, values, lat, lon)
     assert len(frame) > 0 and frame["soil_moisture"].between(0.02, 0.5).all()
 
 
 def test_no_valid_values_in_the_box_is_a_clear_error(tmp_path, monkeypatch):
     _, _, lat, lon = ease_like_arrays()
-    with pytest.raises(RemoteDataError, match="no valid '.*soil_moisture' values inside the box"):
+    with pytest.raises(InputError, match="no valid '.*soil_moisture' values.*SMAP revisits every 2-3 days.*PM group"):
         fetch(tmp_path, monkeypatch, np.full(lat.shape, -9999, dtype="float32"), lat, lon)
 
 
@@ -113,3 +124,73 @@ def test_box_between_cells_of_a_nonuniform_axis_uses_the_local_cell_size():
         assert clip.clip_latlon(da, BBox(0.060, 0.060, 0.065, 0.065)).shape == (1, 1)
     with pytest.raises(Exception, match="does not overlap"):
         clip.clip_latlon(da, BBox(3.0, 3.0, 3.1, 3.1))
+
+
+def values_with_some_above_valid_max():
+    _, _, lat, lon = ease_like_arrays()
+    values = np.full(lat.shape, 0.3, dtype="float32")
+    values[1::4, :] = 0.6  # above valid_max (0.5)
+    values[2::7, ::5] = -9999  # fill
+    return values, lat, lon
+
+
+def test_values_above_valid_max_are_dropped_with_a_count_by_default(tmp_path, monkeypatch):
+    values, lat, lon = values_with_some_above_valid_max()
+    with pytest.warns(
+        clip.OutOfRangeWarning, match=r"dropped (\d+) values outside valid_min/valid_max \(0.02-0.5\)"
+    ) as record:
+        frame = fetch(tmp_path, monkeypatch, values, lat, lon)
+    assert frame[["Soil_Moisture_Retrieval_Data_AM", "soil_moisture"][1]].max() <= 0.5
+    kept = fetch_all(tmp_path, monkeypatch, values, lat, lon)
+    dropped = int(str(record[0].message).split()[1])
+    assert dropped == (kept["soil_moisture"] > 0.5).sum() > 0 and len(frame) == len(kept) - dropped
+
+
+def fetch_all(tmp_path, monkeypatch, values, lat, lon):
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        return fetch(tmp_path, monkeypatch, values, lat, lon, keep_out_of_range=True)
+
+
+def test_keep_out_of_range_keeps_them_silently_but_fills_stay_masked(tmp_path, monkeypatch):
+    values, lat, lon = values_with_some_above_valid_max()
+    frame = fetch_all(tmp_path, monkeypatch, values, lat, lon)
+    assert (frame["soil_moisture"] > 0.5).any() and (frame["soil_moisture"] > -1).all()
+
+
+def test_cli_prints_the_warning_and_accepts_the_flag(tmp_path, monkeypatch, capsys):
+    values, lat, lon = values_with_some_above_valid_max()
+    stub_download(tmp_path, monkeypatch, values, lat, lon)
+    monkeypatch.setattr(earthdata, "search", lambda *args: [FakeGranule()])
+    variable = "Soil_Moisture_Retrieval_Data_AM/soil_moisture"
+    argv = ["smap", "--variable", variable, "--start", "2025-01-10", "--end", "2025-01-10", "--raw-dir", str(tmp_path)]
+    assert cli.main([*argv, "--out", str(tmp_path / "a.csv")]) == 0
+    assert "warning: dropped " in capsys.readouterr().err
+    assert cli.main([*argv, "--keep-out-of-range", "--out", str(tmp_path / "b.csv")]) == 0
+    assert capsys.readouterr().err == ""
+    default, kept = (pd.read_csv(tmp_path / name) for name in ("a.csv", "b.csv"))
+    assert len(kept) > len(default) and default["soil_moisture"].max() <= 0.5 < kept["soil_moisture"].max()
+
+
+def test_a_variable_without_valid_range_warns_about_nothing(tmp_path, monkeypatch):
+    _, _, lat, lon = ease_like_arrays()
+    stub_download(tmp_path, monkeypatch, np.full(lat.shape, 0.9, dtype="float32"), lat, lon)
+    with h5py.File(tmp_path / "SMAP_L3_SM_P_E_20250110.h5", "a") as h5:
+        for key in ("valid_min", "valid_max"):
+            del h5["Soil_Moisture_Retrieval_Data_AM/soil_moisture"].attrs[key]
+    variable = "Soil_Moisture_Retrieval_Data_AM/soil_moisture"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        frame = earthdata.fetch_grid(earthdata.SOURCES["smap"], [FakeGranule()], variable, SERGIPE, tmp_path)
+    assert np.allclose(frame["soil_moisture"], 0.9)
+
+
+def test_pm_group_with_suffixed_names(tmp_path, monkeypatch):
+    _rows, _cols, lat, lon = ease_like_arrays(seed=5)
+    values = np.full(lat.shape, 0.25, dtype="float32")
+    values[::3, :] = -9999
+    frame = fetch(tmp_path, monkeypatch, values, lat, lon, half="PM")
+    assert len(frame) > 20 and list(frame.columns) == ["time", "lat", "lon", "soil_moisture_pm"]
+    assert frame["lat"].between(SERGIPE.south, SERGIPE.north).all()
+    assert frame["lon"].between(SERGIPE.west, SERGIPE.east).all()
+    assert np.allclose(frame["soil_moisture_pm"], 0.25)

@@ -139,21 +139,35 @@ def clip_curvilinear(ds: xr.Dataset, variable: str, bbox: BBox) -> xr.DataArray:
     return clipped.assign_coords(lat=lat.isel(window), lon=lon.isel(window))
 
 
-def mask_valid_range(da: xr.DataArray) -> xr.DataArray:
+class OutOfRangeWarning(UserWarning):
+    """Values outside the variable's declared valid range were dropped."""
+
+
+def describe_range(low: float | None, high: float | None) -> str:
+    """Text for a valid range, e.g. '0.02-0.5', '>= 0.02' or '<= 0.5'."""
+    if low is not None and high is not None:
+        return f"{low:g}-{high:g}"
+    return f">= {low:g}" if low is not None else f"<= {high:g}"
+
+
+def mask_valid_range(da: xr.DataArray) -> tuple[xr.DataArray, int, tuple[float | None, float | None]]:
     """NaN outside the variable's valid_min/valid_max (or valid_range) attributes, when it declares them.
 
+    Returns the masked array, how many non-NaN values were dropped and the (low, high) bounds that were used.
     Skipped for variables xarray unpacked with scale_factor/add_offset: their valid range is in packed units.
     """
     if "scale_factor" in da.encoding or "add_offset" in da.encoding:
-        return da
+        return da, 0, (None, None)
     bounds, valid_min, valid_max = (_numbers(da.attrs, n) for n in ("valid_range", "valid_min", "valid_max"))
     low = bounds[0] if bounds.size == 2 else (valid_min[0] if valid_min.size == 1 else None)
     high = bounds[1] if bounds.size == 2 else (valid_max[0] if valid_max.size == 1 else None)
+    keep = xr.ones_like(da, dtype=bool)
     if low is not None:
-        da = da.where(da >= low)
+        keep &= da >= low
     if high is not None:
-        da = da.where(da <= high)
-    return da
+        keep &= da <= high
+    dropped = int((da.notnull() & ~keep).sum())
+    return da.where(keep), dropped, (low, high)
 
 
 def to_long_frame(da: xr.DataArray, value_name: str) -> pd.DataFrame:

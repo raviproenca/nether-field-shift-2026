@@ -6,6 +6,7 @@ The download paths of this module have not been exercised against the real servi
 """
 
 import os
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -109,25 +110,40 @@ def _open_dataset(handle, variable: str) -> tuple[xr.Dataset, str]:
     return xr.open_dataset(handle, engine="h5netcdf", group=group or None, phony_dims="sort"), name
 
 
-def _clip_grid(granule, handle, variable: str, bbox: BBox, kind: str) -> pd.DataFrame:
+def _clip_grid(
+    granule, handle, variable: str, bbox: BBox, kind: str, keep_out_of_range: bool = False
+) -> tuple[pd.DataFrame, int, tuple[float | None, float | None]]:
+    """Clipped long table, how many values the valid range dropped, and the range that was applied."""
     ds, name = _open_dataset(handle, variable)
     with ds:
         if name not in ds:
             raise InputError(f"variable '{name}' not found; available: {', '.join(ds.data_vars)}")
         da = clip.clip_latlon(ds[name], bbox) if kind == "remote_grid" else clip.clip_curvilinear(ds, name, bbox)
-        da = clip.mask_valid_range(da).load()
+        dropped, bounds = 0, (None, None)
+        if not keep_out_of_range:
+            da, dropped, bounds = clip.mask_valid_range(da)
+        da = da.load()
     if "time" not in da.dims and "time" not in da.coords:
         da = da.expand_dims(time=[granule_start(granule)])
-    return clip.to_long_frame(da, name)
+    return clip.to_long_frame(da, name), dropped, bounds
 
 
 def fetch_grid(
-    source: Source, granules: list, variable: str, bbox: BBox, raw_dir: Path, download_full: bool = False
+    source: Source,
+    granules: list,
+    variable: str,
+    bbox: BBox,
+    raw_dir: Path,
+    download_full: bool = False,
+    keep_out_of_range: bool = False,
 ) -> pd.DataFrame:
     """Long table (time, lat, lon, value) for GLDAS, IMERG and SMAP.
 
     GLDAS/IMERG are read lazily over HTTPS (earthaccess.open) so only the bytes of the box are transferred,
     unless download_full is set. SMAP files are always downloaded to raw_dir and clipped locally.
+
+    Fill values are always dropped. Values outside the variable's declared valid_min/valid_max are dropped too,
+    with one warning that gives the count, unless keep_out_of_range is set.
     """
     require_login()
     with remote_errors("opening the granules"):
@@ -136,13 +152,21 @@ def fetch_grid(
         else:
             handles = earthaccess.open(granules)
     with remote_errors("reading the granules"):
-        frames = [_clip_grid(g, h, variable, bbox, source.kind) for g, h in zip(granules, handles)]
-    table = pd.concat(frames, ignore_index=True)
-    if table.empty:
-        raise RemoteDataError(
-            f"the granules have no valid '{variable}' values inside the box "
-            "(satellite swaths leave gaps: try other dates, a bigger box or, for SMAP, the PM group)"
+        results = [_clip_grid(g, h, variable, bbox, source.kind, keep_out_of_range) for g, h in zip(granules, handles)]
+    dropped = sum(count for _, count, _ in results)
+    if dropped:
+        low, high = next(bounds for _, count, bounds in results if count)
+        warnings.warn(
+            f"dropped {dropped} values outside valid_min/valid_max ({clip.describe_range(low, high)}); "
+            "pass --keep-out-of-range to keep them",
+            clip.OutOfRangeWarning,
         )
+    table = pd.concat([frame for frame, _, _ in results], ignore_index=True)
+    if table.empty:
+        hint = "try other dates (SMAP revisits every 2-3 days), a bigger box, or the PM group"
+        if source.kind != "file_grid":
+            hint = "try other dates or a bigger box"
+        raise InputError(f"no valid '{variable}' values inside the box for these dates: {hint}")
     return table
 
 
