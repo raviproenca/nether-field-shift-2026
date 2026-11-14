@@ -52,16 +52,21 @@ The **channel** (Telegram bot, voice) and the **audience** are decided only afte
 
 ## 6. Who does what (per the board)
 
-Area labels and assignees as on the [project board](https://github.com/users/raviproenca/projects/1) on Nov 14. The board is the live source for assignees.
+Area labels and assignees as on the [project board](https://github.com/users/raviproenca/projects/1) on Nov 14, late afternoon. The board is the live source for assignees; if this table is out of date, the board wins.
 
 | Area (label) | What | Who |
 |---|---|---|
-| `predição` | Decision engine (`src/engine`), backtest | Guilherme (`@guilhermevbagio`); #79 has no assignee yet |
-| `dados` | Connectors, snapshots, ZARC, Open-Meteo | Duda (`@dudxyz`), with Guilherme on #48 and Ravi on #51 |
-| `back` | API (`apps/api`), explanation (`src/explain`), bot | Ravi (API), Guilherme (explanation), Gabriel (`@gabrielchavesas`, bot) |
-| `front` | Producer dashboard, internal map | Ravi (dashboard), Gabriel (internal map) |
-| `deploy` | Cloudflare Pages, Cloud Run deploy, credits and link check | Ravi, Lucas (`@LucasFe3152`, #65), Duda (#66) |
-| `infra` | Piper service | Ravi and Gabriel (#59) |
+| `predição` | Decision engine (`src/engine`): #38, #44 to #47 | Duda (`@dudxyz`) and Lucas (`@LucasFe3152`) |
+| `predição` | Historical backtest #79 | Ravi and Gabriel (`@gabrielchavesas`) |
+| `dados` | ZARC check #48 | Ravi and Gabriel |
+| `dados` | Open-Meteo forecast #51 | Duda and Ravi |
+| `back` | API (`apps/api`): #39, #49, #50, #53, #54 | Ravi |
+| `back` | Explanation (`src/explain`): #40, #52, #55 | No assignee yet |
+| `back` | Bot: #41, #56, #57 (and voice #58, #60, #61) | Gabriel; Ravi and Lucas also on #56 |
+| `front` | Producer dashboard: #42, #62 to #64 | Ravi |
+| `front` | Internal map: #15 (epic #19 has no assignee) | Gabriel |
+| `deploy` | Cloudflare Pages #18, Cloud Run #65, credits and link check #66 | Ravi; Lucas on #65; Duda on #66 |
+| `infra` | Piper service #59 | Ravi and Gabriel |
 
 Ravi (`@raviproenca`, Tech Lead) opens and assigns issues, approves and merges every PR.
 
