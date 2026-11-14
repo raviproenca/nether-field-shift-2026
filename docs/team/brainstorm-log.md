@@ -49,3 +49,18 @@ Curated summary per session, in order. Nothing here is a decision: see [decision
 - Data sources proposed by Duda: NASA POWER, GPM IMERG, SMAP, Sentinel-2, Landsat, SRTM, SoilGrids, plus ANA (Brazil). Others welcome.
 - State of the art: papers (IEEE) and patents or software registrations (INPI).
 - Split discussed: Duda on data; one person on requirements and issues; Chaves (Gabriel) on screens.
+
+## 12:05 · Team with a mentor
+**What the team presented:** family farmers (small and medium) in Brazil; a conversational bot instead of complex charts; voice for people who have trouble reading or writing; daily tips and answers on planting, rotation and timing; NASA data plus other free sources for the region; MVP probably on a **Telegram bot** (WhatsApp's API is paid), with bot and dashboard on the same API; AI only to explain. Example from the team: farmers know "after São João (late June) you plant corn", but with climate change the date has shifted, and corn is sensitive to heat.
+
+**Mentor feedback:**
+- Good direction. **Close the scope this morning.**
+- **Validate with 1–2 people from the field** (a farmer, or a businessperson who knows farmers) by the end of the day: someone saying "I would use this".
+- Risk: most challenge datasets focus on the US. The team answered that many NASA datasets are global (rain, soil moisture, vegetation, climate).
+- Build the data layer that consolidates everything early.
+- Both channels are valid; the main focus is conversational.
+- The biggest challenge is translating indicators into the farmer's everyday language.
+- Not just the current state: **projection**, and if possible **prescription**.
+- Start the **pitch skeleton** now with the keywords that come up.
+- Have someone act as a **"traffic light"**: say what is green or red and change course early.
+- Offered help with database organization and tooling.
