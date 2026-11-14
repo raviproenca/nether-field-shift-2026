@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 11:35 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 11:40 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
@@ -16,11 +16,11 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 
 | Front | What | Status |
 |---|---|---|
-| **A. Internal map** | Team tool to explore and validate data. Shared login, no visual polish, **not judged**. Published on Cloudflare Pages (`*.pages.dev`). | In progress (epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19)) |
+| **A. Internal map** | Team tool to explore and validate data. No visual polish, **not judged**. Static site on Cloudflare Pages (`*.pages.dev`) with **pre-generated data and no API**; NASA GIBS layers live. | In progress (epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19)) |
 | **B. Farmer product** | A **Telegram bot** (family farmers) and a **producer web dashboard** (larger farms), both on the same API. Anything judges open works **without login** (demo mode in the dashboard; the bot open to anyone). | **Not started on purpose:** built only after the formal idea decision and the PRD (BMad) |
 | **C. Judges' delivery** | Project page on the Space Apps site (submission form), video ≤ 30 s or ≤ 7 slides, public links (demo, repo), all in English. | At the end; the checklist already exists |
 
-**Shared by all three, worth investing in now:** the data layer (`src/data/`) and the API (`apps/api/`). The internal map's layers and map component can be reused in the producer dashboard.
+**Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the idea decision, and can serve the same format. The internal map's layers and map component can be reused in the producer dashboard.
 
 ## 2b. Direction under discussion (repeated and supported out loud; not decided)
 
@@ -66,10 +66,11 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 | Issues | Area | Who |
 |---|---|---|
 | [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12)–[#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) | Front end (`apps/web/`): setup, base map, NASA GIBS layers, point side panel (front A) | **Gabriel (Chaves)** |
-| [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16)–[#18](https://github.com/raviproenca/nether-field-shift-2026/issues/18) | API (`apps/api/`), shared login, deploy | **Ravi**, with AI agents |
+| [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16)–[#18](https://github.com/raviproenca/nether-field-shift-2026/issues/18) | Snapshot generator (pre-built data in `apps/web/public/data/`), access choice, deploy to `*.pages.dev` | **Ravi**, with AI agents |
 
-- The API **contract (OpenAPI) comes first**, in a small PR, so the front end can build against it (with mocks) right away.
-- The front-end setup (#12) is Gabriel's: the API side does not touch `apps/web/`.
+- **No API for the internal map** (decided Nov 14): the front end reads pre-generated JSON/GeoJSON files. The format (from the earlier API contract draft) is documented first, so the front end can build against it right away.
+- The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
+- Access (#17): no login inside the front end (it could not be verified). Options for Ravi: no login (unlisted URL, `noindex`) or Cloudflare Access.
 
 ## 5. Roles (as discussed; confirm in decisions.md)
 
