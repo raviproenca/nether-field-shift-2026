@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 11:29 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 11:35 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
@@ -10,11 +10,23 @@ _Last updated: Nov 14, 2026, 11:29 BRT. Read this and [decisions.md](decisions.m
 - **Deadline:** Sun Nov 15, 2026, 23:59 BRT.
 - **Project idea:** **under discussion, not decided.** Only what is in [decisions.md](decisions.md) counts as decided.
 
-## 2. Direction under discussion (repeated and supported out loud; not decided)
+## 2. Three fronts
+
+To avoid building the wrong thing, the work is split into three fronts (decided Nov 14; see [decisions.md](decisions.md)):
+
+| Front | What | Status |
+|---|---|---|
+| **A. Internal map** | Team tool to explore and validate data. Shared login, no visual polish, **not judged**. Published on Cloudflare Pages (`*.pages.dev`). | In progress (epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19)) |
+| **B. Farmer product** | A **Telegram bot** (family farmers) and a **producer web dashboard** (larger farms), both on the same API. Anything judges open works **without login** (demo mode in the dashboard; the bot open to anyone). | **Not started on purpose:** built only after the formal idea decision and the PRD (BMad) |
+| **C. Judges' delivery** | Project page on the Space Apps site (submission form), video ≤ 30 s or ≤ 7 slides, public links (demo, repo), all in English. | At the end; the checklist already exists |
+
+**Shared by all three, worth investing in now:** the data layer (`src/data/`) and the API (`apps/api/`). The internal map's layers and map component can be reused in the producer dashboard.
+
+## 2b. Direction under discussion (repeated and supported out loud; not decided)
 
 - **Who:** family farming (agricultura familiar) in Brazil, with a well-defined persona.
 - **Minimum input:** the farmer's location plus the crop; everything else is pulled from data.
-- **Delivery:** asynchronous messages (WhatsApp as the ideal, Telegram for the demo because its bot API is free; SMS mentioned) and a more detailed web dashboard for larger farms, both on the same API.
+- **Delivery:** asynchronous messages through a **Telegram bot (decided: Telegram for now; WhatsApp as future work)** and a more detailed web dashboard for larger farms, both on the same API.
 - **Data:** NASA data, plus local measurements for validation (a field device or sensor was discussed).
 - **Logic:** deterministic calculations; AI only to explain the results in plain language; complex ML as future work.
 - **Open:** forecasts (the data is historical), and where they would come from.
@@ -53,7 +65,7 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 
 | Issues | Area | Who |
 |---|---|---|
-| [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12)–[#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) | Front end (`apps/web/`): setup, base map, NASA GIBS layers, point side panel | **Gabriel (Chaves)** |
+| [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12)–[#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) | Front end (`apps/web/`): setup, base map, NASA GIBS layers, point side panel (front A) | **Gabriel (Chaves)** |
 | [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16)–[#18](https://github.com/raviproenca/nether-field-shift-2026/issues/18) | API (`apps/api/`), shared login, deploy | **Ravi**, with AI agents |
 
 - The API **contract (OpenAPI) comes first**, in a small PR, so the front end can build against it (with mocks) right away.

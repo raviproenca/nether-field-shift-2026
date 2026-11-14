@@ -8,6 +8,6 @@
 | 2 | Where would **forecasts** come from? (current data is historical) | 11:15 | team |
 | 3 | Which other datasets beyond POWER, IMERG, SMAP, Sentinel-2, Landsat, SRTM, SoilGrids and ANA? | 11:15 | Duda (asked for suggestions) |
 | 4 | Can a WhatsApp bot ask for the user's location with a button? | 10:45 | team |
-| 5 | Demo channel: Telegram (free API), WhatsApp (paid) or SMS? | 10:45 | team |
+| 5 | ~~Demo channel: Telegram, WhatsApp or SMS?~~ **Decided Nov 14: Telegram for now** (see decisions.md) | 10:45 | — |
 | 6 | Which map API for the dashboards? | 10:36 | team |
 | 7 | Who gathers the requirements and opens the issues? | 11:15 | team |
