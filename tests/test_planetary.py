@@ -210,3 +210,30 @@ def test_cli_max_pixels_flag_reaches_the_guard(monkeypatch, capsys):
     argv = ["planetary", "--variable", "B04", "--start", "2025-01-01", "--end", "2025-01-31"]
     assert cli.main(argv) == 2
     assert "million pixels per band" in capsys.readouterr().err
+
+
+def make_range_item(item_id, start_day):
+    return Item(
+        id=item_id,
+        geometry=None,
+        bbox=None,
+        datetime=None,
+        properties={
+            "start_datetime": f"2025-01-{start_day:02d}T00:00:00Z",
+            "end_datetime": f"2025-01-{start_day + 1:02d}T00:00:00Z",
+        },
+    )
+
+
+def test_items_without_datetime_sort_by_start_datetime_and_do_not_crash():
+    items = [make_item("dated", day=15), make_range_item("late", 20), make_range_item("early", 3)]
+    ordered = planetary.search(FakeClient(items), BOX, DATES, "sentinel-2-l2a", 20)
+    assert [i.id for i in ordered] == ["early", "dated", "late"]
+    newest = planetary.latest_item_datetime(FakeClient([make_range_item("only", 9)]), BOX, "sentinel-2-l2a")
+    assert newest.day == 9
+
+
+def test_item_time_falls_back_to_the_oldest_time():
+    bare = Item(id="bare", geometry=None, bbox=None, datetime=datetime(2025, 1, 1, tzinfo=UTC), properties={})
+    bare.datetime = None
+    assert planetary.item_time(bare) < datetime(2000, 1, 1, tzinfo=UTC)

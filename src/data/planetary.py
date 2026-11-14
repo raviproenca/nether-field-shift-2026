@@ -5,7 +5,7 @@ Sentinel-2 is ESA/Copernicus data, not NASA data. For 30 m NASA imagery use the 
 """
 
 import math
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import planetary_computer
@@ -52,7 +52,12 @@ def search(client: pystac_client.Client, bbox: BBox, dates: DateRange, collectio
             f"no {collection} items for this box and period with cloud < {max_cloud:g}% "
             "(try more dates, a higher --max-cloud or another --collection)"
         )
-    return sorted(items, key=lambda item: item.datetime)
+    return sorted(items, key=item_time)
+
+
+def item_time(item: Item) -> datetime:
+    """When the item was acquired: datetime, else start_datetime, else the oldest possible UTC time."""
+    return item.datetime or item.common_metadata.start_datetime or datetime.min.replace(tzinfo=UTC)
 
 
 def latest_item_datetime(client: pystac_client.Client, bbox: BBox, collection: str) -> datetime:
@@ -67,7 +72,7 @@ def latest_item_datetime(client: pystac_client.Client, bbox: BBox, collection: s
         newest = next(iter(search_.items()), None)
     if newest is None:
         raise RemoteDataError(f"no {collection} items over this box")
-    return newest.datetime
+    return item_time(newest)
 
 
 def asset_href(item: Item, asset: str) -> str:
