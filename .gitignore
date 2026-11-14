@@ -16,6 +16,7 @@ venv/
 # dados brutos e cache (baixar com script; não versionar arquivos grandes)
 data/raw/
 data/cache/
+data/processed/
 *.nc
 *.h5
 *.hdf
@@ -35,3 +36,5 @@ _bmad/render/
 .claude/settings.local.json
 # Maestri canvas (local workspace state)
 .maestri/
+# git worktrees (local)
+.worktrees/
