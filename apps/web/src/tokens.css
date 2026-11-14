@@ -1,7 +1,7 @@
 /* AI-assisted: generated with Claude Code, reviewed by Ravi */
 /* Design tokens. Style: achromatic ledger (taste skill, app screens), light theme only. */
 :root {
-  /* Colour: ink chrome, the map carries the colour. */
+  /* Color: ink chrome, the map carries the color. */
   --ground: #f2f5f2;
   --surface: #ffffff;
   --raised: #eeeeee;
@@ -35,6 +35,12 @@
   --control-height: 36px;
   --touch-height: 44px;
   --panel-width: 320px;
+  --legend-height: 12px;
+  --swatch-size: 10px;
+  --check-size: 16px;
+  /* Room kept free under the panel for the map attribution. */
+  --panel-clearance: 64px;
+  --panel-body-max-phone: 40dvh;
   --mark-size: 8px;
   --border-width: 1px;
   --focus-width: 2px;

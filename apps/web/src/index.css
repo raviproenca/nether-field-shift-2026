@@ -65,6 +65,7 @@ fieldset {
   flex-direction: column;
   gap: var(--space-3);
   width: var(--panel-width);
+  max-height: calc(100% - var(--space-4) - var(--panel-clearance));
   padding: var(--space-4);
   background: var(--surface);
   border-radius: var(--radius-card);
@@ -140,6 +141,167 @@ fieldset {
   transform: scale(var(--press-scale));
 }
 
+/* Layers and date: a disclosure, so the panel can fold away on a phone. */
+.disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.disclosure-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.disclosure-title,
+.disclosure-action {
+  font-weight: var(--fw-medium);
+}
+
+.disclosure-summary {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.disclosure-action {
+  text-decoration: underline;
+}
+
+.panel-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.layer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field-label {
+  padding: 0;
+  font-weight: var(--fw-medium);
+}
+
+.date-input {
+  height: var(--control-height);
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.date-input:disabled {
+  color: var(--muted);
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.layer-list > .field-label {
+  margin-bottom: var(--space-1);
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  cursor: pointer;
+}
+
+.layer-toggle input {
+  width: var(--check-size);
+  height: var(--check-size);
+  margin: 0;
+  accent-color: var(--text);
+  cursor: pointer;
+}
+
+.layer-status {
+  padding-left: calc(var(--check-size) + var(--space-2));
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+/* Legend: the official color scale, its ends and its unit. */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding-left: calc(var(--check-size) + var(--space-2));
+}
+
+.legend-bar {
+  display: block;
+  width: 100%;
+  height: var(--legend-height);
+  border-radius: var(--radius-inner);
+}
+
+.legend-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-unit {
+  color: var(--muted);
+}
+
+.legend-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-dot {
+  flex: none;
+  width: var(--swatch-size);
+  height: var(--swatch-size);
+  border-radius: var(--radius-round);
+}
+
+.legend-note,
+.legend-source {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-note a {
+  color: var(--text);
+}
+
 /* Map problem: one sentence and a way out, inside the panel. */
 .notice {
   display: flex;
@@ -202,8 +364,15 @@ fieldset {
     height: calc(var(--touch-height) - 2 * var(--space-1));
   }
 
-  .text-button {
+  .text-button,
+  .disclosure,
+  .layer-toggle,
+  .date-input {
     min-height: var(--touch-height);
+  }
+
+  .panel-body {
+    max-height: var(--panel-body-max-phone);
   }
 }
 
