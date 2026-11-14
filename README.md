@@ -80,7 +80,7 @@ The internal map reads static JSON and GeoJSON files from `apps/web/public/data/
 Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents: [AGENTS.md](AGENTS.md).
 
 ## AI usage
-Built with the help of AI coding assistants; the idea and decisions are the team's own. The data toolkit in `src/data/`, its tests and `scripts/earthdata-login.sh` were generated with Claude Code and carry an `AI-assisted` header (review pending).
+Built with the help of AI coding assistants; the idea and decisions are the team's own. The data toolkit in `src/data/`, its tests and `scripts/earthdata-login.sh` were generated with Claude Code and carry an `AI-assisted` header (review pending). The internal map front end in `apps/web/` was also generated with Claude Code and carries the same header (review pending).
 
 ## Credits
 
@@ -104,6 +104,16 @@ Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requiremen
 | [pystac-client](https://github.com/stac-utils/pystac-client) (STAC search for Planetary Computer; added because the `planetary` source queries the STAC API) | Apache-2.0 |
 | [planetary-computer](https://github.com/microsoft/planetary-computer-sdk-for-python) (signs asset URLs, no key; added for the same reason) | MIT |
 | [pytest](https://pytest.org/) | MIT |
+
+Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.json)):
+
+| Library, data or font | License / terms |
+|---|---|
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) base map tiles | Data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) |
+| [MapLibre GL JS](https://maplibre.org/) | BSD-3-Clause |
+| [React](https://react.dev/) | MIT |
+| [Vite](https://vite.dev/) | MIT |
+| [Geist](https://vercel.com/font) font via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
 
 ## License
 [Apache License 2.0](LICENSE)
