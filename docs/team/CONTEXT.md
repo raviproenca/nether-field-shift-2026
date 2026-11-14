@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 12:40 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Updated Nov 14, 2026 after the mentor feedback. Read [docs/scope.md](../scope.md) first, then [decisions.md](decisions.md)._
 
 **Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out.
 
@@ -10,7 +10,7 @@ _Last updated: Nov 14, 2026, 12:40 BRT. Read this and [decisions.md](decisions.m
 
 - **Challenge:** Field Shift: Adapting Farms with NASA Data. Team Nether, Aracaju local event.
 - **Deadline:** Sun Nov 15, 2026, 23:59 BRT.
-- **Project idea:** **Confirmed (Nov 14) by Ravi (Tech Lead) on behalf of the team; wording by Duda:** Brazilian family farming in Sergipe (Agreste & Semiárido), two interfaces (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*, with **projection and prescription** (what to do, not only how things are). See [decisions.md](decisions.md). PRD (BMad) in progress.
+- **Project idea:** **Confirmed (Nov 14) by Ravi (Tech Lead) on behalf of the team; wording by Duda:** Brazilian family farming in Sergipe (Agreste & Semiárido), an initial two-interface concept (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*, with **projection and prescription** (what to do, not only how things are). See [decisions.md](decisions.md). The later priority decision defers the channel and audience until the engine is validated; the dashboard leads the demo. The PRD and epics are recorded in `_bmad-output/planning-artifacts/`.
 
 ## 2. Three fronts
 
@@ -24,7 +24,7 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 
 **Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts (Open-Meteo only in the product API, not in the internal snapshots). The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
 
-**Notes for the PRD and architecture (front B, not built yet):**
+**Earlier architecture decisions (apply to bot/voice only if the channel is confirmed after validation):**
 - Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice) **as a separate service** because of its GPL-3.0 license. No service with a trial or key that expires before Jan 26, 2027.
 - Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
 - **Hosting (decided):** everything on Google Cloud (Global Offers credit): Cloud Run (API, bot, voice service), Vertex AI Gemini Flash for explanations with a template fallback, Google Speech-to-Text/Text-to-Speech (pt-BR, en) with Piper + faster-whisper as fallback. Budget alert at US$ 50, no GPU, secrets in env/Secret Manager.
@@ -33,7 +33,9 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 - Forecasts: Open-Meteo in the demo; NASA GEOS-FP cited in the pitch. ZARC as a validation reference for planting windows.
 - Validation with farmers: skipped during the hackathon; "next step" in the pitch.
 
-## 2b. Confirmed product direction
+## 2b. Earlier product direction (channel deferred)
+
+The following records the concept before the latest priority change. It is historical context for the engine and data; the channel, voice and audience await confirmation after validation. Follow [docs/scope.md](../scope.md) for current work.
 
 - **Who:** Brazilian family farming (*agricultura familiar*) in Sergipe (Agreste & Semiárido) for the primary persona, plus larger farms/extension on the web dashboard.
 - **Minimum input:** farmer's location (Telegram `request_location` or map pin) + current/intended crop + priority (water, soil, erosion, or income/forage); everything else is pulled from data.
