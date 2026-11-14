@@ -42,7 +42,7 @@ Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR p
 
 O escopo atual está em [docs/scope.md](docs/scope.md). Para uma explicação em português, com o seu próximo passo, use a skill `nether-escopo`:
 
-- **Claude Code:** `/nether-escopo` (geral) ou `/nether-escopo <seu nome ou área>`, ex.: `/nether-escopo guilherme`.
+- **Claude Code:** `/nether-escopo` (geral) ou `/nether-escopo <seu nome ou área>`, ex.: `/nether-escopo lucas`.
 - **Codex:** `$nether-escopo` (ou `$nether-escopo <nome ou área>`), ou peça "explica o escopo".
 
 A skill só lê: os documentos e, se o `gh` estiver logado, o quadro e as issues. Ela não atribui issues nem mexe no quadro.

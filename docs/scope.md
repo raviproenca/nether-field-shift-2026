@@ -30,10 +30,10 @@ After a mentor's feedback, and because the judging criteria weigh **validity** a
 3. **E2 Product API** [#39](https://github.com/raviproenca/nether-field-shift-2026/issues/39), only what the dashboard needs: [#49](https://github.com/raviproenca/nether-field-shift-2026/issues/49), [#50](https://github.com/raviproenca/nether-field-shift-2026/issues/50), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#53](https://github.com/raviproenca/nether-field-shift-2026/issues/53), [#54](https://github.com/raviproenca/nether-field-shift-2026/issues/54).
 4. **E5 Producer dashboard and demo mode** [#42](https://github.com/raviproenca/nether-field-shift-2026/issues/42): [#62](https://github.com/raviproenca/nether-field-shift-2026/issues/62), [#63](https://github.com/raviproenca/nether-field-shift-2026/issues/63), [#64](https://github.com/raviproenca/nether-field-shift-2026/issues/64).
 5. **E3 Plain-language explanation** [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40): [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52), [#55](https://github.com/raviproenca/nether-field-shift-2026/issues/55).
-6. **E6 Deploy and judge readiness** [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43): [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66).
-7. **E4 Telegram bot with voice** [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), **after the engine is validated**: [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56)–[#58](https://github.com/raviproenca/nether-field-shift-2026/issues/58), [#60](https://github.com/raviproenca/nether-field-shift-2026/issues/60), [#61](https://github.com/raviproenca/nether-field-shift-2026/issues/61), and the Piper service [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59) last.
+6. **E6 Deploy and judge readiness** [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43): [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66); bot/voice deployment [#82](https://github.com/raviproenca/nether-field-shift-2026/issues/82) remains in the Backlog until validation.
+7. **E4 Telegram bot with voice** [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), **after the engine is validated**: [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56)–[#58](https://github.com/raviproenca/nether-field-shift-2026/issues/58), [#60](https://github.com/raviproenca/nether-field-shift-2026/issues/60), [#61](https://github.com/raviproenca/nether-field-shift-2026/issues/61), and the Piper service [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59) last; deploy follows in [#82](https://github.com/raviproenca/nether-field-shift-2026/issues/82).
 
-The **channel** (Telegram bot, voice) and the **audience** are decided only after the engine is validated. The bot and voice issues are kept, at the end of the Backlog.
+The **channel** (Telegram bot, voice) and the **audience** are decided only after the engine is validated. The template explanation [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52) is a prerequisite of API story #53 and therefore comes before #53; the rest of E3 remains later. The bot and voice issues are kept, at the end of the Backlog.
 
 ## 4. Out of scope
 
@@ -61,11 +61,11 @@ Area labels and assignees as on the [project board](https://github.com/users/rav
 | `dados` | ZARC check #48 | Ravi and Gabriel |
 | `dados` | Open-Meteo forecast #51 | Duda and Ravi |
 | `back` | API (`apps/api`): #39, #49, #50, #53, #54 | Ravi |
-| `back` | Explanation (`src/explain`): #40, #52, #55 | No assignee yet |
+| `back` | Explanation (`src/explain`): #40, #52, #55 | No assignee yet; #52 must precede #53 |
 | `back` | Bot: #41, #56, #57 (and voice #58, #60, #61) | Gabriel; Ravi and Lucas also on #56 |
 | `front` | Producer dashboard: #42, #62 to #64 | Ravi |
 | `front` | Internal map: #15 (epic #19 has no assignee) | Gabriel |
-| `deploy` | Cloudflare Pages #18, Cloud Run #65, credits and link check #66 | Ravi; Lucas on #65; Duda on #66 |
+| `deploy` | Cloudflare Pages #18, API Cloud Run #65, credits and link check #66; bot/voice deploy #82 after validation | Ravi; Lucas on #65; Duda on #66 |
 | `infra` | Piper service #59 | Ravi and Gabriel |
 
 Ravi (`@raviproenca`, Tech Lead) opens and assigns issues, approves and merges every PR.

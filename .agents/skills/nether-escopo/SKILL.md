@@ -27,7 +27,7 @@ From the repo root, read in this order:
 3. `docs/team/CONTEXT.md`: the team context and roles.
 4. Only if needed for a detail: the PRD (`_bmad-output/planning-artifacts/prds/*/prd.md` and `addendum.md`) and `_bmad-output/planning-artifacts/epics.md`.
 
-If `docs/scope.md` is missing, say that the scope file is not on this branch, suggest `git switch dev && git pull`, and continue with `decisions.md` and `CONTEXT.md`.
+If `docs/scope.md` is missing, say that the scope file is not on this branch, say that this branch does not yet contain it, and continue with `decisions.md` and `CONTEXT.md`.
 
 ## Step 2: Read the live board (if possible)
 
@@ -66,7 +66,7 @@ Clear and friendly, for someone who has read nothing. Short paragraphs and lists
 5. **Quem faz o quê**: area → people, as on the board (or the docs, if the board could not be read).
 6. **Status do quadro agora**: what is in Todo and In Progress (with assignees), what is blocked (`bloqueada`), and anything open without an assignee. Skip this section, with one line saying why, if the board could not be read.
 7. **Seu próximo passo**:
-   - With a person or an area: their open issues in **In Progress** first, then **Todo**, in board order. For each one: link, title and its "Pronto quando" items, read with `gh issue view <n> -R raviproenca/nether-field-shift-2026 --json body`. If they have nothing in Todo or In Progress, say so and point to their first Backlog issue in priority order. Suggest asking Ravi before picking up an issue that has no assignee.
+   - With a person or an area: their open issues in **In Progress** first, then **Todo**, in board order. For each one: link, title and its "Pronto quando" items, read with `gh issue view <n> -R raviproenca/nether-field-shift-2026 --json body`. If they have nothing in Todo or In Progress, say so. Point to their first assigned Backlog issue only if they have one. If they have no assigned issue, say clearly that they have no task to start and should wait for Ravi to assign one; do not suggest an unassigned issue as their next step. Never treat an unassigned issue as permission to start it.
    - Without an argument: one line asking who they are, for example "Me diga seu nome ou sua área (ex.: `/nether-escopo guilherme`) que eu mostro as suas issues."
 8. **Onde ler mais**: links to `docs/scope.md`, `docs/team/decisions.md`, `docs/team/CONTEXT.md`, the PRD, `epics.md` and the board <https://github.com/users/raviproenca/projects/1>.
 

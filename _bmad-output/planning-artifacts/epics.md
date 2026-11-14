@@ -30,7 +30,7 @@ After a mentor's feedback, and because the judging criteria weigh validity and r
 3. **E2 Product API**, only what the dashboard needs (#49, #50, #51, #53, #54).
 4. **E5 Producer dashboard and demo mode** (#62, #63, #64).
 5. **E3 Plain-language explanation** (#52, #55).
-6. **E6 Deploy and judge readiness** (#65, #66).
+6. **E6 Deploy and judge readiness** (#65, #66; bot/voice deploy #82 waits for validation).
 7. **E4 Telegram bot with voice: after the engine is validated** (#56 to #58, #60, #61, then the Piper service #59 last). The channel and the audience are decided then.
 
 ## FR Coverage Map
@@ -229,12 +229,11 @@ As a producer, I want to switch the dashboard to PT-BR, so that I can read it in
 ## Epic 6: Deploy and judge readiness
 
 ### Story 6.1: Google Cloud deployment (Cloud Run)
-As the team, I want the API, the bot and the TTS fallback on Cloud Run until Jan 26, 2027, so that the judges' links keep working.
+As the team, I want the product API on Cloud Run until Jan 26, 2027, so that the dashboard and judges' links keep working. Bot and voice deployment is separate, after validation (#82).
 
 **Acceptance criteria:**
 - **Given** a merge, **then** GitHub Actions deploys to Cloud Run through Workload Identity Federation, with no JSON key.
 - **And** the secrets live in Secret Manager.
-- **And** the bot uses a Telegram webhook.
 - **And** no service uses a GPU.
 - **And** a US$ 50 budget alert is set (AD-10).
 - **And** the credit window is confirmed to cover Jan 26, 2027.
@@ -243,8 +242,15 @@ As the team, I want the API, the bot and the TTS fallback on Cloud Run until Jan
 As a judge, I want every source and license credited and every link public, so that the submission follows the rules.
 
 **Acceptance criteria:**
-- **Given** the README and the UI footers, **then** every NASA and third-party source used is listed with its license, including Open-Meteo as non-commercial and not NASA, and Piper as GPL as a separate service.
+- **Given** the README and the UI footers, **then** every NASA and third-party source used is listed with its license, including Open-Meteo as non-commercial and not NASA, and Piper as GPL in a separate service if voice ships.
 - **And** every submitted link opens without login.
+
+### Story 6.3: Bot and voice deployment after validation (#82)
+If the team confirms the channel and voice after validating the engine, deploy the bot and required voice services to Cloud Run. This story does not block Story 6.1 or the dashboard submission.
+
+**Acceptance criteria:**
+- **Given** the engine validation is complete and the team confirms the channel, **then** the bot uses a Telegram webhook without exposing secrets.
+- **And** Piper, if used, runs as a separate GPL service.
 
 ## Issue list (created by the Tech Lead)
 
@@ -274,5 +280,6 @@ Issue numbers were added on Nov 14. The board order follows "Priority order" abo
 | Dashboard: plot view | E5 | 2.4, #12 |
 | Dashboard: demo mode | E5 | 5.1, 2.5 |
 | Dashboard: language (English default, PT-BR button) | E5 | 5.1 |
-| Deploy: Google Cloud (Cloud Run, WIF, Secret Manager, budget alert) | E6 | 2.1, 4.1 |
+| Deploy: product API on Cloud Run (#65) | E6 | 2.1 |
+| Deploy: bot and voice after validation (#82) | E6 | 1.5, 1.6, 4.1, 6.1 |
 | Credits and link check | E6 | all |
