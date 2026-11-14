@@ -23,6 +23,8 @@ python -m src.data power --point -10.91,-37.07 --radius-km 1 --start 2025-01-01 
   --variable T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN --out data/sample/power_aracaju_2025.csv
 # Count granules without login
 python -m src.data modis --search-only --start 2025-01-01 --end 2025-01-31
+# Sentinel-2 (ESA, not NASA) from the Planetary Computer: no account
+python -m src.data planetary --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31
 # GLDAS, IMERG, SMAP, MODIS, VIIRS and HLS downloads need a free NASA Earthdata account:
 scripts/earthdata-login.sh        # once; stores credentials in ~/.netrc, never in the repo
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
@@ -52,9 +54,17 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 
 - [ ] Every link in the project page (demo, app, video, slides, data, repo) opens without login and works until 2027-01-26
 - [ ] Repo is public; README lists how to run, NASA data (above), credits and AI usage
-- [ ] Each NASA dataset used appears in the table above with link, DOI and license/policy
+- [ ] Each NASA dataset used appears in the table above with link, DOI and license/policy; non-NASA data (Sentinel-2) only in "Third-party data" with its attribution
 - [ ] Citations with DOI for the datasets shown in the demo (POWER: project, version, access date)
 - [ ] No credentials, `.netrc` or `.env` in the history
+
+## Third-party data (not NASA)
+
+| Dataset | Provider | Page | DOI | License / terms |
+|---|---|---|---|---|
+| Sentinel-2 MSI Level-2A surface reflectance, 10 m (`sentinel-2-l2a`) | ESA / Copernicus, served by the Microsoft Planetary Computer | [Planetary Computer catalog](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a) | [10.5270/S2_-znk9xsj](https://doi.org/10.5270/S2_-znk9xsj) (Sentinel-2 MSI Level-2A BOA Reflectance Product, ESA) | Free, full and open under the [Copernicus Sentinel data terms](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice); attribution: "Contains modified Copernicus Sentinel data [year]". Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
+
+Sentinel-2 is **European data, not NASA data**, so it is not part of "NASA data used". It is read through the `planetary` source of the toolkit (no account, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it.
 
 ## Contributing
 Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents: [AGENTS.md](AGENTS.md).
@@ -78,6 +88,8 @@ Libraries (pinned in [requirements.txt](requirements.txt)):
 | [pyarrow](https://arrow.apache.org/docs/python/) | Apache-2.0 |
 | [requests](https://requests.readthedocs.io/) | Apache-2.0 |
 | [pyhdf](https://github.com/fhs/pyhdf) | MIT |
+| [pystac-client](https://github.com/stac-utils/pystac-client) (STAC search for Planetary Computer; added because the `planetary` source queries the STAC API) | Apache-2.0 |
+| [planetary-computer](https://github.com/microsoft/planetary-computer-sdk-for-python) (signs asset URLs, no key; added for the same reason) | MIT |
 | [pytest](https://pytest.org/) | MIT |
 
 ## License
