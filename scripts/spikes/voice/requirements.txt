@@ -1,0 +1,5 @@
+# Voice spike only (not part of the toolkit). Pinned versions tested on Nov 14, 2026.
+piper-tts==1.8.0
+faster-whisper==1.2.1
+av==15.1.0  # faster-whisper 1.2.1 breaks with av>=16 (removed open(metadata_errors=...))
+numpy==2.5.4
