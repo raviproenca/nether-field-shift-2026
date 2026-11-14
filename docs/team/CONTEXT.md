@@ -2,7 +2,7 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 12:20 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Last updated: Nov 14, 2026, 12:30 BRT. Read this and [decisions.md](decisions.md) before any task._
 
 ## 1. Where we are
 
@@ -25,7 +25,9 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 **Notes for the PRD and architecture (front B, not built yet):**
 - Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice) **as a separate service** because of its GPL-3.0 license. No service with a trial or key that expires before Jan 26, 2027.
 - Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
-- Voice adds CPU and RAM needs: include it in the hosting decision for front B (proposed: Google Cloud from the Global Offers; see open question 12).
+- **Hosting (decided):** everything on Google Cloud (Global Offers credit): Cloud Run (API, bot, voice service), Vertex AI Gemini Flash for explanations with a template fallback, Google Speech-to-Text/Text-to-Speech (pt-BR, en) with Piper + faster-whisper as fallback. Budget alert at US$ 50, no GPU, secrets in env/Secret Manager.
+- **Language (decided):** bot in Portuguese by default with an English option (voice too); producer dashboard in English by default with a PT-BR button.
+- **Crops for v1 (decided):** corn, beans, cassava. Product name: still open.
 - Forecasts: Open-Meteo in the demo; NASA GEOS-FP cited in the pitch. ZARC as a validation reference for planting windows.
 - Validation with farmers: skipped during the hackathon; "next step" in the pitch.
 
