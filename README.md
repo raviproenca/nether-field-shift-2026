@@ -42,6 +42,7 @@ Every dataset the project can read. NASA Earth science data are open: free to us
 |---|---|---|---|
 | NASA POWER, daily point API (MERRA-2 + CERES SYN1deg) | [power.larc.nasa.gov](https://power.larc.nasa.gov/) | none | Open; own [referencing guide](https://power.larc.nasa.gov/docs/referencing/): cite the POWER project, the version and the access date |
 | GLDAS Noah Land Surface Model L4 3-hourly 0.25° v2.1 (`GLDAS_NOAH025_3H`) | [GES DISC](https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_3H_2.1/summary) | [10.5067/E7TYRXPJKWOQ](https://doi.org/10.5067/E7TYRXPJKWOQ) | NASA open data, EOSDIS use guidance |
+| GLDAS Noah Land Surface Model L4 monthly 0.25° v2.1 (`GLDAS_NOAH025_M`) | [GES DISC](https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary) | [10.5067/SXAVCZFAQLNO](https://doi.org/10.5067/SXAVCZFAQLNO) | NASA open data, EOSDIS use guidance |
 | GPM IMERG Late Precipitation L3 1 day 0.1° v07 (`GPM_3IMERGDL`) | [GES DISC](https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary) | [10.5067/GPM/IMERGDL/DAY/07](https://doi.org/10.5067/GPM/IMERGDL/DAY/07) | NASA open data, EOSDIS use guidance |
 | GPM IMERG Final Precipitation L3 1 day 0.1° v07 (`GPM_3IMERGDF`, up to 2025-09-30) | [GES DISC](https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDF_07/summary) | [10.5067/GPM/IMERGDF/DAY/07](https://doi.org/10.5067/GPM/IMERGDF/DAY/07) | NASA open data, EOSDIS use guidance |
 | SMAP Enhanced L3 Radiometer Soil Moisture Daily 9 km v006 (`SPL3SMP_E`) | [NSIDC](https://nsidc.org/data/spl3smp_e/versions/6) | [10.5067/M20OXIZHY3RJ](https://doi.org/10.5067/M20OXIZHY3RJ) | Free and open; NSIDC asks for citation as on the dataset page |
@@ -49,6 +50,7 @@ Every dataset the project can read. NASA Earth science data are open: free to us
 | VIIRS/NPP Vegetation Indices 16-Day L3 500 m v002 (`VNP13A1`) | [LP DAAC](https://lpdaac.usgs.gov/products/vnp13a1v002/) | [10.5067/VIIRS/VNP13A1.002](https://doi.org/10.5067/VIIRS/VNP13A1.002) | NASA open data, EOSDIS use guidance |
 | HLS Landsat Surface Reflectance 30 m v2.0 (`HLSL30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlsl30v002/) | [10.5067/HLS/HLSL30.002](https://doi.org/10.5067/HLS/HLSL30.002) | NASA open data, EOSDIS use guidance |
 | HLS Sentinel-2 Surface Reflectance 30 m v2.0 (`HLSS30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlss30v002/) | [10.5067/HLS/HLSS30.002](https://doi.org/10.5067/HLS/HLSS30.002) | NASA open data, EOSDIS use guidance |
+| NASADEM Merged DEM Global 1 arc-second v001 (`NASADEM_HGT`, elevation and slope; read through the Microsoft Planetary Computer) | [Planetary Computer](https://planetarycomputer.microsoft.com/dataset/nasadem) | [10.5067/MEASURES/NASADEM/NASADEM_HGT.001](https://doi.org/10.5067/MEASURES/NASADEM/NASADEM_HGT.001) | NASA open data, EOSDIS use guidance. Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
 
 DOIs were read from the NASA CMR collection records on 2026-11-14 and every link above answered HTTP 200 that day. Trim this table to the datasets actually used before submitting.
 
@@ -69,6 +71,10 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 | Produção Agrícola Municipal (PAM), table 5457: area, production, yield and value by municipality and crop, 1974 to 2025 | IBGE (Instituto Brasileiro de Geografia e Estatística), via the SIDRA API | [SIDRA table 5457](https://sidra.ibge.gov.br/tabela/5457) | none | Licence **not verified yet** (the IBGE terms pages block automated access); credit "Fonte: IBGE, Pesquisa Agrícola Municipal" and the access date. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
 
 Sentinel-2 is **European data** and IBGE PAM is **Brazilian data**: neither is NASA data, so they are not part of "NASA data used". Sentinel-2 is read through the `planetary` source of the toolkit (no account, no key); IBGE PAM is read with `python -m src.data.sidra` (public API, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it; if it shows PAM numbers, credit IBGE.
+
+## Pre-generated data (internal map)
+
+The internal map reads static JSON and GeoJSON files from `apps/web/public/data/`, built by `python -m src.data.snapshots` from the sources above (POWER, GLDAS monthly, IMERG, SMAP, VIIRS NDVI, NASADEM). No server and no login. How to regenerate it, its size and the file format: [src/data/README.md](src/data/README.md#snapshots-for-the-internal-map) and [docs/data-format.md](docs/data-format.md). Terrain code is based on work by [@dudxyz](https://github.com/dudxyz).
 
 ## Contributing
 Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents: [AGENTS.md](AGENTS.md).

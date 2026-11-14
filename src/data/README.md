@@ -139,3 +139,49 @@ python -m src.data.sidra --table 5457 --variable 8331,216,214,112,215 --classifi
 ```
 
 Output is a tidy CSV/Parquet (one row per municipality, variable, year and category) with `value` as a number (`-` becomes 0, `X`, `..` and `...` become NaN) and the raw text in `symbol`. One call may return at most 100,000 values; the connector stops with a clear error above that. Raw answers are cached in `data/cache/sidra/` (`--refresh` ignores the cache). The IBGE licence was not verified (see the research note): credit "Fonte: IBGE, Pesquisa Agrícola Municipal".
+
+## Snapshots for the internal map
+
+The internal map has no API: `python -m src.data.snapshots` builds static JSON/GeoJSON files in `apps/web/public/data/`
+(the only place it writes) that are published with the front end. Format and field meanings:
+[docs/data-format.md](../../docs/data-format.md); JSON Schemas in [docs/data-format/](../../docs/data-format/).
+
+```bash
+source .venv/bin/activate
+scripts/earthdata-login.sh                                  # once; GLDAS, IMERG, SMAP and VIIRS need it
+python -m src.data.snapshots --workers 12                   # Sergipe + Nordeste, all sources, default windows
+python -m src.data.snapshots --regions sergipe --days 7 --sources power,srtm,imerg --out /tmp/snap   # a quick one
+python -m src.data.snapshots --spacing nordeste=2 --max-mb 3                                          # coarser grid
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--regions` | `sergipe,nordeste` | Regions to build |
+| `--spacing REGION=DEG` | sergipe 0.25, nordeste 1 | Grid spacing of the points (repeatable) |
+| `--sources` | `gldas,srtm,power,imerg,smap,viirs` | Also `modis` instead of `viirs` for NDVI |
+| `--days` | 30 | Days of the daily series (POWER, IMERG, SMAP) |
+| `--gldas-months` | 6 | Months of GLDAS monthly series |
+| `--ndvi-days` | 60 | Span of the 16-day NDVI composites |
+| `--today` | today (UTC) | Reference day, for reproducible runs |
+| `--out` | `apps/web/public/data` | Output folder. Only `index.json` and the region folders are replaced |
+| `--max-mb` | 5 | Size limit of all files; the run fails with a per-file table when exceeded |
+| `--raw-dir`, `--cache-dir` | `data/raw`, `data/cache` | Downloaded tiles and cached windows (git-ignored) |
+| `--workers` | 4 | Parallel reads (IMERG, SMAP, GLDAS, SRTM, tile downloads); POWER always uses at most 4 |
+
+How it works, in order:
+
+1. **Grid.** Points at multiples of the spacing inside each region box. **Land mask:** GLDAS (a land model) has no value
+   over open water, so a point with no GLDAS value is dropped from every source. The two Sergipe **pilot places**
+   (Itabaiana and Nossa Senhora da Glória, 5 km) are added to the points and always kept.
+2. **SRTM terrain** (NASADEM via the Planetary Computer, no login): elevation and mean slope in 5 km around each point,
+   cached per point. Elevations feed the ET0 calculation.
+3. **POWER**: one call per MERRA-2 cell (0.5° x 0.625°) shared by the points inside it, cached in `data/cache/power`.
+   ET0 (FAO-56) and the water balance are derived per point.
+4. **IMERG, SMAP, GLDAS**: only the box window of each file is read over HTTPS (no full download) and cached as a small
+   `.npz` in `data/cache/snapshots/`; the window is then averaged inside each point's box. **VIIRS NDVI**: one tile
+   download per tile and date (cached in `data/raw/viirs`), sampled in place.
+5. **Failures.** A source that fails is listed with `status: "failed"` and a warning in `index.json`; the rest is
+   written. A date that fails inside a source becomes a `partial_data` warning.
+
+Re-running is cheap: windows, tiles, POWER responses and terrain are cached. Delete `data/cache/snapshots/` to force new
+reads. The files change when the sources get new data, so regenerate and commit them before a release.
