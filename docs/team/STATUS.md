@@ -7,7 +7,8 @@ What is done and what is missing for the submission. 🟢 done · 🟡 in progre
 | Item | State | Notes |
 |---|---|---|
 | Project idea formally confirmed | 🟢 | Confirmed Nov 14 by Ravi (Tech Lead) on behalf of the team, with projection and prescription. See [decisions.md](decisions.md) |
-| PRD (BMad): brief, PRD, architecture, epics | 🟡 | In progress |
+| PRD (BMad): brief, PRD, architecture, epics | 🟢 | Merged (#35); update for Google Cloud, language and crops in progress |
+| Issues for the farmer product | 🔴 | Ravi opens and assigns them from the epics list |
 | Validation with 1–2 farmers or agribusiness people | ⚪ | Skipped by decision; "next step" in the pitch |
 | Data toolkit (`src/data`): NASA sources | 🟢 | POWER, GLDAS, IMERG, SMAP, MODIS, VIIRS, HLS tested against the real services; Sentinel-2 (third party) too |
 | Extra sources: SRTM terrain, ET0 and water balance | 🟡 | Being merged into the snapshot generator (#16) |
@@ -17,8 +18,8 @@ What is done and what is missing for the submission. 🟢 done · 🟡 in progre
 | Internal map: deploy (#18) | 🟡 | Workflow merged; Cloudflare project and repo secrets still to be set by Ravi |
 | Farmer product: Telegram bot | 🔴 | Waits for the PRD |
 | Farmer product: producer web dashboard | 🔴 | Waits for the PRD |
-| Farmer product: hosting | 🟡 | Proposed: Google Cloud (Global Offers); pending Ravi's OK |
-| Voice (speech-to-text / text-to-speech) | 🟡 | Offline spike works; Piper as a separate service (license) |
+| Farmer product: hosting (Google Cloud) | 🟡 | Decided; Ravi activates the Global Offers credit and sets up the project (step-by-step ready) |
+| Voice (speech-to-text / text-to-speech) | 🟡 | Google STT/TTS (pt-BR, en) decided; offline Piper + faster-whisper spike works as fallback |
 | Pitch skeleton | 🟡 | Keywords collected in [pitch-keywords.md](pitch-keywords.md) |
 | Demo: video ≤ 30 s or ≤ 7 slides | 🔴 | Not started |
 | Project page on the Space Apps site (submission form) | 🔴 | Not started |
