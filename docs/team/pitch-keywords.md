@@ -34,7 +34,7 @@ Only keywords and phrases the **team** (or a mentor, when marked) said in today'
 - Mentor: the biggest challenge is the farmer's language (12:05).
 
 ## Validation
-- Mentor: 1–2 farmers or agribusiness people saying "I would use this" (12:05). _Pending._
+- Mentor: 1–2 farmers or agribusiness people saying "I would use this" (12:05). **Decided Nov 14: skipped during the hackathon; "validation with farmers: next step".**
 
 ## Future
 - Predictive models (ML) as future work (11:15).
