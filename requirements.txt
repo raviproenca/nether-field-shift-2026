@@ -11,3 +11,5 @@ pytest==9.2.0         # tests
 # Extras (indispensable):
 h5py==3.16.0          # HDF5 backend of h5netcdf and VIIRS tile reader (not pulled in by h5netcdf 1.8)
 pyhdf==0.11.7         # MODIS MOD13Q1 v061 is HDF4; the rasterio wheel has no HDF4 driver
+pystac-client==0.9.1       # STAC search of the Microsoft Planetary Computer (Sentinel-2), Apache-2.0
+planetary-computer==1.0.0  # signs Planetary Computer asset URLs, no account or key, MIT
