@@ -30,6 +30,11 @@ npm run preview     # serves the built dist/ locally
 
 - OpenStreetMap base map, opening on Sergipe.
 - Region selector (Sergipe, Nordeste). The bounding boxes in `src/regions.ts` are copied from `src/data/regions.py` at the repo root; keep both files equal.
+- Six NASA GIBS layers that can be switched on and off: true color, NDVI, land surface temperature, soil moisture, precipitation and fire hotspots (`src/gibs/layers.ts`, with the source of every identifier).
+- One date (UTC) for all layers. The app asks GIBS which dates each layer has (WMTS DescribeDomains), opens on the most recent date that has data in the most layers, and says in words when a layer has no data on the chosen date.
+- A legend under each visible layer, drawn from the layer's official GIBS colormap, with its unit.
+
+Network: the browser talks to `tile.openstreetmap.org` and `gibs.earthdata.nasa.gov` only. No key, no login, no API of our own. The fire layer uses the GIBS WMS, because the EPSG:3857 WMTS only lists it as vector tiles and those answer 404.
 
 ## Credits
 
@@ -40,6 +45,7 @@ npm run preview     # serves the built dist/ locally
 | [React](https://react.dev/) | MIT |
 | [Vite](https://vite.dev/) | MIT |
 | [Geist](https://vercel.com/font) font, self-hosted via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
+| Imagery: [NASA GIBS / EOSDIS](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api) (layers, colormaps and styles listed in the root README, "NASA data used"); credit shown on the map | NASA open data, EOSDIS use guidance |
 
 ## Files not to edit by hand
 

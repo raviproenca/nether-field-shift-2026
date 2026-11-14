@@ -51,8 +51,15 @@ Every dataset the project can read. NASA Earth science data are open: free to us
 | HLS Landsat Surface Reflectance 30 m v2.0 (`HLSL30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlsl30v002/) | [10.5067/HLS/HLSL30.002](https://doi.org/10.5067/HLS/HLSL30.002) | NASA open data, EOSDIS use guidance |
 | HLS Sentinel-2 Surface Reflectance 30 m v2.0 (`HLSS30`) | [LP DAAC](https://lpdaac.usgs.gov/products/hlss30v002/) | [10.5067/HLS/HLSS30.002](https://doi.org/10.5067/HLS/HLSS30.002) | NASA open data, EOSDIS use guidance |
 | NASADEM Merged DEM Global 1 arc-second v001 (`NASADEM_HGT`, elevation and slope; read through the Microsoft Planetary Computer) | [Planetary Computer](https://planetarycomputer.microsoft.com/dataset/nasadem) | [10.5067/MEASURES/NASADEM/NASADEM_HGT.001](https://doi.org/10.5067/MEASURES/NASADEM/NASADEM_HGT.001) | NASA open data, EOSDIS use guidance. Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
+| NASA GIBS (Global Imagery Browse Services), WMTS and WMS for EPSG:3857, shown live in the internal map (`apps/web/`) | [GIBS API](https://www.earthdata.nasa.gov/engage/open-data-services-software/earthdata-developer-portal/gibs-api) | none | NASA open data, EOSDIS use guidance; credited on the map as "Imagery: NASA GIBS / EOSDIS" |
+| GIBS `VIIRS_NOAA20_CorrectedReflectance_TrueColor`, from VIIRS/JPSS1 L1B 375 m and 750 m swaths NRT v2.1 (`VJ102IMG_NRT`, `VJ103IMG_NRT`, `VJ102MOD_NRT`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C2208779826-LANCEMODIS.html) | [10.5067/VIIRS/VJ102IMG_NRT.021](https://doi.org/10.5067/VIIRS/VJ102IMG_NRT.021), [10.5067/VIIRS/VJ103IMG_NRT.021](https://doi.org/10.5067/VIIRS/VJ103IMG_NRT.021), [10.5067/VIIRS/VJ102MOD_NRT.021](https://doi.org/10.5067/VIIRS/VJ102MOD_NRT.021) | NASA open data, EOSDIS use guidance |
+| GIBS `VIIRS_NOAA20_NDVI_8Day`, from VIIRS/JPSS1 Vegetation Indices 8-Day L3 500 m v2 (`VJ113A4N`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C3706771935-LANCEMODIS.html) | [10.5067/VIIRS/VJ113A4N.002](https://doi.org/10.5067/VIIRS/VJ113A4N.002) | NASA open data, EOSDIS use guidance |
+| GIBS `VIIRS_NOAA20_Land_Surface_Temp_Day`, from VIIRS/JPSS1 Land Surface Temperature and Emissivity L2 750 m v2 (`VJ121_NRT`, `VJ121`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C2781382411-LANCEMODIS.html) | [10.5067/VIIRS/VJ121_NRT.002](https://doi.org/10.5067/VIIRS/VJ121_NRT.002) | NASA open data, EOSDIS use guidance |
+| GIBS `SMAP_L4_Analyzed_Surface_Soil_Moisture`, from SMAP L4 Global 3-hourly 9 km Surface and Root Zone Soil Moisture Analysis Update v008 (`SPL4SMAU`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C3480440639-NSIDC_CPRD.html) | [10.5067/02LGW4DGJYRX](https://doi.org/10.5067/02LGW4DGJYRX) | Free and open; NSIDC asks for citation as on the dataset page |
+| GIBS `IMERG_Precipitation_Rate`, from GPM IMERG Early and Final Precipitation L3 Half Hourly 0.1° v07 (`GPM_3IMERGHHE`, `GPM_3IMERGHH`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C2723758340-GES_DISC.html) | [10.5067/GPM/IMERG/3B-HH-E/07](https://doi.org/10.5067/GPM/IMERG/3B-HH-E/07), [10.5067/GPM/IMERG/3B-HH/07](https://doi.org/10.5067/GPM/IMERG/3B-HH/07) | NASA open data, EOSDIS use guidance |
+| GIBS `VIIRS_NOAA20_Thermal_Anomalies_375m_All` (FIRMS active fires), from VIIRS NOAA-20 375 m I-Band Active Fire NRT v2 (`VJ114IMGT_NRT`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C1355615368-LANCEMODIS.html) | [10.5067/FIRMS/VIIRS/VJ114IMGT_NRT.002](https://doi.org/10.5067/FIRMS/VIIRS/VJ114IMGT_NRT.002) | NASA open data, EOSDIS use guidance |
 
-DOIs were read from the NASA CMR collection records on 2026-11-14 and every link above answered HTTP 200 that day. Trim this table to the datasets actually used before submitting.
+DOIs were read from the NASA CMR collection records on 2026-11-14 and every link above answered HTTP 200 that day. The GIBS rows list the source collections that GIBS names for each layer in its layer metadata (`https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/<layer>.json`). Trim this table to the datasets actually used before submitting.
 
 ### Page checklist before submitting
 
@@ -80,7 +87,7 @@ The internal map reads static JSON and GeoJSON files from `apps/web/public/data/
 Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents: [AGENTS.md](AGENTS.md).
 
 ## AI usage
-Built with the help of AI coding assistants; the idea and decisions are the team's own. The data toolkit in `src/data/`, its tests and `scripts/earthdata-login.sh` were generated with Claude Code and carry an `AI-assisted` header (review pending). The internal map front end in `apps/web/` was also generated with Claude Code and carries the same header (review pending).
+Built with the help of AI coding assistants; the idea and decisions are the team's own. The data toolkit in `src/data/`, its tests and `scripts/earthdata-login.sh` were generated with Claude Code and carry an `AI-assisted` header (review pending). The internal map front end in `apps/web/` was also generated with Claude Code and carries the same header (reviewed by Ravi).
 
 ## Credits
 
@@ -114,6 +121,7 @@ Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.js
 | [React](https://react.dev/) | MIT |
 | [Vite](https://vite.dev/) | MIT |
 | [Geist](https://vercel.com/font) font via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
+| NASA GIBS imagery and its official colormaps and layer styles (live, not copied into the repo; see "NASA data used") | NASA open data, EOSDIS use guidance; no NASA logo or Worldview code is used |
 
 ## License
 [Apache License 2.0](LICENSE)
