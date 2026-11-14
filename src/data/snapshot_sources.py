@@ -261,7 +261,7 @@ def _derived_et0(ctx: Context, frame: pd.DataFrame, point: Point) -> np.ndarray 
     elevation = ctx.elevations.get(point.id)
     if elevation is None:
         return None
-    days = np.asarray(frame.index.dayofyear)
+    days = np.asarray(frame.index.day_of_year)
     inputs = [frame[name].to_numpy(dtype="float64") for name in ("T2M_MAX", "T2M_MIN", "RH2M", "WS2M")]
     et0_values = et0.et0_series(point.lat, elevation, days, *inputs, frame["ALLSKY_SFC_SW_DWN"].to_numpy("float64"))
     return np.stack([et0_values, frame["PRECTOTCORR"].to_numpy("float64") - et0_values], axis=-1)
