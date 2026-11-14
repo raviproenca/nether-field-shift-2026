@@ -38,6 +38,15 @@ Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR p
 - **A ideia é da equipe:** IA ajuda no código, mas não gera a ideia.
 - Links da entrega abrem sem login. A demo tem no máximo 30 s de vídeo ou 7 slides.
 
+## Entender o escopo
+
+O escopo atual está em [docs/scope.md](docs/scope.md). Para uma explicação em português, com o seu próximo passo, use a skill `nether-escopo`:
+
+- **Claude Code:** `/nether-escopo` (geral) ou `/nether-escopo <seu nome ou área>`, ex.: `/nether-escopo lucas`.
+- **Codex:** `$nether-escopo` (ou `$nether-escopo <nome ou área>`), ou peça "explica o escopo".
+
+A skill só lê: os documentos e, se o `gh` estiver logado, o quadro e as issues. Ela não atribui issues nem mexe no quadro.
+
 ## IA e BMad
 
 Cada um pode usar o agente que quiser (Claude Code, Codex, Cursor…). Todos leem o [AGENTS.md](AGENTS.md). O fluxo BMad (PRD → arquitetura → épicos → histórias) gera arquivos em `_bmad-output/`. Se não souber o próximo passo, rode a skill `bmad-help`.

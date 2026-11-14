@@ -4,6 +4,8 @@ Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.s
 
 **Challenge:** [Field Shift: Adapting Farms with NASA Data](https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/)
 
+**Current scope:** [docs/scope.md](docs/scope.md), the single source for what we deliver, in which order and what is out.
+
 > 🚧 **Work in progress.** Development happens during the hackathon (November 14–15, 2026), per the event rules.
 
 ## How to run

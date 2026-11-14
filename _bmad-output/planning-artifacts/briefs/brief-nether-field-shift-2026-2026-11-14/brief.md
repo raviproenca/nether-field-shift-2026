@@ -55,16 +55,20 @@ There are two interfaces on **one API**: a **Telegram bot**, with voice in and o
 
 ## Success Criteria (hackathon)
 
-- A judge can complete one full flow with no login, in the bot or in the dashboard demo mode: location and crop in, three strategies out, with evidence and uncertainty. Both pilot sites work.
+_Updated Nov 14 for the new priority: engine first, then validation, then dashboard (`docs/team/decisions.md`)._
+
+- A judge completes the full flow in the **dashboard demo mode**, with no login: a pilot site in, the strategy comparison out, with evidence and uncertainty. Both pilot sites work. The bot is optional.
+- The engine is **validated**: its planting windows are checked against ZARC, and a historical backtest on 2 or 3 real Sergipe years (at least one wet and one dry) shows how each strategy would have done.
 - Every number shown can be traced to a named NASA dataset, or to a credited third-party source.
-- A bot voice reply comes back in a few seconds on CPU `[ASSUMPTION]`. In the Nov 14 spike, Whisper small took 1.2 s to transcribe 5.5 s of audio, and Piper took 0.4 s to generate 5.5 s of audio.
 - Every submitted link is public and stays valid until Jan 26, 2027.
+- If the bot ships after validation: a voice reply comes back in a few seconds on CPU `[ASSUMPTION]`. In the Nov 14 spike, Whisper small took 1.2 s to transcribe 5.5 s of audio, and Piper took 0.4 s to generate 5.5 s of audio.
 
 ## Scope
 
 **In (hackathon v1):**
-- Telegram bot with location, crop, priority and voice.
+- Decision engine and its validation (ZARC check and historical backtest), built first.
 - Producer dashboard with a judge demo mode.
+- Telegram bot with location, crop, priority and voice: after the engine is validated; channel and audience decided then.
 - Shared API on `src/data` and the snapshot format, covering Sergipe and the two pilots.
 - Deterministic strategy comparison.
 - Open-Meteo forecast.
@@ -72,6 +76,7 @@ There are two interfaces on **one API**: a **Telegram bot**, with voice in and o
 
 **Out:**
 - Validation with real farmers. It is skipped in the hackathon and becomes the next step in the pitch.
+- Crop photos.
 - WhatsApp, which is future work.
 - ML yield prediction.
 - Field sensors.

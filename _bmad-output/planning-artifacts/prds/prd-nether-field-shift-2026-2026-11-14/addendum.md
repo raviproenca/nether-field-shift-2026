@@ -4,8 +4,17 @@
 
 These are the technical choices the team has already decided. They come from `docs/team/decisions.md` and the Tech Lead's message of Nov 14. The architecture document develops them.
 
+## Priority change (decided Nov 14)
+- **Date and source:** Nov 14, 2026, Ravi (Tech Lead); `docs/team/decisions.md`, PR #78.
+- **Why:** a mentor's feedback, and the judging criteria weigh **validity** and **relevance**. The engine has to be shown to work before the channel matters.
+- **Order:** E1 decision engine (#44 to #47) → validation: ZARC check (#48) and historical backtest on 2 or 3 real Sergipe years, at least one wet and one dry (#79) → E2 API, only what the dashboard needs → E5 producer dashboard → E3 explanation → E6 deploy → E4 Telegram bot and voice last, with the Piper service (#59) at the end.
+- **Engine:** in go the farmer's crops, the soil, the region, the season and the previous crops; out come the rotation options with trade-offs, the planting schedule and dates per crop, the water demand and the pest-cycle break.
+- **Channel and audience:** decided only after the engine is validated. The bot and voice issues are kept, at the end of the Backlog. The judge flow goes through the dashboard demo mode.
+- **Out of scope:** crop photos.
+- The current scope is summarized in `docs/scope.md`.
+
 ## Channels and interface
-- **Interfaces:** a Telegram Bot API bot, which uses `KeyboardButton(request_location=True)` for the location, and a web dashboard built with MapLibre GL, OpenStreetMap and NASA GIBS (WMTS).
+- **Interfaces:** first a web dashboard built with MapLibre GL, OpenStreetMap and NASA GIBS (WMTS). After the engine is validated, a Telegram Bot API bot, which uses `KeyboardButton(request_location=True)` for the location.
 - **Shared API:** the bot and the dashboard use the same API, `apps/api`.
 
 ## Voice (updated Nov 14)

@@ -2,13 +2,15 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Last updated: Nov 14, 2026, 12:40 BRT. Read this and [decisions.md](decisions.md) before any task._
+_Updated Nov 14, 2026 after the mentor feedback. Read [docs/scope.md](../scope.md) first, then [decisions.md](decisions.md)._
+
+**Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out. Teammates may start their assigned Todo issues now; only implementation by Ravi's AI agents waits for his release (Nov 14 clarification).
 
 ## 1. Where we are
 
 - **Challenge:** Field Shift: Adapting Farms with NASA Data. Team Nether, Aracaju local event.
 - **Deadline:** Sun Nov 15, 2026, 23:59 BRT.
-- **Project idea:** **Confirmed (Nov 14) by Ravi (Tech Lead) on behalf of the team; wording by Duda:** Brazilian family farming in Sergipe (Agreste & Semiárido), two interfaces (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*, with **projection and prescription** (what to do, not only how things are). See [decisions.md](decisions.md). PRD (BMad) in progress.
+- **Project idea:** **Confirmed (Nov 14) by Ravi (Tech Lead) on behalf of the team; wording by Duda:** Brazilian family farming in Sergipe (Agreste & Semiárido), an initial two-interface concept (Telegram Bot + Web Dashboard) sharing one API, comparing >= 3 crop/rotation strategies including *consórcio*, with **projection and prescription** (what to do, not only how things are). See [decisions.md](decisions.md). The later priority decision defers the channel and audience until the engine is validated; the dashboard leads the demo. The PRD and epics are recorded in `_bmad-output/planning-artifacts/`.
 
 ## 2. Three fronts
 
@@ -22,7 +24,7 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 
 **Shared by all three, worth investing in now:** the data layer (`src/data/`) and its snapshot format. An API (`apps/api/`) is **not** built for the internal map; it comes with front B, after the PRD, and serves the same snapshot format + Open-Meteo forecasts (Open-Meteo only in the product API, not in the internal snapshots). The internal map's layers and MapLibre GL component can be reused in the producer dashboard.
 
-**Notes for the PRD and architecture (front B, not built yet):**
+**Earlier architecture decisions (apply to bot/voice only if the channel is confirmed after validation):**
 - Voice in the bot (decided): speech-to-text with `faster-whisper` (already used by the team; `small` or `medium` on CPU int8 is enough for short Brazilian Portuguese audio); text-to-speech with **Piper** (open source, runs locally, Brazilian Portuguese voice) **as a separate service** because of its GPL-3.0 license. No service with a trial or key that expires before Jan 26, 2027.
 - Telegram sends voice as OGG/Opus; replies go back as short OGG/Opus.
 - **Hosting (decided):** everything on Google Cloud (Global Offers credit): Cloud Run (API, bot, voice service), Vertex AI Gemini Flash for explanations with a template fallback, Google Speech-to-Text/Text-to-Speech (pt-BR, en) with Piper + faster-whisper as fallback. Budget alert at US$ 50, no GPU, secrets in env/Secret Manager.
@@ -31,7 +33,9 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 - Forecasts: Open-Meteo in the demo; NASA GEOS-FP cited in the pitch. ZARC as a validation reference for planting windows.
 - Validation with farmers: skipped during the hackathon; "next step" in the pitch.
 
-## 2b. Confirmed product direction
+## 2b. Earlier product direction (channel deferred)
+
+The following records the concept before the latest priority change. It is historical context for the engine and data; the channel, voice and audience await confirmation after validation. Follow [docs/scope.md](../scope.md) for current work.
 
 - **Who:** Brazilian family farming (*agricultura familiar*) in Sergipe (Agreste & Semiárido) for the primary persona, plus larger farms/extension on the web dashboard.
 - **Minimum input:** farmer's location (Telegram `request_location` or map pin) + current/intended crop + priority (water, soil, erosion, or income/forage); everything else is pulled from data.
@@ -82,18 +86,19 @@ Epic [#19](https://github.com/raviproenca/nether-field-shift-2026/issues/19). Th
 - The front-end setup (#12) is Gabriel's. The data side writes only to `apps/web/public/data/` (generated files).
 - Access (#17, closed): **no login**; unlisted `*.pages.dev` URL with `noindex`. Deploy (#18) via GitHub Actions to Ravi's Cloudflare account, project name neutral (e.g. `nether-field-map`).
 
-## 5. Roles and work split (Nov 14, by Ravi)
+## 5. Roles and work split (Nov 14, latest decision)
 
-| Who | Area | Issues |
+The live [project board](https://github.com/users/raviproenca/projects/1) is authoritative for status and assignees. The priority and division below follow the decision recorded after the mentor feedback; see [docs/scope.md](../scope.md).
+
+| Who | Current responsibility | Issues |
 |---|---|---|
-| **Ravi** (`@raviproenca`) | Tech Lead: approves and merges every PR, opens and assigns issues, keeps [STATUS.md](STATUS.md). Product API, producer dashboard, deploy, integration, and any gap | E2 [#39](https://github.com/raviproenca/nether-field-shift-2026/issues/39), [#49](https://github.com/raviproenca/nether-field-shift-2026/issues/49), [#50](https://github.com/raviproenca/nether-field-shift-2026/issues/50), [#53](https://github.com/raviproenca/nether-field-shift-2026/issues/53), [#54](https://github.com/raviproenca/nether-field-shift-2026/issues/54); E5 [#42](https://github.com/raviproenca/nether-field-shift-2026/issues/42), [#62](https://github.com/raviproenca/nether-field-shift-2026/issues/62), [#63](https://github.com/raviproenca/nether-field-shift-2026/issues/63), [#64](https://github.com/raviproenca/nether-field-shift-2026/issues/64); E6 [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43); co-assignee on [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56), [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59), [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66), [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16) |
-| **Gabriel** (`@gabrielchavesas`, Chaves) | Telegram bot and voice (STT/TTS), bot language; internal map front end | E4 [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56), [#57](https://github.com/raviproenca/nether-field-shift-2026/issues/57), [#58](https://github.com/raviproenca/nether-field-shift-2026/issues/58), [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59), [#60](https://github.com/raviproenca/nether-field-shift-2026/issues/60), [#61](https://github.com/raviproenca/nether-field-shift-2026/issues/61) (Ravi helps on API integration and bot deploy); internal map [#12](https://github.com/raviproenca/nether-field-shift-2026/issues/12), [#13](https://github.com/raviproenca/nether-field-shift-2026/issues/13), [#14](https://github.com/raviproenca/nether-field-shift-2026/issues/14), [#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15) |
-| **Guilherme** (`@guilhermevbagio`) | Decision engine (strategies, ranking, ET0/water balance, ZARC as reference) and the plain-language explanation built on it | E1 [#38](https://github.com/raviproenca/nether-field-shift-2026/issues/38), [#44](https://github.com/raviproenca/nether-field-shift-2026/issues/44), [#45](https://github.com/raviproenca/nether-field-shift-2026/issues/45), [#46](https://github.com/raviproenca/nether-field-shift-2026/issues/46), [#47](https://github.com/raviproenca/nether-field-shift-2026/issues/47), [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48); E3 [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40), [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52), [#55](https://github.com/raviproenca/nether-field-shift-2026/issues/55) |
-| **Duda** (`@dudxyz`, Eduarda) | Data: `src/data`, connectors (SRTM, Open-Meteo), snapshots with the AI agents, Brazil data research (ZARC, MapBiomas, IBGE) | [#16](https://github.com/raviproenca/nether-field-shift-2026/issues/16); co-assignee on [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66) |
-| **Lucas** (`@LucasFe3152`, Feitosa) | Requirements (`docs/requirements.md`); owns the Google Cloud trial account and its setup ([gcp-setup.md](../infra/gcp-setup.md)) | [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65) (with Ravi) |
+| **Lucas** (`@LucasFe3152`) and **Duda** (`@dudxyz`) | Decision engine, first on the critical path | E1 [#38](https://github.com/raviproenca/nether-field-shift-2026/issues/38), [#44–#47](https://github.com/raviproenca/nether-field-shift-2026/issues/44) |
+| **Ravi** (`@raviproenca`) and **Gabriel** (`@gabrielchavesas`) | Validation after the engine: ZARC and historical backtest | [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48), [#79](https://github.com/raviproenca/nether-field-shift-2026/issues/79) |
+| **Ravi** | Tech Lead; coordinates issues, approves and merges PRs. Product API, producer dashboard, deploy and judges' delivery | E2 [#39](https://github.com/raviproenca/nether-field-shift-2026/issues/39), E5 [#42](https://github.com/raviproenca/nether-field-shift-2026/issues/42), E6 [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43) |
+| **Gabriel** | Internal-map front end; Telegram bot and voice remain in the Backlog until the engine is validated | [#15](https://github.com/raviproenca/nether-field-shift-2026/issues/15), E4 [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41) |
+| **Guilherme** (`@guilhermevbagio`) | No assigned issue until Ravi gives a new direction | None |
 
-- **Issues:** Ravi opens and coordinates them and splits tasks among teammates; AI agents only prepare drafts.
-- Milestone **Submission** marks the demo's critical path.
+The explanation epic [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40) has no assignee. Its template story [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52) is a prerequisite of the API recommendation [#53](https://github.com/raviproenca/nether-field-shift-2026/issues/53); it must be completed before #53, even though the rest of the explanation epic is later in the priority order. Ravi owns issue assignment; agents do not assign work on their own. The **Submission** milestone marks the demo's critical path.
 
 ## 6. Space Apps rules that matter
 
