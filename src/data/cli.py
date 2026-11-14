@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import earthdata, planetary, power
-from .clip import NearestCellWarning
+from .clip import NearestCellWarning, OutOfRangeWarning
 from .dates import DateRange, parse_range
 from .errors import DataToolkitError, InputError, remote_errors
 from .paths import CACHE_DIR, PROCESSED_DIR, RAW_DIR, safe_filename
@@ -46,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--search-only", action="store_true", help="count granules and show the latest date; no login")
     parser.add_argument(
         "--download", action="store_true", help="GLDAS/IMERG: download full files instead of lazy reads"
+    )
+    parser.add_argument(
+        "--keep-out-of-range",
+        action="store_true",
+        help="GLDAS/IMERG/SMAP: keep values outside the variable's valid_min/valid_max (fill values are still dropped)",
     )
     parser.add_argument("--refresh", action="store_true", help="POWER: ignore the local cache")
     return parser
@@ -128,7 +133,9 @@ def run_earthdata(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> Non
         written = earthdata.fetch_rasters(args.source, granules, args.variable, bbox, raw_dir, out)
         print(f"wrote {len(written)} GeoTIFF files to {out}")
     else:
-        frame = earthdata.fetch_grid(source, granules, args.variable, bbox, raw_dir, args.download)
+        frame = earthdata.fetch_grid(
+            source, granules, args.variable, bbox, raw_dir, args.download, args.keep_out_of_range
+        )
         write_table(frame, out)
         print(f"wrote {len(frame)} rows to {out}")
 
@@ -166,6 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("default", NearestCellWarning)
+            warnings.simplefilter("default", OutOfRangeWarning)
             warnings.showwarning = lambda message, *_: print(f"warning: {message}", file=sys.stderr)
             dates = parse_range(args.start, args.end)
             check_out_extension(args)

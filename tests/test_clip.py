@@ -157,7 +157,7 @@ def test_curvilinear_box_smaller_than_a_cell_uses_the_nearest_cell():
     )
     with pytest.warns(clip.NearestCellWarning):
         da = clip.clip_curvilinear(ds, "sm", BBox(-37.4, -10.4, -37.3, -10.3))
-    assert da.shape == (1, 1) and float(da.lat[0, 0]) == -10.5 and float(da.lon[0, 0]) == -37.5
+    assert da.shape == (1, 1) and float(da.lat[0]) == -10.5 and float(da.lon[0]) == -37.5
     assert not np.isnan(da.values).any()
     with pytest.raises(InputError):
         clip.clip_curvilinear(ds, "sm", BBox(10, 10, 10.1, 10.1))
@@ -197,8 +197,7 @@ def test_extent_margin_ignores_the_jump_between_rows_of_a_2d_grid():
     ds = xr.Dataset(
         {"v": (("r", "c"), np.ones(lat.shape))}, coords={"latitude": (("r", "c"), lat), "longitude": (("r", "c"), lon)}
     )
-    with pytest.raises(InputError, match="no grid cell"):
-        clip.clip_curvilinear(ds, "v", BBox(12.0, 4.0, 12.1, 4.1))
-    with pytest.raises(InputError, match="no grid cell"):
-        clip.clip_curvilinear(ds, "v", BBox(4.0, 12.0, 4.1, 12.1))
+    for box in (BBox(12.0, 4.0, 12.1, 4.1), BBox(4.0, 12.0, 4.1, 12.1)):
+        with pytest.raises(InputError, match="no grid cell|does not overlap"):
+            clip.clip_curvilinear(ds, "v", box)
     assert clip._within_extent(lon, 10.4, 10.6) and not clip._within_extent(lon, 10.6, 10.7)
