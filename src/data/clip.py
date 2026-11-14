@@ -112,7 +112,8 @@ def clip_box_latlon(da: xr.DataArray, bbox: BBox, label: str) -> xr.DataArray:
 
 def clip_raster(path: Path, bbox: BBox) -> xr.DataArray:
     """Clip a GeoTIFF (HLS) to a lat/lon box."""
-    return clip_box_latlon(rioxarray.open_rasterio(path, masked=True), bbox, path.name)
+    with rioxarray.open_rasterio(path, masked=True) as lazy:
+        return clip_box_latlon(lazy, bbox, path.name).load()
 
 
 def _parse_grid_metadata(text: str) -> tuple[tuple[float, float], tuple[float, float], int, int]:
