@@ -35,7 +35,7 @@ To avoid building the wrong thing, the work is split into three fronts (decided 
 - **Delivery:** asynchronous messages through **Telegram Bot API** (hackathon demo; WhatsApp Cloud API as future work) and a **MapLibre GL + OpenStreetMap** web dashboard on the same API.
 - **Data:** Global physical core `SMAP + GLDAS + IMERG + FAO-56` (+ NASA POWER, SRTM/NASADEM elevation/slope, HLS/Sentinel-2 NDVI) + **Open-Meteo** 15-day forecasts; local measurements for validation; **ANA HidroWeb** and complex ML scoped as future work.
 - **Logic:** deterministic agronomic/water-balance calculations; AI only to explain the results in plain language with uncertainties/evidence.
-- **Open for sign-off:** Language strategy (`EN` default + `PT-BR` toggle vs. English-first UI with subtitled PT-BR walkthrough) — see question #10 in [open-questions.md](open-questions.md).
+- **Open for sign-off:** Language strategy (`EN` default + `PT-BR` toggle vs. English-first UI with subtitled PT-BR walkthrough) — see question #11 in [open-questions.md](open-questions.md).
 
 Session-by-session notes: [brainstorm-log.md](brainstorm-log.md).
 
