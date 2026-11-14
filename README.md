@@ -89,6 +89,8 @@ Team workflow: [CONTRIBUTING.md](CONTRIBUTING.md) · instructions for AI agents:
 ## AI usage
 Built with the help of AI coding assistants; the idea and decisions are the team's own. The data toolkit in `src/data/`, its tests and `scripts/earthdata-login.sh` were generated with Claude Code and carry an `AI-assisted` header (review pending). The internal map front end in `apps/web/` was also generated with Claude Code and carries the same header (reviewed by Ravi).
 
+On Nov 14, 2026 an AI assistant was also used to critique our scope against the Field Shift challenge text (what the challenge asks for versus what we had planned). The team discussed that critique and decided the priority itself: decision engine first, then its validation against ZARC and past seasons, then the dashboard (see [docs/team/decisions.md](docs/team/decisions.md)).
+
 ## Credits
 
 Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requirements-dev.txt](requirements-dev.txt)):
