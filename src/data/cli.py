@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import earthdata, power
+from . import earthdata, planetary, power
 from .dates import DateRange, parse_range
 from .errors import DataToolkitError, InputError
 from .paths import PROCESSED_DIR, RAW_DIR
 from .regions import BBox, resolve_region
 
-SOURCE_CHOICES = ["power", *earthdata.SOURCES]
+SOURCE_CHOICES = ["power", *earthdata.SOURCES, "planetary"]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,6 +26,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--start", required=True, help="YYYY-MM-DD")
     parser.add_argument("--end", required=True, help="YYYY-MM-DD")
     parser.add_argument("--variable", help="POWER: comma list (T2M,PRECTOTCORR). Others: variable or band name")
+    parser.add_argument("--collection", default=planetary.DEFAULT_COLLECTION, help="planetary: STAC collection")
+    parser.add_argument(
+        "--max-cloud", type=float, default=planetary.DEFAULT_MAX_CLOUD, help="planetary: eo:cloud_cover < N"
+    )
     parser.add_argument("--short-name", help="override the default NASA short_name of the source")
     parser.add_argument("--version", help="collection version for the CMR search")
     parser.add_argument("--out", type=Path, help=".csv/.parquet table, or a folder for GeoTIFF sources")
@@ -97,6 +101,23 @@ def attach_negative_values(argv: list[str]) -> list[str]:
     return merged
 
 
+def run_planetary(args: argparse.Namespace, bbox: BBox, dates: DateRange) -> None:
+    client = planetary.open_client()
+    latest = planetary.latest_item_datetime(client, bbox, args.collection)
+    items = planetary.search(client, bbox, dates, args.collection, args.max_cloud)
+    print(
+        f"{args.collection}: {len(items)} items with cloud < {args.max_cloud:g}% in the period; "
+        f"latest item over the box (any cloud) {latest.date()}"
+    )
+    if args.search_only:
+        return
+    if not args.variable:
+        raise InputError("--variable is required (asset/band name, e.g. B04, B08, SCL)")
+    out = args.out or PROCESSED_DIR / "planetary"
+    written = planetary.fetch_clips(items, args.variable, bbox, out)
+    print(f"wrote {len(written)} GeoTIFF files to {out}")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(attach_negative_values(sys.argv[1:] if argv is None else argv))
     try:
@@ -106,6 +127,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.search_only:
                 raise InputError("--search-only applies to Earthdata sources, not POWER")
             run_power(args, bbox, dates)
+        elif args.source == "planetary":
+            run_planetary(args, bbox, dates)
         else:
             run_earthdata(args, bbox, dates)
     except DataToolkitError as exc:

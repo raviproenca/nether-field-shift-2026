@@ -8,7 +8,7 @@ source .venv/bin/activate          # after the setup in the root README
 python -m src.data <source> [region] --start YYYY-MM-DD --end YYYY-MM-DD --variable NAME [--out PATH]
 ```
 
-Sources: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls`.
+Sources: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls` (NASA) and `planetary` (Sentinel-2, ESA/Copernicus, **not NASA**).
 
 ## Region
 
@@ -31,6 +31,10 @@ python -m src.data power --point -10.91,-37.07 --radius-km 1 --start 2025-01-01 
 # How many granules exist? (no login, no download)
 python -m src.data gldas --search-only --start 2025-01-01 --end 2025-01-31
 python -m src.data hls --short-name HLSS30 --search-only --point -10.91,-37.07 --radius-km 5 --start 2025-01-01 --end 2025-01-31
+
+# Sentinel-2 L2A, 10 m, from the Microsoft Planetary Computer (no account, no key)
+python -m src.data planetary --search-only --start 2025-01-01 --end 2025-01-31
+python -m src.data planetary --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31 --max-cloud 20
 
 # Needs Earthdata Login (run scripts/earthdata-login.sh once)
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
@@ -61,6 +65,7 @@ Output of POWER, GLDAS, IMERG and SMAP is a table (`.csv` or `.parquet`; GLDAS/I
 | `smap` | Earthdata Login | Full `.h5` downloaded, clipped locally with its 2-D lat/lon arrays |
 | `modis` | Earthdata Login | HDF4 tile downloaded, read with `pyhdf`, clipped locally |
 | `viirs` | Earthdata Login | HDF5 tile downloaded, clipped locally |
+| `planetary` | No | STAC search (`pystac-client`), URLs signed by `planetary-computer`; only the box window of the cloud-optimized GeoTIFF is read over HTTP |
 | `hls` | Earthdata Login | Only the requested band GeoTIFF is downloaded, clipped locally |
 
 Granule **search** never needs login. Without `~/.netrc` the download commands stop with `run scripts/earthdata-login.sh first`.
@@ -82,8 +87,9 @@ Latest date = start of the most recent granule returned by the CMR search (POWER
 | `viirs` | `VNP13A1` (002) | 500 m, 8-day rolling 16-day | 2026-10-24 (composite start) |
 | `hls` | `HLSL30` (2.0) | 30 m, Landsat | 2026-11-05 |
 | `hls` | `HLSS30` (2.0) | 30 m, Sentinel-2 | 2026-11-05 |
+| `planetary` | `sentinel-2-l2a` (Copernicus, not NASA) | 10 m (B02, B03, B04, B08), 20 m, 60 m | 2026-11-10 (point box) / 2026-11-12 (Sergipe box) |
 
-Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SMAP 31, MODIS 6, VIIRS 12, HLSL30 61, HLSS30 72.
+Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SMAP 31, MODIS 6, VIIRS 12, HLSL30 61, HLSS30 72. Sentinel-2 L2A (Planetary Computer, same box and period): 11 items with cloud < 20%, 63 with any cloud.
 
 ### Choices worth knowing
 
@@ -91,3 +97,10 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 - **MODIS is not discontinued and has no gaps.** Between 2025-01 and 2026-10 `MOD13Q1` has a composite every 16 days on both tiles covering Sergipe (h14v09, h14v10), with no gap. Terra and Aqua are far beyond their design life, though, so VIIRS is the continuity record.
 - **MODIS or VIIRS?** Use `MOD13Q1` (250 m) when field-scale detail matters and the period is covered: it is the finest of the two. Use `VNP13A1` (500 m, new composite every 8 days, latest date 8 days newer) when you need the freshest data, denser time sampling, or a record that will keep going. `--short-name MYD13Q1` gives Aqua, offset by 8 days.
 - **HLS is the only product near plot scale (30 m).** HLSL30 is Landsat, HLSS30 is Sentinel-2; use both for a 2-3 day revisit. Reflectance bands have a 0.0001 scale factor that the output does not apply (nodata `-9999` becomes NaN); multiply by 0.0001 yourself. MODIS/VIIRS output applies fill values and `scale_factor` when the file declares them.
+
+### `planetary` (Sentinel-2)
+
+- Flags: `--collection` (default `sentinel-2-l2a`), `--max-cloud N` (default 20, query `eo:cloud_cover < N`; use `--max-cloud 100` for collections without cloud cover), `--variable` = asset name (`B04`, `B08`, `SCL`, `visual`). `--search-only` prints the item count in the period and the newest item over the box (any cloud, sorted by datetime descending).
+- Output: one GeoTIFF per item in `data/processed/planetary/` (`<item id>_<asset>.tif`), in the item's UTM CRS. The lat/lon box is reprojected before clipping and only that window is downloaded. Reflectance values are raw digital numbers (scale 0.0001; products after processing baseline 04.00 also carry an offset of -0.1, see the item's `raster:bands`). Keep boxes small: a 10 m raster of a whole state is huge.
+- Real test (2026-11-14): `--point -10.91,-37.07 --radius-km 2`, `B04`, January 2025, cloud < 20% gave 2 items and two 404 x 401 pixel uint16 GeoTIFFs (EPSG:32724, 10 m, about 317 KiB each).
+- Sentinel-2 is ESA/Copernicus data: credit "Contains modified Copernicus Sentinel data [year]". Use `hls` for the NASA 30 m alternative.

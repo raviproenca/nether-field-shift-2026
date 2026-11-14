@@ -62,7 +62,7 @@ def to_long_frame(da: xr.DataArray, value_name: str) -> pd.DataFrame:
     return frame[columns].dropna(subset=[value_name]).reset_index(drop=True)
 
 
-def _clip_box(da: xr.DataArray, bbox: BBox, label: str) -> xr.DataArray:
+def clip_box_latlon(da: xr.DataArray, bbox: BBox, label: str) -> xr.DataArray:
     """rioxarray clip_box with a lat/lon box (reprojected to the raster CRS) and a friendly error."""
     try:
         return da.rio.clip_box(*bbox.as_tuple, crs="EPSG:4326")
@@ -72,7 +72,7 @@ def _clip_box(da: xr.DataArray, bbox: BBox, label: str) -> xr.DataArray:
 
 def clip_raster(path: Path, bbox: BBox) -> xr.DataArray:
     """Clip a GeoTIFF (HLS) to a lat/lon box."""
-    return _clip_box(rioxarray.open_rasterio(path, masked=True), bbox, path.name)
+    return clip_box_latlon(rioxarray.open_rasterio(path, masked=True), bbox, path.name)
 
 
 def _parse_grid_metadata(text: str) -> tuple[tuple[float, float], tuple[float, float], int, int]:
@@ -158,4 +158,4 @@ def read_sinusoidal_tile(path: Path, variable: str) -> xr.DataArray:
 
 
 def clip_tile(path: Path, variable: str, bbox: BBox) -> xr.DataArray:
-    return _clip_box(read_sinusoidal_tile(path, variable), bbox, path.name)
+    return clip_box_latlon(read_sinusoidal_tile(path, variable), bbox, path.name)
