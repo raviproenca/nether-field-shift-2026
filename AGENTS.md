@@ -124,5 +124,5 @@ Not sure what to do next? Run `bmad-help`. Do not edit files inside `_bmad/` by 
 
 - Repo public; README in English with: how to run, NASA data used (with links), other data/code/credits, AI usage.
 - Demo: **video ≤ 30 s** (English, or English subtitles) **or ≤ 7 slides**. Over the limit = out of global judging.
-- All links open without login.
+- All links open without login or password and stay valid until **Jan 26, 2027** (winners announcement). Do not rely on a free trial or partner offer that expires earlier.
 - No credentials anywhere in the history.
