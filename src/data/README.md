@@ -42,7 +42,7 @@ python -m src.data planetary --variable B04 --point -10.91,-37.07 --radius-km 2 
 # Needs Earthdata Login (run scripts/earthdata-login.sh once)
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
 python -m src.data imerg --variable precipitation --start 2025-01-01 --end 2025-01-31 --out data/processed/rain.parquet
-python -m src.data smap  --variable Soil_Moisture_Retrieval_Data_AM/soil_moisture --start 2025-01-01 --end 2025-01-31
+python -m src.data smap  --variable Soil_Moisture_Retrieval_Data_AM/soil_moisture --start 2025-01-01 --end 2025-01-31   # PM group: Soil_Moisture_Retrieval_Data_PM/soil_moisture_pm
 python -m src.data modis --variable NDVI --start 2025-01-01 --end 2025-03-31          # one GeoTIFF per tile in data/processed/modis/
 python -m src.data hls   --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31
 ```
@@ -76,7 +76,11 @@ Granule **search** never needs login. Without `~/.netrc` the download commands s
 
 > **Errors:** network, auth (HTTP 401/403), file and format failures while opening, downloading or reading data are reported as one `error:` line (HTTP status or error class plus a short text, never credentials or signed URLs), not as a traceback.
 
-> **Not exercised against the real services:** the Earthdata download paths (GLDAS, IMERG, SMAP, MODIS, VIIRS, HLS) were not run because there are no credentials in this environment. Search, clipping (synthetic files in `tests/`) and the login error are tested. Expect to fix small details (variable names, SMAP group paths, VIIRS scale attributes) on the first real run. OPeNDAP via Hyrax would need `pydap` or `.dodsrc` setup that cannot be validated without login, so lazy HTTPS reads are used instead.
+> **Tested with real files (2026-11-14):** SMAP, MODIS, VIIRS and HLS were downloaded and clipped for Sergipe; GLDAS and IMERG downloads have not been run yet. Notes from that run:
+>
+> - **SMAP** stores `-9999` in its 2-D `latitude`/`longitude` without declaring it. These holes are ignored; EASE-Grid 2.0 is clipped through its per-row latitudes and per-column longitudes. Values outside the variable's `valid_min`/`valid_max` become NaN. A day can have no valid soil moisture over a small box (swath gaps): the command then stops with a clear error instead of writing an empty file.
+> - **MODIS (HDF4)** `scale_factor` above 1 (NDVI/EVI use 10000) means `(raw - add_offset) / scale_factor`; a factor of 1 or less (e.g. LST 0.02) and all **VIIRS (HDF5)** files use the CF rule `raw * scale_factor + add_offset`. Fill values (VIIRS has two) and `valid_range` are masked before scaling. Output GeoTIFFs are float64 with NaN as nodata.
+> - OPeNDAP via Hyrax would need `pydap` or `.dodsrc` setup that cannot be validated here, so GLDAS/IMERG use lazy HTTPS reads instead.
 
 ## Datasets, resolution and latest data (measured 2026-11-14, box = Sergipe preset)
 
