@@ -56,3 +56,27 @@ export async function fetchDemo(pilotId: string, lang: Lang, signal?: AbortSigna
   }
   return (await response.json()) as RecommendationResponse;
 }
+
+/** Pre-computed result for one pilot, crop and priority (scripts/build_demo_cache.py writes all twelve). */
+export async function fetchPilotResult(
+  pilotId: string,
+  crop: string,
+  priority: string,
+  lang: Lang,
+  signal?: AbortSignal,
+): Promise<RecommendationResponse> {
+  const suffix = lang === "en" ? "" : `.${lang}`;
+  let response: Response;
+  try {
+    response = await fetch(`${import.meta.env.BASE_URL}demo/${pilotId}/${crop}-${priority}${suffix}.json`, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new RecommendationError("The pilot data could not be loaded. Check your connection and try again.");
+  }
+  if (!response.ok) {
+    throw new RecommendationError("The pilot data could not be loaded. Try again in a moment.");
+  }
+  return (await response.json()) as RecommendationResponse;
+}

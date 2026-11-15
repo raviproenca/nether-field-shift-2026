@@ -1,0 +1,100 @@
+{
+  "pilot_id": "sergipe_agreste_itabaiana",
+  "decendios": [
+    {
+      "decendio": 10,
+      "strong_el_nino_mm": 25.7,
+      "other_years_mm": 14.7
+    },
+    {
+      "decendio": 11,
+      "strong_el_nino_mm": 15.3,
+      "other_years_mm": 27.1
+    },
+    {
+      "decendio": 12,
+      "strong_el_nino_mm": 7.4,
+      "other_years_mm": 36.5
+    },
+    {
+      "decendio": 13,
+      "strong_el_nino_mm": 11.1,
+      "other_years_mm": 34.8
+    },
+    {
+      "decendio": 14,
+      "strong_el_nino_mm": 16.6,
+      "other_years_mm": 31.8
+    },
+    {
+      "decendio": 15,
+      "strong_el_nino_mm": 36.7,
+      "other_years_mm": 37.7
+    },
+    {
+      "decendio": 16,
+      "strong_el_nino_mm": 33.1,
+      "other_years_mm": 34.8
+    },
+    {
+      "decendio": 17,
+      "strong_el_nino_mm": 44.5,
+      "other_years_mm": 37.4
+    },
+    {
+      "decendio": 18,
+      "strong_el_nino_mm": 39.3,
+      "other_years_mm": 36.9
+    },
+    {
+      "decendio": 19,
+      "strong_el_nino_mm": 25.5,
+      "other_years_mm": 37.4
+    },
+    {
+      "decendio": 20,
+      "strong_el_nino_mm": 26.1,
+      "other_years_mm": 27.5
+    },
+    {
+      "decendio": 21,
+      "strong_el_nino_mm": 27.7,
+      "other_years_mm": 29.5
+    }
+  ],
+  "strong_el_nino_years": [
+    1983,
+    1992,
+    1998,
+    2016,
+    2024
+  ],
+  "other_years_count": 40,
+  "windows": {
+    "maize": {
+      "start": 10,
+      "end": 18
+    },
+    "beans": {
+      "start": 11,
+      "end": 18
+    },
+    "cassava": {
+      "start": 10,
+      "end": 18
+    }
+  },
+  "current_oni_note": "NOAA CPC: strong El Ni\u00f1o expected through January-March 2027 (12 Nov 2026 update).",
+  "sources": [
+    {
+      "name": "NASA POWER daily rain (PRECTOTCORR), 1981-2025",
+      "url": "https://power.larc.nasa.gov/",
+      "nasa": true
+    },
+    {
+      "name": "NOAA CPC Oceanic Ni\u00f1o Index",
+      "url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
+      "nasa": false
+    }
+  ]
+}

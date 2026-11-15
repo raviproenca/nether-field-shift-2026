@@ -36,10 +36,15 @@ PILOTS = (
 )
 
 
-def build(lat: float, lon: float, code: str, crop: Crop, priority: Priority, lang: str) -> dict:
+def inputs(lat: float, lon: float, code: str):
+    """Engine inputs for one pilot, built once and reused for every crop and priority."""
     plot, diagnosis = build_engine_diagnosis(lat=lat, lon=lon, radius_km=5.0)
     plot = replace(plot, municipality_code=code)
     projection = build_engine_projection(lat=lat, lon=lon, forecast_days=15)
+    return plot, diagnosis, projection
+
+
+def build(plot, diagnosis, projection, crop: Crop, priority: Priority, lang: str) -> dict:
     result = recommend(plot, diagnosis, projection, crop, priority, load_rules(), zarc=load_zarc_table())
     return {
         "recommendation": result.to_dict(),
@@ -49,16 +54,26 @@ def build(lat: float, lon: float, code: str, crop: Crop, priority: Priority, lan
     }
 
 
+def write(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     if load_zarc_table() is None:
         print("error: no ZARC CSV in data/processed/; run python -m src.data.zarc first", file=sys.stderr)
         return 2
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for pilot_id, lat, lon, code, crop, priority in PILOTS:
+    for pilot_id, lat, lon, code, default_crop, default_priority in PILOTS:
+        plot, diagnosis, projection = inputs(lat, lon, code)
         for lang, suffix in (("en", ""), ("pt-BR", ".pt-BR")):
-            path = OUT_DIR / f"{pilot_id}{suffix}.json"
-            path.write_text(json.dumps(build(lat, lon, code, crop, priority, lang), indent=2) + "\n", encoding="utf-8")
-            print(f"wrote {path.relative_to(ROOT)}")
+            # Every crop and priority, so the dashboard can switch them instantly without the API.
+            for crop in Crop:
+                for priority in Priority:
+                    payload = build(plot, diagnosis, projection, crop, priority, lang)
+                    write(OUT_DIR / pilot_id / f"{crop.value}-{priority.value}{suffix}.json", payload)
+                    if crop is default_crop and priority is default_priority:
+                        write(OUT_DIR / f"{pilot_id}{suffix}.json", payload)  # the default view
+            print(f"wrote demo files for {pilot_id} ({lang})")
     return 0
 
 

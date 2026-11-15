@@ -10,6 +10,12 @@
   --text: #0a0a0a;
   --muted: #5f5f5f;
   --negative: #c4242a;
+  /* Product accent and the seasonal-risk chart (immersive view). */
+  --accent: #a4532a;
+  --accent-soft: #f4e6dc;
+  --risk-strong: #c2462f;
+  --risk-other: #9aa49d;
+  --risk-window: #a4532a1f;
   --focus: #0a0a0a;
 
   /* Type: one grotesk, three sizes. */
@@ -35,6 +41,8 @@
   --control-height: 36px;
   --touch-height: 44px;
   --panel-width: 320px;
+  --result-width: 440px;
+  --bar-width: 360px;
   --legend-height: 12px;
   --swatch-size: 10px;
   --check-size: 16px;

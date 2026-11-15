@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import "@fontsource-variable/geist";
 import App from "./App";
 import PlotApp from "./plot/PlotApp";
+import ImmersiveApp from "./plot/immersive/ImmersiveApp";
 import "./tokens.css";
 import "./index.css";
 
@@ -14,6 +15,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    {window.location.hash === "#internal" ? <App /> : <PlotApp />}
+    {window.location.hash === "#internal" ? <App /> : window.location.hash === "#classic" ? <PlotApp /> : <ImmersiveApp />}
   </StrictMode>,
 );
