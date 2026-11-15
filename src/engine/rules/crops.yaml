@@ -1,5 +1,9 @@
 # AI-assisted: generated with Antigravity, reviewed by Lucas Feitosa
-# Crop agronomic profiles and baselines for Sergipe family farming (Issue #45)
+# Crop agronomic profiles and baselines for Sergipe family farming (Issue #45).
+# Human parameter selection and review: Team Nether (Lucas Feitosa).
+# Planting calendar baselines are anchored to traceable MAPA ZARC CSV rows for pilot municipality Itabaiana-SE (geocodigo=2802908).
+# Extrapolating a single municipal row statewide across Sergipe and setting min_15d_rain_onset_mm are unverified demo heuristics.
+# Real multi-parameter ZARC validation is separate (Issue #48).
 schema_version: 1
 
 crops:
@@ -12,27 +16,29 @@ crops:
     water_need_mm:
       min_mm: 500.0
       max_mm: 800.0
-      typical_mm: 550.0
-      source: "FAO-56 Allen et al. (1998) & Embrapa Milho e Sorgo"
-      url: "https://www.fao.org/land-water/databases-and-software/crop-information/maize/en/"
+      typical_mm: 600.0
+      source: "FAO Irrigation Water Management Training Manual 3 Ch. 3 Table 9 (500-800 mm) & Embrapa Milho e Sorgo Circular Tecnica 76 (~600 mm)"
+      url: "https://www.fao.org/4/s2022e/s2022e07.htm"
+      # Companion Embrapa reference: https://www.infoteca.cnptia.embrapa.br/bitstream/doc/490408/1/Circ76.pdf
     cycle_length_days:
-      min_days: 90
-      max_days: 130
-      typical_days: 110
-      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Tabuleiros Costeiros"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      min_days: 110
+      max_days: 145
+      typical_days: 125
+      source: "FAO-56 Table 11 (Maize grain humid tropics: 125 d) & Embrapa Milho e Sorgo Plantio Grupo II (110-145 d)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
+      # Companion Embrapa reference: https://ainfo.cnptia.embrapa.br/digital/bitstream/item/27037/1/Plantio.pdf
     heat_limit_c:
       max_optimal_c: 30.0
-      critical_c: 34.0
+      critical_c: 35.0
       sensitive_stage: "flowering_and_silking"
-      source: "FAO-56 & Embrapa Milho e Sorgo agroclimatic guidelines"
-      url: "https://www.embrapa.br/milho-e-sorgo"
+      source: "Embrapa Milho e Sorgo Plantio & Circular Tecnica 76 (optimal 24-30 C; pollen viability and flowering stress >35 C)"
+      url: "https://ainfo.cnptia.embrapa.br/digital/bitstream/item/27037/1/Plantio.pdf"
     kc:
       kc_ini: 0.30
       kc_mid: 1.20
       kc_end: 0.60
-      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
-      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+      source: "FAO-56 Table 12 (Maize, field/grain crop coefficient Kc)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
     planting_calendar:
       preferred_season: "wet"
       start_month: 4
@@ -40,8 +46,8 @@ crops:
       start_decendio: 10
       end_decendio: 18
       min_15d_rain_onset_mm: 35.0
-      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      source: "MAPA ZARC pilot anchor: Itabaiana-SE (geocodigo=2802908), Milho 1a Safra, Safra 2026/2027, Cod_Cultura=16, Cod_Ciclo=20 (Group I), Cod_Solo=14 (AD4), Cod_Outros_Manejos=1 (rainfed), Port. 237 de 10/07/2026 (dec10=40%, dec11=30%, dec12..17=20%, dec18=40% risk). Unverified demo baseline assumption when extrapolated statewide or for min_15d_rain_onset_mm (35.0 mm); actual ZARC validation is separate (#48)."
+      url: "https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico"
 
   beans:
     id: "beans"
@@ -53,26 +59,27 @@ crops:
       min_mm: 300.0
       max_mm: 500.0
       typical_mm: 350.0
-      source: "FAO-56 Allen et al. (1998) & Embrapa Arroz e Feijão"
-      url: "https://www.fao.org/land-water/databases-and-software/crop-information/dry-bean/en/"
+      source: "FAO Irrigation Water Management Training Manual 3 Ch. 3 Table 9 (300-500 mm) & Embrapa Ageitec Feijao Clima (~300 mm); 350 mm demo nominal midpoint"
+      url: "https://www.fao.org/4/s2022e/s2022e07.htm"
+      # Companion Embrapa reference: https://www.embrapa.br/web/agencia-de-informacao-tecnologica/cultivos/feijao/pre-producao/clima
     cycle_length_days:
-      min_days: 65
-      max_days: 95
-      typical_days: 75
-      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Tabuleiros Costeiros"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      min_days: 95
+      max_days: 110
+      typical_days: 100
+      source: "FAO-56 Table 11 (Beans, dry: 95/100/110 days across listed semi-arid and continental environments, aligned with dry-bean Kc values)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
     heat_limit_c:
-      max_optimal_c: 28.0
-      critical_c: 32.0
+      max_optimal_c: 30.0
+      critical_c: 35.0
       sensitive_stage: "flowering_and_pod_set"
-      source: "FAO-56 & Embrapa Arroz e Feijão agroclimatic guidelines"
-      url: "https://www.embrapa.br/arroz-e-feijao"
+      source: "Embrapa Ageitec Feijao Clima (optimal 18-30 C, daytime heat stress >30 C, flower abortion >35 C)"
+      url: "https://www.embrapa.br/web/agencia-de-informacao-tecnologica/cultivos/feijao/pre-producao/clima"
     kc:
       kc_ini: 0.40
       kc_mid: 1.15
       kc_end: 0.35
-      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
-      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+      source: "FAO-56 Table 12 (Beans, dry and Pulses crop coefficient Kc)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
     planting_calendar:
       preferred_season: "wet"
       start_month: 4
@@ -80,8 +87,8 @@ crops:
       start_decendio: 11
       end_decendio: 18
       min_15d_rain_onset_mm: 30.0
-      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      source: "MAPA ZARC pilot anchor: Itabaiana-SE (geocodigo=2802908), Feijao 2a Safra (1a safra is irrigated-only in SE), Safra 2026/2027, Cod_Cultura=14, Cod_Ciclo=20 (Group I), Cod_Solo=13 (AD3), Cod_Outros_Manejos=1 (rainfed), Port. 372 de 24/08/2026 (dec11=30%, dec12..18=20% risk). Unverified demo baseline assumption when extrapolated statewide or for min_15d_rain_onset_mm (30.0 mm); actual ZARC validation is separate (#48)."
+      url: "https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico"
 
   cassava:
     id: "cassava"
@@ -90,35 +97,36 @@ crops:
     fixes_nitrogen: false
     soil_cover_rating: "low_initial"
     water_need_mm:
-      min_mm: 400.0
-      max_mm: 750.0
-      typical_mm: 600.0
-      source: "FAO-56 Allen et al. (1998) & Embrapa Mandioca e Fruticultura"
-      url: "https://www.fao.org/land-water/databases-and-software/crop-information/cassava/en/"
+      min_mm: 500.0
+      max_mm: 1500.0
+      typical_mm: 1000.0
+      source: "Embrapa Tabuleiros Costeiros Sistemas de Producao 11 Clima (500-700 mm/yr semi-arid minimum; 1000-1500 mm/yr optimal range)"
+      url: "https://sistemasdeproducao.cnptia.embrapa.br/FontesHTML/Mandioca/mandioca_tabcosteiros/clima.htm"
     cycle_length_days:
-      min_days: 270
-      max_days: 450
-      typical_days: 360
-      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Mandioca e Fruticultura"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      min_days: 210
+      max_days: 360
+      typical_days: 300
+      source: "FAO-56 Table 11 (Cassava year 1: 210 d; year 2: 360 d) & Embrapa Tabuleiros Costeiros Colheita (early cycle 10-12 months / 300-360 d)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
+      # Companion Embrapa reference: https://sistemasdeproducao.cnptia.embrapa.br/FontesHTML/Mandioca/mandioca_tabcosteiros/colheita.htm
     heat_limit_c:
-      max_optimal_c: 32.0
-      critical_c: 38.0
+      max_optimal_c: 30.0
+      critical_c: 37.0
       sensitive_stage: "sprouting_and_root_bulking"
-      source: "FAO-56 & Embrapa Mandioca e Fruticultura agroclimatic guidelines"
-      url: "https://www.embrapa.br/mandioca-e-fruticultura"
+      source: "Embrapa Fisiologia da Mandioca (Alves, 2006, p. 152: sprouting optimal 28-30 C, inhibited >37 C; growth range 16-38 C)"
+      url: "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1152564/1/Fisiologia-da-mandioca.pdf"
     kc:
       kc_ini: 0.30
       kc_mid: 0.80
       kc_end: 0.30
-      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
-      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+      source: "FAO-56 Table 12 (Cassava, year 1 crop coefficient Kc)"
+      url: "https://www.fao.org/4/x0490e/x0490e0b.htm"
     planting_calendar:
       preferred_season: "wet"
       start_month: 4
-      end_month: 7
+      end_month: 6
       start_decendio: 10
-      end_decendio: 21
+      end_decendio: 18
       min_15d_rain_onset_mm: 25.0
-      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
-      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+      source: "MAPA ZARC pilot anchor: Itabaiana-SE (geocodigo=2802908), Mandioca (aipim, macaxeira), Perene/Sem Safra CSV, Cod_Cultura=35, Cod_Ciclo=13 (Perene), Cod_Solo=2 (Textura Media), Cod_Outros_Manejos=1 (rainfed), Port. 17 de 12/02/2020 (Apr-Jun window dec10..17=20%, dec18=40% risk; full row also zones dec7=40%, dec8..9=30%). Unverified demo baseline assumption when extrapolated statewide or for min_15d_rain_onset_mm (25.0 mm); actual ZARC validation is separate (#48)."
+      url: "https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico"

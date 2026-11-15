@@ -106,6 +106,7 @@ class WaterBalanceThresholds:
     min_smap_surface_m3m3: float
     min_forecast_15d_rain_mm: float
     source: str
+    url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +117,7 @@ class VegetationThresholds:
     sparse_cover_ndvi_max: float
     healthy_cover_ndvi_min: float
     source: str
+    url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +128,7 @@ class TerrainThresholds:
     contour_planting_min_slope_pct: float
     high_erosion_risk_slope_pct: float
     source: str
+    url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -445,6 +448,7 @@ def _parse_water_balance(raw: Mapping[str, Any]) -> WaterBalanceThresholds:
     min_smap_surface_m3m3 = _require_float(data, "min_smap_surface_m3m3", ctx)
     min_forecast_15d_rain_mm = _require_float(data, "min_forecast_15d_rain_mm", ctx)
     source = _require_non_empty_str(data, "source", ctx)
+    url = _optional_url(data, ctx)
 
     if severe_deficit_mm > moderate_deficit_mm:
         raise ValueError(
@@ -468,6 +472,7 @@ def _parse_water_balance(raw: Mapping[str, Any]) -> WaterBalanceThresholds:
         min_smap_surface_m3m3=min_smap_surface_m3m3,
         min_forecast_15d_rain_mm=min_forecast_15d_rain_mm,
         source=source,
+        url=url,
     )
 
 
@@ -478,6 +483,7 @@ def _parse_vegetation(raw: Mapping[str, Any]) -> VegetationThresholds:
     sparse_cover_ndvi_max = _require_float(data, "sparse_cover_ndvi_max", ctx)
     healthy_cover_ndvi_min = _require_float(data, "healthy_cover_ndvi_min", ctx)
     source = _require_non_empty_str(data, "source", ctx)
+    url = _optional_url(data, ctx)
 
     if not (
         -1.0
@@ -497,6 +503,7 @@ def _parse_vegetation(raw: Mapping[str, Any]) -> VegetationThresholds:
         sparse_cover_ndvi_max=sparse_cover_ndvi_max,
         healthy_cover_ndvi_min=healthy_cover_ndvi_min,
         source=source,
+        url=url,
     )
 
 
@@ -511,6 +518,7 @@ def _parse_terrain(raw: Mapping[str, Any]) -> TerrainThresholds:
         data, "high_erosion_risk_slope_pct", ctx
     )
     source = _require_non_empty_str(data, "source", ctx)
+    url = _optional_url(data, ctx)
 
     if not (
         0.0
@@ -530,6 +538,7 @@ def _parse_terrain(raw: Mapping[str, Any]) -> TerrainThresholds:
         contour_planting_min_slope_pct=contour_planting_min_slope_pct,
         high_erosion_risk_slope_pct=high_erosion_risk_slope_pct,
         source=source,
+        url=url,
     )
 
 

@@ -80,7 +80,7 @@ def test_load_rules_has_all_v1_crops_with_water_cycle_and_heat_sources() -> None
 
 
 def test_crop_profiles_include_water_demand_kc_and_planting_calendar_parameters() -> None:
-    """Verify FAO-56 Kc parameters, ZARC planting calendars, botanical family, and N-fixation."""
+    """Verify FAO-56 Kc parameters, planting calendar pilot anchors/heuristics, botanical family, and N-fixation."""
     rules = load_rules()
 
     # Botanical family and nitrogen fixation assertions
@@ -114,7 +114,7 @@ def test_crop_profiles_include_water_demand_kc_and_planting_calendar_parameters(
         assert isinstance(kc.source, str) and len(kc.source.strip()) > 0
         assert kc.url is not None and kc.url.startswith("http")
 
-        # Planting calendar (ZARC decendios and rainfall threshold)
+        # Planting calendar (pilot calendar decendios and rainfall onset heuristic; full ZARC validation is in #48)
         cal = profile.planting_calendar
         assert cal.preferred_season in {"wet", "dry"}
         assert 1 <= cal.start_month <= 12
@@ -141,6 +141,7 @@ def test_load_thresholds_validates_all_priorities_and_agroclimatic_limits() -> N
     assert 0.0 <= wb.min_smap_surface_m3m3 <= 1.0
     assert wb.min_forecast_15d_rain_mm >= 0.0
     assert isinstance(wb.source, str) and len(wb.source.strip()) > 0
+    assert wb.url is not None and wb.url.startswith("http")
 
     # Vegetation index thresholds
     veg = thresholds.vegetation_and_bare_soil
@@ -151,7 +152,11 @@ def test_load_thresholds_validates_all_priorities_and_agroclimatic_limits() -> N
         <= veg.healthy_cover_ndvi_min
         <= 1.0
     )
+    assert veg.bare_soil_ndvi_max == 0.20
+    assert veg.sparse_cover_ndvi_max == 0.30
+    assert veg.healthy_cover_ndvi_min == 0.60
     assert isinstance(veg.source, str) and len(veg.source.strip()) > 0
+    assert veg.url is not None and veg.url.startswith("http")
 
     # Terrain and slope classes
     ter = thresholds.terrain_and_erosion
@@ -162,6 +167,7 @@ def test_load_thresholds_validates_all_priorities_and_agroclimatic_limits() -> N
         <= ter.high_erosion_risk_slope_pct
     )
     assert isinstance(ter.source, str) and len(ter.source.strip()) > 0
+    assert ter.url is not None and ter.url.startswith("http")
 
     # Multi-criteria priority weights
     expected_priorities = {
@@ -330,7 +336,7 @@ def test_load_rules_from_custom_yaml_directory_reflects_tuned_values(tmp_path: P
     crops_data["crops"]["maize"]["water_need_mm"]["typical_mm"] = 580.0
     crops_data["crops"]["maize"]["water_need_mm"]["max_mm"] = 820.0
 
-    crops_data["crops"]["beans"]["cycle_length_days"]["typical_days"] = 80
+    crops_data["crops"]["beans"]["cycle_length_days"]["typical_days"] = 105
 
     thresholds_data["water_balance"]["severe_deficit_mm"] = -175.0
     thresholds_data["water_balance"]["moderate_deficit_mm"] = -75.0
@@ -348,7 +354,7 @@ def test_load_rules_from_custom_yaml_directory_reflects_tuned_values(tmp_path: P
     assert rules.crops[Crop.MAIZE].water_need.min_mm == 520.0
     assert rules.crops[Crop.MAIZE].water_need.typical_mm == 580.0
     assert rules.crops[Crop.MAIZE].water_need.max_mm == 820.0
-    assert rules.crops[Crop.BEANS].cycle_length.typical_days == 80
+    assert rules.crops[Crop.BEANS].cycle_length.typical_days == 105
 
     assert rules.thresholds.water_balance.severe_deficit_mm == -175.0
     assert rules.thresholds.water_balance.moderate_deficit_mm == -75.0

@@ -2,25 +2,30 @@
 # Agroclimatic thresholds and multi-criteria priority weights for Field Shift decision engine (Issue #45)
 schema_version: 1
 
+# Companion reference for soil water properties (theta_WP and TEW): FAO-56 Ch. 7 Table 19 (https://www.fao.org/4/x0490e/x0490e0c.htm)
 water_balance:
   severe_deficit_mm: -150.0
   moderate_deficit_mm: -60.0
   min_smap_surface_m3m3: 0.12
   min_forecast_15d_rain_mm: 25.0
-  source: "FAO-56 root-zone depletion & NASA SMAP/POWER agroclimatic baselines"
+  source: "Derived project operational thresholds grounded in FAO-56 Ch. 8 Example 35 (maize Zr=1.2m, p=0.55: RAW=59 mm loamy sand -> -60.0 mm moderate deficit; TAW=144 mm silty clay -> -150.0 mm severe deficit) and FAO-56 Ch. 7 Table 19 (loam theta_WP=0.07-0.17 m3/m3 midpoint & silt lower bound = 0.12 m3/m3; topsoil Ze=0.10m TEW=18-29 mm across silt loam to clay -> 25.0 mm 15d onset heuristic)."
+  url: "https://www.fao.org/4/x0490e/x0490e0e.htm"
 
 vegetation_and_bare_soil:
-  bare_soil_ndvi_max: 0.25
-  sparse_cover_ndvi_max: 0.35
-  healthy_cover_ndvi_min: 0.50
-  source: "MODIS/VIIRS/HLS bare-soil NDVI spectral thresholds (FAO & NASA ARSET)"
+  bare_soil_ndvi_max: 0.20
+  sparse_cover_ndvi_max: 0.30
+  healthy_cover_ndvi_min: 0.60
+  source: "NASA Earth Observatory Measuring Vegetation NDVI scale (barren rock/sand/soil <=0.1 to <0.2, shrub and grassland / sparse cover 0.2-0.3, dense healthy canopy 0.6-0.8)."
+  url: "https://science.nasa.gov/earth/earth-observatory/measuring-vegetation-ndvi-evi/"
 
 terrain_and_erosion:
   gentle_slope_max_pct: 3.0
   contour_planting_min_slope_pct: 5.0
   high_erosion_risk_slope_pct: 8.0
-  source: "Embrapa Solos / FAO contour-farming slope classes"
+  source: "Embrapa SiBCS / Ageitec SRTM slope classes (Plano 0-3% -> gentle_slope_max 3.0%; Suave Ondulado 3-8% with 5.0% project operational contour-planting trigger; Ondulado 8-20% -> high_erosion_risk 8.0%)."
+  url: "https://www.embrapa.br/web/agencia-de-informacao-tecnologica/territorios/territorio-mata-sul-pernambucana/caracteristicas-do-territorio/recursos-naturais/relevo"
 
+# Human-authored Team Nether product design weights (owned by Lucas Feitosa) rather than external biometric thresholds.
 priority_weights:
   water:
     water_efficiency: 0.50
