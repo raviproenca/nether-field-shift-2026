@@ -1,3 +1,5 @@
+<!-- AI-assisted: generated with Cursor, reviewed by Lucas Feitosa -->
+
 # Epic 1 Context: Decision engine (`src/engine`)
 
 <!-- Compiled from planning artifacts. Edit freely. Regenerate with compile-epic-context if planning docs change. -->
@@ -27,13 +29,13 @@ Every Recommendation includes at least these strategies, ranked by the given Pri
 
 Every Recommendation has an uncertainty note (coarse resolution, a missing day, or a forecast that is not an observation) and a validation note (where a local technician must confirm the advice, and any disagreement between the planting window and ZARC for that crop and municipality). ZARC is the MAPA/Embrapa reference.
 
-Crop profiles for maize, beans, and cassava record water need, cycle length, and heat limit, each with a source citation. The team still sets the numeric thresholds.
+Crop profiles for maize, beans, and cassava record water need, cycle length, and heat limit, each with a source citation. Those numbers and the priority weights live in `src/engine/rules/crops.yaml` and `thresholds.yaml`. The caller loads them and passes an `EngineRules` object into `recommend()`.
 
 The Recommendation is language-neutral: identifiers, numbers, and codes. There is no account and no stored farm history. Farmer trials, crop photos, and states other than Sergipe are out of this hackathon. SoilGrids is not an MVP source.
 
 Done means: identical inputs produce a byte-identical Recommendation; a ZARC disagreement appears in the validation note; and a backtest of two or three real past Sergipe years, at least one wet and one dry, reports how each strategy would have done.
 
-Leave this mapping undecided until the team resolves it: extra inputs are the farmer's crops, soil, region, season, and previous crops; extra outputs are rotation options with trade-offs, a planting schedule and dates per crop, water demand, and a pest-cycle break. Soil source and how previous crops are entered are open. ZARC access (file or API, and granularity) is open.
+Story 1.3 ranks with the loaded rules. Inputs that change the score are the Diagnosis (rain, water balance, soil moisture, NDVI, temperature, slope), the Projection, `plot.region`, `plot.season`, and the previous crop. A strategy does not earn a family break while it still plants the previous botanical family. Priority weights change the order, not only the ties. Water demand comes from the crop profiles. Planting dates, actions, and the pest-cycle note stay with story 1.4. ZARC access stays with story 1.5.
 
 ## Technical Decisions
 

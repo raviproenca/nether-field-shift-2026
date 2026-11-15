@@ -1,4 +1,4 @@
-# AI-assisted: generated with Cursor; pending review by the team.
+# AI-assisted: generated with Cursor, reviewed by Lucas Feitosa.
 """Run recommend() on the cached Sergipe POWER snapshot for the two pilots."""
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from src.engine import (
     Priority,
     Projection,
     SourceAttribution,
+    load_rules,
     recommend,
     serialize_recommendation,
 )
@@ -24,6 +25,7 @@ POWER_PATH = ROOT / "apps" / "web" / "public" / "data" / "sergipe" / "power.json
 POINTS_PATH = ROOT / "apps" / "web" / "public" / "data" / "sergipe" / "points.geojson"
 PILOTS_PATH = ROOT / "apps" / "web" / "public" / "data" / "sergipe" / "pilots.geojson"
 SCHEMA_PATH = ROOT / "docs" / "data-format" / "recommendation.schema.json"
+RULES = load_rules()
 
 
 def _load() -> tuple[dict, dict[str, tuple[float, float]], list[dict]]:
@@ -102,19 +104,23 @@ def test_pilots_use_nearest_power_cell_and_rank_a_legume_after_maize() -> None:
             region=props["zone"],
             previous_crops=("maize",),
         )
-        recommendation = recommend(plot, diagnosis, projection, Crop.MAIZE, Priority.WATER)
+        water = recommend(plot, diagnosis, projection, Crop.MAIZE, Priority.WATER, RULES)
+        income = recommend(plot, diagnosis, projection, Crop.MAIZE, Priority.INCOME, RULES)
 
-        assert [strategy.kind.value for strategy in recommendation.strategies] == [
+        assert [strategy.kind.value for strategy in water.strategies] == [
             "soil_water_conservation",
-            "resilient_income_forage",
             "current_practice",
+            "resilient_income_forage",
         ]
-        assert recommendation.strategies[0].crops == ("maize", "beans")
+        assert water.strategies[0].crops == ("maize", "beans")
+        assert income.strategies[0].kind.value == "resilient_income_forage"
+        assert "severe deficit" in water.uncertainty_note
+        recommendation = water
         assert diagnosis.rain_total_mm == expect_rain
         assert diagnosis.temperature_mean_c == expect_temp
         assert diagnosis.water_balance_mm == expect_balance
         assert recommendation.diagnosis.rain_total_mm == diagnosis.rain_total_mm
-        assert recommendation.uncertainty_note == "The forecast is absent."
+        assert recommendation.uncertainty_note.startswith("The forecast is absent.")
         payload = json.loads(json.dumps(serialize_recommendation(recommendation)))
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
         Draft202012Validator(schema, format_checker=FormatChecker()).validate(payload)

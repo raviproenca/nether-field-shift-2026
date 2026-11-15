@@ -114,6 +114,7 @@ Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requiremen
 | [pyhdf](https://github.com/fhs/pyhdf) | MIT |
 | [pystac-client](https://github.com/stac-utils/pystac-client) (STAC search for Planetary Computer; added because the `planetary` source queries the STAC API) | Apache-2.0 |
 | [planetary-computer](https://github.com/microsoft/planetary-computer-sdk-for-python) (signs asset URLs, no key; added for the same reason) | MIT |
+| [PyYAML](https://pyyaml.org/) (reads `src/engine/rules/*.yaml`) | MIT |
 | [pytest](https://pytest.org/) | MIT |
 
 Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.json)):
