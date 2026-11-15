@@ -1,8 +1,8 @@
-# AI-assisted: generated with Antigravity, reviewed by dudxyz
+# AI-assisted: generated with Antigravity and Claude Code, reviewed by dudxyz (adapted for the snapshot generator)
+# Based on work by @dudxyz in feat/dudxyz-srtm-openmeteo-pilots
 """Tests for NASA NASADEM / SRTM terrain clipping and slope calculation (no network)."""
 
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +12,7 @@ import xarray as xr
 from pystac import Asset, Item
 from rasterio.transform import from_origin
 
-from src.data import cli, planetary, srtm
+from src.data import srtm
 from src.data.errors import InputError, RemoteDataError
 from src.data.regions import BBox, point_to_bbox
 
@@ -90,7 +90,7 @@ def test_size_guard_rejects_huge_box():
         srtm.check_size(BBox(-48.0, -18.0, -34.0, -1.0), max_pixels=100_000)
 
 
-def test_compute_slope_known_plane():
+def test_compute_slope_of_a_known_plane():
     # Create a 5x5 grid with step ~30 m (~0.00027 deg) and linear ramp rising 3 m per pixel east (~10% slope)
     step_deg = 30.0 / (111.32 * 1000.0)
     x = np.linspace(-37.43, -37.43 + 4 * step_deg, 5)
@@ -143,3 +143,4 @@ def test_cli_srtm_writes_json_summary(tmp_path, monkeypatch, capsys):
     saved = json.loads(out_json.read_text(encoding="utf-8"))
     assert saved["source"] == "srtm" and saved["elevation_mean_m"] == pytest.approx(180.0)
     assert "NASADEM summary" in capsys.readouterr().out
+    assert not {"slope_class", "erosion_risk", "contour_planting_recommended"} & set(summary)  # no product rules

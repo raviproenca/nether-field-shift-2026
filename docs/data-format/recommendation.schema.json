@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recommendation.schema.json",
+  "title": "Engine Recommendation",
+  "description": "Deterministic crop and rotation recommendation produced by src/engine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plot",
+    "crop",
+    "priority",
+    "diagnosis",
+    "projection",
+    "strategies",
+    "uncertainty_note",
+    "validation_note",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "plot": {
+      "$ref": "#/$defs/plot"
+    },
+    "crop": {
+      "type": "string",
+      "enum": ["maize", "beans", "cassava"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["water", "soil", "erosion", "income"]
+    },
+    "diagnosis": {
+      "$ref": "#/$defs/diagnosis"
+    },
+    "projection": {
+      "$ref": "#/$defs/projection"
+    },
+    "strategies": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/strategy"
+      }
+    },
+    "uncertainty_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourceAttribution"
+      }
+    }
+  },
+  "$defs": {
+    "soilInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "texture": { "type": ["string", "null"] },
+        "organic_carbon_g_kg": { "type": ["number", "null"] },
+        "ph": { "type": ["number", "null"] },
+        "water_holding_capacity_mm": { "type": ["number", "null"] },
+        "notes": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] }
+      }
+    },
+    "plot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lat", "lon", "radius_km"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "radius_km": { "type": "number", "exclusiveMinimum": 0 },
+        "id": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "region": { "type": ["string", "null"] },
+        "municipality_code": { "type": ["string", "null"] },
+        "elevation_m": { "type": ["number", "null"] },
+        "slope_mean_deg": { "type": ["number", "null"] },
+        "slope_mean_pct": { "type": ["number", "null"] },
+        "soil": {
+          "oneOf": [
+            { "$ref": "#/$defs/soilInfo" },
+            { "type": "null" }
+          ]
+        },
+        "season": { "type": ["string", "null"] },
+        "previous_crops": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "sourceAttribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "dataset", "nasa", "url"],
+      "properties": {
+        "source": { "type": "string" },
+        "dataset": { "type": "string" },
+        "nasa": { "type": "boolean" },
+        "url": { "type": "string", "format": "uri" },
+        "doi": { "type": ["string", "null"] },
+        "notice": { "type": ["string", "null"] }
+      }
+    },
+    "bareSoilWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" },
+        "ndvi_mean": { "type": ["number", "null"] },
+        "description": { "type": ["string", "null"] }
+      }
+    },
+    "diagnosis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_start", "period_end"],
+      "properties": {
+        "period_start": { "type": "string", "format": "date" },
+        "period_end": { "type": "string", "format": "date" },
+        "rain_total_mm": { "type": ["number", "null"] },
+        "rain_daily_mean_mm": { "type": ["number", "null"] },
+        "et0_daily_mean_mm": { "type": ["number", "null"] },
+        "water_balance_mm": { "type": ["number", "null"] },
+        "soil_moisture_surface_m3m3": { "type": ["number", "null"] },
+        "soil_moisture_root_kgm2": { "type": ["number", "null"] },
+        "temperature_mean_c": { "type": ["number", "null"] },
+        "temperature_max_c": { "type": ["number", "null"] },
+        "ndvi_mean": { "type": ["number", "null"] },
+        "elevation_m": { "type": ["number", "null"] },
+        "slope_mean_pct": { "type": ["number", "null"] },
+        "bare_soil_windows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/bareSoilWindow" }
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceAttribution" }
+        }
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_start", "period_end", "horizon_days", "available"],
+      "properties": {
+        "period_start": { "type": "string", "format": "date" },
+        "period_end": { "type": "string", "format": "date" },
+        "horizon_days": { "type": "integer", "minimum": 1 },
+        "available": { "type": "boolean" },
+        "rain_total_mm": { "type": ["number", "null"] },
+        "rain_daily_mean_mm": { "type": ["number", "null"] },
+        "temperature_mean_c": { "type": ["number", "null"] },
+        "temperature_max_c": { "type": ["number", "null"] },
+        "et0_daily_mean_mm": { "type": ["number", "null"] },
+        "water_balance_mm": { "type": ["number", "null"] },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceAttribution" }
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "summary", "timing", "evidence"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "timing": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "cropSchedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["crop", "planting_start", "planting_end", "cycle_days", "water_demand_mm"],
+      "properties": {
+        "crop": { "type": "string", "minLength": 1 },
+        "planting_start": { "type": "string", "format": "date" },
+        "planting_end": { "type": "string", "format": "date" },
+        "cycle_days": { "type": "integer", "minimum": 1 },
+        "water_demand_mm": { "type": "number", "minimum": 0 }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "rank",
+        "score",
+        "title",
+        "crops",
+        "trade_offs",
+        "planting_schedule",
+        "water_demand_mm",
+        "breaks_pest_cycle",
+        "pest_cycle_note",
+        "actions"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "current_practice",
+            "soil_water_conservation",
+            "resilient_income_forage"
+          ]
+        },
+        "rank": { "type": "integer", "minimum": 1 },
+        "score": { "type": "number" },
+        "title": { "type": "string", "minLength": 1 },
+        "crops": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "trade_offs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "planting_schedule": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cropSchedule" }
+        },
+        "water_demand_mm": { "type": "number", "minimum": 0 },
+        "breaks_pest_cycle": { "type": "boolean" },
+        "pest_cycle_note": { "type": "string" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/action" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "static.schema.json",
+  "title": "Static layer file (<region>/srtm.json)",
+  "description": "Values without time, one object per point (terrain from NASADEM). Same shared metadata as series.schema.json.",
+  "type": "object",
+  "required": [
+    "source",
+    "region",
+    "variables",
+    "aggregation",
+    "resolution",
+    "attribution",
+    "points"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "source": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "variables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "series.schema.json#/$defs/variable"
+      }
+    },
+    "aggregation": {
+      "enum": [
+        "cell_mean",
+        "nearest_cell",
+        "window_mean"
+      ]
+    },
+    "resolution": {
+      "type": "string"
+    },
+    "attribution": {
+      "$ref": "series.schema.json#/$defs/attribution"
+    },
+    "points": {
+      "type": "object",
+      "description": "Point id (grid points and pilots) to {variable: value}. A point with no valid value is absent.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

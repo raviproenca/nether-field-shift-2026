@@ -1,4 +1,5 @@
-# AI-assisted: generated with Antigravity, reviewed by dudxyz
+# AI-assisted: generated with Antigravity and Claude Code, reviewed by dudxyz (adapted for the snapshot generator)
+# Based on work by @dudxyz in feat/dudxyz-srtm-openmeteo-pilots
 """NASA NASADEM / SRTM 30 m terrain elevation and slope clipping (public via Planetary Computer STAC)."""
 
 import math
@@ -116,7 +117,7 @@ def compute_slope(elevation: xr.DataArray) -> tuple[xr.DataArray, xr.DataArray]:
 
 
 def summarize_terrain(elevation: xr.DataArray) -> dict:
-    """Compute elevation & slope summary statistics for the clipped bounding box."""
+    """Elevation and slope statistics of a clipped DEM: physical values only, no classes or recommendations."""
     elev_values = elevation.values.astype("float64")
     finite_elev = elev_values[np.isfinite(elev_values)]
     if finite_elev.size == 0:

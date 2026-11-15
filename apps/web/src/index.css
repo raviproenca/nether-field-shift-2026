@@ -1,0 +1,383 @@
+/* AI-assisted: generated with Claude Code, reviewed by Ravi */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+p,
+h1,
+fieldset {
+  margin: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-width);
+}
+
+/* Layout: the map fills the window; the panel floats over its top-left corner. */
+.app {
+  position: relative;
+  height: 100%;
+}
+
+.map-area,
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.panel {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: var(--panel-width);
+  max-height: calc(100% - var(--space-4) - var(--panel-clearance));
+  padding: var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+}
+
+.panel-title {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  font-weight: var(--fw-title);
+}
+
+.panel-region {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-region-name {
+  font-weight: var(--fw-medium);
+}
+
+.panel-meta {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+/* Region selector: native radios styled as a segmented control (arrow keys move the choice). */
+.segmented {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 0;
+  background: var(--raised);
+  border-radius: var(--radius-control);
+}
+
+.segmented-option {
+  position: relative;
+  flex: 1;
+}
+
+.segmented-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--control-height) - 2 * var(--space-1));
+  border-radius: var(--radius-inner);
+  color: var(--muted);
+  transition: transform var(--duration-press) var(--ease-out);
+}
+
+.segmented-option input:checked + span {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--fw-medium);
+}
+
+.segmented-option input:focus-visible + span {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-width);
+}
+
+.segmented-option input:active + span {
+  transform: scale(var(--press-scale));
+}
+
+/* Layers and date: a disclosure, so the panel can fold away on a phone. */
+.disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.disclosure-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.disclosure-title,
+.disclosure-action {
+  font-weight: var(--fw-medium);
+}
+
+.disclosure-summary {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.disclosure-action {
+  text-decoration: underline;
+}
+
+.panel-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.layer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field-label {
+  padding: 0;
+  font-weight: var(--fw-medium);
+}
+
+.date-input {
+  height: var(--control-height);
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.date-input:disabled {
+  color: var(--muted);
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.layer-list > .field-label {
+  margin-bottom: var(--space-1);
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  cursor: pointer;
+}
+
+.layer-toggle input {
+  width: var(--check-size);
+  height: var(--check-size);
+  margin: 0;
+  accent-color: var(--text);
+  cursor: pointer;
+}
+
+.layer-status {
+  padding-left: calc(var(--check-size) + var(--space-2));
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+/* Legend: the official color scale, its ends and its unit. */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding-left: calc(var(--check-size) + var(--space-2));
+}
+
+.legend-bar {
+  display: block;
+  width: 100%;
+  height: var(--legend-height);
+  border-radius: var(--radius-inner);
+}
+
+.legend-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-unit {
+  color: var(--muted);
+}
+
+.legend-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-dot {
+  flex: none;
+  width: var(--swatch-size);
+  height: var(--swatch-size);
+  border-radius: var(--radius-round);
+}
+
+.legend-note,
+.legend-source {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+}
+
+.legend-note a {
+  color: var(--text);
+}
+
+/* Map problem: one sentence and a way out, inside the panel. */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.notice p {
+  flex: 1;
+}
+
+.notice p::before {
+  content: "";
+  display: inline-block;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  margin-right: var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--negative);
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* MapLibre attribution: keep it legible on any tile. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-inner);
+}
+
+/* Same 16 px margin as the panel, so no text sits against the screen edge. */
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin: 0 var(--space-4) var(--space-4) 0;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    right: var(--space-4);
+    width: auto;
+  }
+
+  .segmented-option span {
+    height: calc(var(--touch-height) - 2 * var(--space-1));
+  }
+
+  .text-button,
+  .disclosure,
+  .layer-toggle,
+  .date-input {
+    min-height: var(--touch-height);
+  }
+
+  .panel-body {
+    max-height: var(--panel-body-max-phone);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented-option span {
+    transition: none;
+  }
+}

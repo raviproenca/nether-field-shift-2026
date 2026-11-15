@@ -13,7 +13,7 @@ Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms
 1. **Never commit directly to `dev` or `main`.** Always work on your own branch and open a PR to `dev`. Both branches are protected.
 2. **The idea is the team's.** Space Apps rules forbid using AI to come up with the project idea. Do not propose, brainstorm or rank project ideas. If the user asks for one, remind them of this rule. Do not run `bmad-brainstorming`, `bmad-forge-idea` or `bmad-prfaq` to generate the idea; use BMad only after the team has written its idea down.
 3. **No credentials in Git.** Earthdata Login is read from a local `~/.netrc` or `.env`, both git-ignored. Never print, log, hardcode or commit tokens, passwords or `.netrc`/`.env` contents. Only `.env.example` (with empty values) is committed.
-4. **English everywhere public:** code, comments, commit messages, PR titles, UI text, README and docs in this repo. Agents may talk to team members in Portuguese.
+4. **English everywhere public:** code, comments, commit messages, PR titles and descriptions, UI text, README and docs in this repo. **Exception: GitHub issues and the project board are in Brazilian Portuguese (PT-BR)**, with titles, descriptions and labels in PT-BR (see [decisions.md](docs/team/decisions.md)). Agents may talk to team members in Portuguese.
 5. **NASA data at the center.** Features should be built on NASA data (e.g. POWER, MODIS, SMAP, GLDAS, IMERG). Every dataset used must be listed in the README with a link.
 6. **Public links, no login.** Anything the judges open (demo, app, video, slides, data) must work without an account. Do not add a login wall to the app.
 7. **Credit everything.** Third-party code, data, images and text (even open source) are listed in the README with their licenses.
@@ -22,15 +22,15 @@ Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms
 
 ## 2. Stack and folder structure
 
-> **Stack: to be decided by the team on Nov 14.** Update this section in the first PR after the decision (the Tech Lead approves it).
+> **Stack recorded on Nov 14.** Versions and the product services are in the [architecture spine](_bmad-output/planning-artifacts/architecture/architecture-nether-field-shift-2026-2026-11-14/ARCHITECTURE-SPINE.md#stack). Changes go through a PR approved by the Tech Lead.
 
 | Item | Decision |
 |---|---|
-| Language / runtime | _TBD_ |
-| App / UI framework | _TBD_ |
-| Data access | _TBD_ (NASA APIs; `earthaccess` if Earthdata Login is needed) |
-| Tests | _TBD_ |
-| Deploy (public URL, no login) | _TBD_ |
+| Language / runtime | Python 3.12 (`src/data/`, `apps/api/`); Node.js 24 + TypeScript (`apps/web/`) |
+| App / UI framework | `apps/web/`: Vite + React + TypeScript + MapLibre GL JS (internal map now; producer dashboard reuses it). `apps/api/`: FastAPI. (The Telegram bot and voice are out of v1, Nov 15.) |
+| Data access | `src/data/` toolkit: NASA POWER API, `earthaccess` for Earthdata Login sources, Planetary Computer STAC for Sentinel-2. The internal map reads pre-generated snapshots in `apps/web/public/data/` and NASA GIBS tiles; product clients call `apps/api/` over HTTP only |
+| Tests | `pytest` (Python); `npm run lint` (ESLint) and `npm run typecheck` (`tsc --noEmit`) in `apps/web/` |
+| Deploy (public URL, no login) | Internal map: Cloudflare Pages (`*.pages.dev`) via [`.github/workflows/deploy-internal-map.yml`](.github/workflows/deploy-internal-map.yml). API: Google Cloud Run (see the architecture spine) |
 
 Folder layout (adjust once the stack is chosen, keep it flat and simple):
 

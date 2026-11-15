@@ -30,12 +30,22 @@ Regra de ouro: **nunca commitar direto em `dev` ou `main`.** Tudo entra por PR p
 
 ## Lembretes do Space Apps
 
-- Código, commits, PRs e interface **em inglês** (aqui no CONTRIBUTING pode ser em português).
+- Código, commits, PRs, README, docs e interface **em inglês** (aqui no CONTRIBUTING pode ser em português).
+- Issues e quadro do Project **em português (PT-BR)**: título, descrição e etiquetas.
 - **Credencial nunca vai para o Git:** `.env` e `~/.netrc` ficam só na sua máquina. Use o `.env.example` como modelo.
 - Arquivos de dados grandes não entram no repo: use um script que baixa.
 - Todo dado da NASA ou de terceiros usado precisa ser citado no README, com link.
 - **A ideia é da equipe:** IA ajuda no código, mas não gera a ideia.
 - Links da entrega abrem sem login. A demo tem no máximo 30 s de vídeo ou 7 slides.
+
+## Entender o escopo
+
+O escopo atual está em [docs/scope.md](docs/scope.md). Para uma explicação em português, com o seu próximo passo, use a skill `nether-escopo`:
+
+- **Claude Code:** `/nether-escopo` (geral) ou `/nether-escopo <seu nome ou área>`, ex.: `/nether-escopo lucas`.
+- **Codex:** `$nether-escopo` (ou `$nether-escopo <nome ou área>`), ou peça "explica o escopo".
+
+A skill só lê: os documentos e, se o `gh` estiver logado, o quadro e as issues. Ela não atribui issues nem mexe no quadro.
 
 ## IA e BMad
 

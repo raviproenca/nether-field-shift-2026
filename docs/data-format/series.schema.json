@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "series.schema.json",
+  "title": "Snapshot series file (<region>/<source>.json)",
+  "description": "Series of one source for every point of one region. Adapted from the Timeseries schema of the API contract (feat/ravi-api-contract): metadata is shared by the file and each point has its own series.",
+  "type": "object",
+  "required": ["source", "region", "variables", "aggregation", "resolution", "period", "attribution", "points"],
+  "additionalProperties": false,
+  "properties": {
+    "source": { "type": "string", "description": "Source id (power, gldas, imerg, smap, viirs, modis)." },
+    "region": { "type": "string", "description": "Region id (sergipe, nordeste)." },
+    "variables": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/variable" }
+    },
+    "aggregation": {
+      "enum": ["cell_mean", "nearest_cell", "window_mean"],
+      "description": "cell_mean: mean of the grid cells inside the point's box. nearest_cell: the cell that holds the point (POWER). window_mean: mean of the valid pixels inside the box (NDVI)."
+    },
+    "resolution": { "type": "string" },
+    "period": {
+      "oneOf": [{ "$ref": "#/$defs/period" }, { "type": "null" }],
+      "description": "First and last published time; null when the source has no valid value."
+    },
+    "attribution": { "$ref": "#/$defs/attribution" },
+    "points": {
+      "type": "object",
+      "description": "Point id (see points.geojson) to its series. A point with no valid value is absent.",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "description": "Ascending by time.",
+        "items": { "$ref": "#/$defs/seriesPoint" }
+      }
+    }
+  },
+  "$defs": {
+    "variable": {
+      "type": "object",
+      "required": ["name", "long_name", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "long_name": { "type": "string" },
+        "unit": { "type": "string" }
+      }
+    },
+    "period": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" }
+      }
+    },
+    "attribution": {
+      "type": "object",
+      "required": ["dataset", "doi", "url", "notice"],
+      "additionalProperties": false,
+      "properties": {
+        "dataset": { "type": "string" },
+        "doi": { "type": ["string", "null"], "description": "Bare DOI (10.5067/...); null when the provider has none (POWER)." },
+        "url": { "type": "string", "format": "uri" },
+        "notice": { "type": ["string", "null"] }
+      }
+    },
+    "seriesPoint": {
+      "type": "object",
+      "required": ["time", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "time": { "type": "string", "format": "date", "description": "YYYY-MM-DD. Monthly products use the first day of the month; composites use the first day of the composite." },
+        "values": {
+          "type": "object",
+          "description": "One entry per variable of the file; null means no valid value at that time.",
+          "additionalProperties": { "type": ["number", "null"] }
+        }
+      }
+    }
+  }
+}

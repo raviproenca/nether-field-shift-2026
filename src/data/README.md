@@ -49,6 +49,18 @@ python -m src.data hls   --variable B04 --point -10.91,-37.07 --radius-km 2 --st
 
 `--variable` is always yours to choose: a POWER parameter list, a variable name inside the file, `group/variable` for SMAP, a band name for HLS (`B04`, `B8A`, `Fmask`) or a substring of the dataset name for MODIS/VIIRS (`NDVI`, `EVI`). `--short-name` and `--version` override the defaults below. Each source pins a default version (GLDAS 2.1, IMERG 07, SMAP 006, MOD13Q1 061, VNP13A1 002, HLS 2.0); it is used only with the default short_name, so pass `--version` yourself when you change `--short-name` to a product with another version scheme. For MODIS/VIIRS the text must match exactly one dataset in the tile (an exact name wins; otherwise an error lists the candidates).
 
+### ZARC (Tábua de Risco), third-party data
+
+Not NASA data (MAPA, CC BY). `python -m src.data.zarc` lists the open-data files and keeps only one UF and the crops you name, because the files are whole-country CSVs of 220 to 550 MB with no server-side filter (the file is streamed, nothing large is stored). Crop and file choices are yours; the columns and caveats are in [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md).
+
+```bash
+python -m src.data.zarc --list                                   # harvest-year files in the MAPA catalog
+python -m src.data.zarc --safra 2026/2027 --uf SE --crop milho --crop feij --out data/processed/zarc_se.csv
+python -m src.data.zarc --safra perene --uf SE --crop mandioca   # perennial file (cassava is only there)
+```
+
+`--crop` matches part of the crop name, ignoring case and accents. The filtered rows are cached in `data/cache/zarc/` (`--refresh` ignores the cache). Credit "ZARC, MAPA" with the harvest year and the portaria number.
+
 ## Where files go
 
 | Folder | Content | Git |
@@ -127,3 +139,59 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 
 - Public forecast API (ECMWF IFS / GFS, up to 15–16 days, no login, no `--start`/`--end` required). Attribution required: Open-Meteo (CC BY 4.0).
 - Supports `--point LAT,LON`, `--forecast-days 1..16` (default `15`), `--model best_match|ecmwf_ifs|ecmwf_ifs025|gfs_seamless`, and `--out` `.csv`, `.parquet`, or `.json` (API-contract envelope).
+### IBGE SIDRA (Produção Agrícola Municipal), third-party data
+
+Not NASA data. `python -m src.data.sidra` downloads any SIDRA table for all municipalities of one UF (default Sergipe, code 28) through the public API, no login. The table, variable and product codes are yours to choose (see [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md)).
+
+```bash
+python -m src.data.sidra --table 5457 --variable 8331,216,214,112,215 --classification 782 \
+  --categories 40112,40119,40122 --period "last 1" --out data/processed/pam_sergipe.csv
+```
+
+Output is a tidy CSV/Parquet (one row per municipality, variable, year and category) with `value` as a number (`-` becomes 0, `X`, `..` and `...` become NaN) and the raw text in `symbol`. One call may return at most 100,000 values; the connector stops with a clear error above that. Raw answers are cached in `data/cache/sidra/` (`--refresh` ignores the cache). The IBGE licence was not verified (see the research note): credit "Fonte: IBGE, Pesquisa Agrícola Municipal".
+
+## Snapshots for the internal map
+
+The internal map has no API: `python -m src.data.snapshots` builds static JSON/GeoJSON files in `apps/web/public/data/`
+(the only place it writes) that are published with the front end. Format and field meanings:
+[docs/data-format.md](../../docs/data-format.md); JSON Schemas in [docs/data-format/](../../docs/data-format/).
+
+```bash
+source .venv/bin/activate
+scripts/earthdata-login.sh                                  # once; GLDAS, IMERG, SMAP and VIIRS need it
+python -m src.data.snapshots --workers 12                   # Sergipe + Nordeste, all sources, default windows
+python -m src.data.snapshots --regions sergipe --days 7 --sources power,srtm,imerg --out /tmp/snap   # a quick one
+python -m src.data.snapshots --spacing nordeste=2 --max-mb 3                                          # coarser grid
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--regions` | `sergipe,nordeste` | Regions to build |
+| `--spacing REGION=DEG` | sergipe 0.25, nordeste 1 | Grid spacing of the points (repeatable) |
+| `--sources` | `gldas,srtm,power,imerg,smap,viirs` | Also `modis` instead of `viirs` for NDVI |
+| `--days` | 30 | Days of the daily series (POWER, IMERG, SMAP) |
+| `--gldas-months` | 6 | Months of GLDAS monthly series |
+| `--ndvi-days` | 60 | Span of the 16-day NDVI composites |
+| `--today` | today (UTC) | Reference day, for reproducible runs |
+| `--out` | `apps/web/public/data` | Output folder. Only `index.json` and the region folders are replaced |
+| `--max-mb` | 5 | Size limit of all files; the run fails with a per-file table when exceeded |
+| `--raw-dir`, `--cache-dir` | `data/raw`, `data/cache` | Downloaded tiles and cached windows (git-ignored) |
+| `--workers` | 4 | Parallel reads (IMERG, SMAP, GLDAS, SRTM, tile downloads); POWER always uses at most 4 |
+
+How it works, in order:
+
+1. **Grid.** Points at multiples of the spacing inside each region box. **Land mask:** GLDAS (a land model) has no value
+   over open water, so a point with no GLDAS value is dropped from every source. The two Sergipe **pilot places**
+   (Itabaiana and Nossa Senhora da Glória, 5 km) are added to the points and always kept.
+2. **SRTM terrain** (NASADEM via the Planetary Computer, no login): elevation and mean slope in 5 km around each point,
+   cached per point. Elevations feed the ET0 calculation.
+3. **POWER**: one call per MERRA-2 cell (0.5° x 0.625°) shared by the points inside it, cached in `data/cache/power`.
+   ET0 (FAO-56) and the water balance are derived per point.
+4. **IMERG, SMAP, GLDAS**: only the box window of each file is read over HTTPS (no full download) and cached as a small
+   `.npz` in `data/cache/snapshots/`; the window is then averaged inside each point's box. **VIIRS NDVI**: one tile
+   download per tile and date (cached in `data/raw/viirs`), sampled in place.
+5. **Failures.** A source that fails is listed with `status: "failed"` and a warning in `index.json`; the rest is
+   written. A date that fails inside a source becomes a `partial_data` warning.
+
+Re-running is cheap: windows, tiles, POWER responses and terrain are cached. Delete `data/cache/snapshots/` to force new
+reads. The files change when the sources get new data, so regenerate and commit them before a release.

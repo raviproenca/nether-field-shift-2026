@@ -1,3 +1,5 @@
 # Development and tests. Install: uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt
 -r requirements.txt
 pytest==9.2.0         # tests
+jsonschema==4.26.0    # tests: validate the generated snapshots against docs/data-format/*.schema.json (not needed at runtime)
+referencing==0.37.0   # tests: resolves the $ref between those schema files (installed by jsonschema, pinned because the tests import it)

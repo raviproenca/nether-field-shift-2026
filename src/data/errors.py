@@ -48,3 +48,7 @@ def remote_errors(action: str) -> Iterator[None]:
         raise
     except Exception as exc:  # noqa: BLE001  any remote failure becomes RemoteDataError
         raise RemoteDataError(f"{action} failed: {describe_failure(exc)}") from None
+
+
+class SizeLimitError(DataToolkitError):
+    """The generated snapshot files are larger than the allowed total."""
