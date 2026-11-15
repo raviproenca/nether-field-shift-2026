@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import BaseMap, { type MapProblem, type Overlays } from "../BaseMap";
 import { GIBS_LAYERS } from "../gibs/layers";
 import { getRegion } from "../regions";
-import { RecommendationError, USING_SAMPLE, fetchRecommendation } from "./api";
+import { RecommendationError, USING_SAMPLE, fetchDemo, fetchRecommendation } from "./api";
+import { DEMO_PILOTS, type DemoPilot } from "./demo";
 import { CROPS, PRIORITIES } from "./labels";
 import PlotView from "./PlotView";
 import type { Crop, Priority, RecommendationResponse } from "./types";
@@ -19,20 +20,24 @@ type Outcome = { key: string } & ({ ok: true; response: RecommendationResponse }
 
 export default function PlotApp() {
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
+  const [demo, setDemo] = useState<DemoPilot | null>(null);
   const [crop, setCrop] = useState<Crop>("maize");
   const [priority, setPriority] = useState<Priority>("water");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [problem, setProblem] = useState<MapProblem>(null);
 
   // The outcome is tied to the inputs that produced it, so a change shows "loading" without a state reset.
-  const key = point ? `${point.lat},${point.lon},${crop},${priority}` : null;
+  const key = demo ? `demo:${demo.id}` : point ? `${point.lat},${point.lon},${crop},${priority}` : null;
 
   useEffect(() => {
-    if (!point || key === null) {
+    if (key === null) {
       return;
     }
     const controller = new AbortController();
-    fetchRecommendation({ ...point, radius_km: RADIUS_KM, crop, priority, lang: "en" }, controller.signal)
+    const request = demo
+      ? fetchDemo(demo.id, controller.signal)
+      : fetchRecommendation({ ...point!, radius_km: RADIUS_KM, crop, priority, lang: "en" }, controller.signal);
+    request
       .then((response) => setOutcome({ key, ok: true, response }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -45,7 +50,7 @@ export default function PlotApp() {
         });
       });
     return () => controller.abort();
-  }, [key, point, crop, priority]);
+  }, [key, point, demo, crop, priority]);
 
   const current = outcome !== null && outcome.key === key ? outcome : null;
 
@@ -57,6 +62,20 @@ export default function PlotApp() {
       <header className="plot-header">
         <h1 className="panel-title">Field Shift: planting decision</h1>
         <p className="muted">Click a point on the map, choose a crop and a priority, and compare three strategies.</p>
+        <div className="demo-bar" role="group" aria-label="Demo pilots">
+          <span className="muted">Quick demo:</span>
+          {DEMO_PILOTS.map((pilot) => (
+            <button
+              key={pilot.id}
+              type="button"
+              className="demo-button"
+              aria-pressed={demo?.id === pilot.id}
+              onClick={() => setDemo(pilot)}
+            >
+              {pilot.label}
+            </button>
+          ))}
+        </div>
         <div className="plot-form">
           <label className="field">
             <span>Crop</span>
@@ -79,12 +98,12 @@ export default function PlotApp() {
             </select>
           </label>
         </div>
-        {point && (
+        {(demo ?? point) && (
           <p className="num muted">
-            Selected point: {point.lat.toFixed(3)}, {point.lon.toFixed(3)}
+            Selected point: {(demo ?? point)!.lat.toFixed(3)}, {(demo ?? point)!.lon.toFixed(3)}
           </p>
         )}
-        {USING_SAMPLE && (
+        {USING_SAMPLE && !demo && (
           <p className="notice-inline">
             Sample result: no analysis service is configured, so this shows one saved engine run (Itabaiana, maize) for any point.
           </p>
@@ -97,8 +116,11 @@ export default function PlotApp() {
           onOverlayError={noop}
           getPadding={getPadding}
           onProblem={setProblem}
-          onPick={(lat, lon) => setPoint({ lat, lon })}
-          marker={point}
+          onPick={(lat, lon) => {
+            setDemo(null);
+            setPoint({ lat, lon });
+          }}
+          marker={demo ?? point}
         />
         {problem && (
           <p className="notice-inline map-notice" role="alert">

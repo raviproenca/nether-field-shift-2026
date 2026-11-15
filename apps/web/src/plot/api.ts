@@ -37,3 +37,20 @@ export async function fetchRecommendation(
   }
   return (await response.json()) as RecommendationResponse;
 }
+
+/** Pre-computed result for a pilot (written by scripts/build_demo_cache.py); no API and no login needed. */
+export async function fetchDemo(pilotId: string, signal?: AbortSignal): Promise<RecommendationResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${import.meta.env.BASE_URL}demo/${pilotId}.json`, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new RecommendationError("The demo data could not be loaded. Check your connection and try again.");
+  }
+  if (!response.ok) {
+    throw new RecommendationError("The demo data could not be loaded. Try again in a moment.");
+  }
+  return (await response.json()) as RecommendationResponse;
+}
