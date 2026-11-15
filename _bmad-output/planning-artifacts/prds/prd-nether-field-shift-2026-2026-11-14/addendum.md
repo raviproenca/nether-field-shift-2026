@@ -4,6 +4,13 @@
 
 These are the technical choices the team has already decided. They come from `docs/team/decisions.md` and the Tech Lead's message of Nov 14. The architecture document develops them.
 
+## Audience and channel change (decided Nov 15)
+- **Who decided:** Ravi (Tech Lead), brought by Gabriel. Proposal: `sprint-change-proposal-2026-11-15.md`.
+- **User:** a technical professional who leads planting decisions. The persona comes from discovery (E7, `docs/research/persona-discovery.md`); the team chooses.
+- **Channel:** one web dashboard (`apps/web`) with an interactive analysis. The **Telegram bot and voice are out of v1**, so the "Channels and interface", "Voice" and bot "Languages" choices below no longer apply, and `apps/bot` and `apps/tts` leave the Cloud Run plan.
+- **AI:** its role for this user is decided by the team after discovery. The rule stays: AI never changes a number, with the template text as the fallback (AD-3).
+- **Unchanged:** data, engine, validation, API, dashboard technology, Gemini, Google Cloud.
+
 ## Priority change (decided Nov 14)
 - **Date and source:** Nov 14, 2026, Ravi (Tech Lead); `docs/team/decisions.md`, PR #78.
 - **Why:** a mentor's feedback, and the judging criteria weigh **validity** and **relevance**. The engine has to be shown to work before the channel matters.

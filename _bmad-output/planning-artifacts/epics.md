@@ -9,7 +9,7 @@ inputDocuments:
 
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad epics and stories, headless fast path); pending review by Ravi (Tech Lead). DRAFT ONLY: Ravi opens, coordinates and assigns the issues. Nothing here is assigned to anyone. -->
 
-# nether-field-shift-2026 - Epic Breakdown (front B, farmer product)
+# nether-field-shift-2026 - Epic Breakdown (front B, product)
 
 ## Overview
 
@@ -21,7 +21,16 @@ This is a draft breakdown of the PRD (FR-1 to FR-21, NFR-1 to NFR-6) and the arc
 - the data adapters in `src/data`;
 - the snapshot generator #16 (SRTM, ET0, pilots).
 
-## Priority order (decided Nov 14)
+## Change of Nov 15: technical decision-maker, no bot
+
+Decided by Ravi (Tech Lead), brought by Gabriel (`sprint-change-proposal-2026-11-15.md`):
+- the user is a **technical professional who leads planting decisions**; the persona comes from discovery (**E7**, below);
+- **E4 (Telegram bot with voice) and story 6.3 (#82) are removed from v1**;
+- **E3 story 3.2 is on hold** until the team defines the role of AI (E7.2); story 3.1 (template) stays;
+- **E5** serves the technical decision-maker and adds the interactive analysis;
+- no other technology changes.
+
+## Priority order (decided Nov 14, updated Nov 15)
 
 After a mentor's feedback, and because the judging criteria weigh validity and relevance (`docs/team/decisions.md`, `docs/scope.md`):
 
@@ -31,7 +40,8 @@ After a mentor's feedback, and because the judging criteria weigh validity and r
 4. **E5 Producer dashboard and demo mode** (#62, #63, #64).
 5. **E3 Plain-language explanation** (#52, #55).
 6. **E6 Deploy and judge readiness** (#65, #66; bot/voice deploy #82 waits for validation).
-7. **E4 Telegram bot with voice: after the engine is validated** (#56 to #58, #60, #61, then the Piper service #59 last). The channel and the audience are decided then.
+7. **E7 Persona discovery**, in parallel with items 1 and 2, before the E5 presentation is fixed.
+8. ~~E4 Telegram bot with voice~~ and ~~#82~~: **removed from v1 (Nov 15)**.
 
 ## FR Coverage Map
 
@@ -140,13 +150,16 @@ As a judge, I want the two pilot sites to answer even when NASA services are slo
 ## Epic 3: Plain-language explanation (`src/explain`)
 
 ### Story 3.1: Template explanation (no AI)
-As a farmer, I want a short fixed-template text for every Recommendation, so that the product works without any AI provider.
+As the technical decision-maker, I want a short fixed-template text for every Recommendation, so that the product works without any AI provider.
 
 **Acceptance criteria:**
 - **Given** a Recommendation, **then** the text names each Strategy, its first action and its uncertainty.
 - **And** every number in the text appears in the Recommendation.
 
-### Story 3.2: AI rewrite with number check
+### Story 3.2: AI rewrite with number check (on hold, Nov 15)
+
+> **On hold:** rewritten after the team defines the role of AI (E7.2). The AD-3 number check stays a fixed criterion.
+
 As a farmer, I want the text in natural, simple language, so that I understand it.
 
 **Acceptance criteria:**
@@ -156,7 +169,7 @@ As a farmer, I want the text in natural, simple language, so that I understand i
 
 ## Epic 4: Telegram bot with voice (`apps/bot`, `apps/tts`)
 
-> **After the engine is validated (decided Nov 14).** The channel and the audience are decided then; these stories are kept, at the end of the Backlog.
+> **Removed from v1 (Nov 15).** The stories below are kept only as a record of the Nov 14 plan.
 
 ### Story 4.1: Bot skeleton, `/start` and location
 As a farmer, I want to start the bot with no account and share my location with one tap, so that onboarding takes seconds.
@@ -204,11 +217,12 @@ As a farmer or a judge, I want to switch the bot between Portuguese and English 
 
 ## Epic 5: Producer dashboard and demo mode
 
-### Story 5.1: Plot view
-As a producer, I want to pick a plot on the map and see the three Strategies with charts of the Diagnosis and the Projection, so that I can check the evidence.
+### Story 5.1: Plot view and interactive analysis
+As the technical decision-maker, I want to pick a plot on the map and see the three Strategies with charts of the Diagnosis and the Projection, so that I can check the evidence.
 
 **Acceptance criteria:**
 - **Given** a plot, **then** the dashboard calls the API only (AD-1) and shows the source of every number.
+- **When** the user changes the inputs (crop, priority, previous crops, season), **then** the Strategies update so the effect can be compared. The exact interactions come from the UX document after E7.
 - It reuses the front A map components (MapLibre, OSM, GIBS).
 - Its stack and location depend on #12.
 
@@ -242,15 +256,30 @@ As the team, I want the product API on Cloud Run until Jan 26, 2027, so that the
 As a judge, I want every source and license credited and every link public, so that the submission follows the rules.
 
 **Acceptance criteria:**
-- **Given** the README and the UI footers, **then** every NASA and third-party source used is listed with its license, including Open-Meteo as non-commercial and not NASA, and Piper as GPL in a separate service if voice ships.
+- **Given** the README and the UI footers, **then** every NASA and third-party source used is listed with its license, including Open-Meteo as non-commercial and not NASA. (Piper is no longer credited: voice is out of v1.)
 - **And** every submitted link opens without login.
 
-### Story 6.3: Bot and voice deployment after validation (#82)
+### Story 6.3: Bot and voice deployment after validation (#82): removed from v1 (Nov 15)
 If the team confirms the channel and voice after validating the engine, deploy the bot and required voice services to Cloud Run. This story does not block Story 6.1 or the dashboard submission.
 
 **Acceptance criteria:**
 - **Given** the engine validation is complete and the team confirms the channel, **then** the bot uses a Telegram webhook without exposing secrets.
 - **And** Piper, if used, runs as a separate GPL service.
+
+## Epic 7: Persona discovery (research only, added Nov 15)
+
+### Story 7.1: Who decides the planting in Sergipe, and where their work is hard
+As the team, we want a cited summary of the professionals who lead or advise planting and rotation decisions in Sergipe's Agreste and Semiárido, so that we choose the target persona and the role of AI ourselves.
+
+**Acceptance criteria:**
+- **Given** desk research with cited sources, **then** the summary lists the candidate roles with who they serve, how their work runs, the effort per decision, where they get it wrong or depend on others, and the tools and data they use and their complaints.
+- **And** every claim has a source; anything not found is marked "not found".
+- **And** the summary does not rank roles, choose a persona or propose features.
+
+First pass done Nov 15: `docs/research/persona-discovery.md`.
+
+### Story 7.2: Persona and role of AI recorded
+**Given** the team's choices, **then** PRD §2 gets the persona, the JTBD and two or three journeys, and FR-13 gets the role of AI. Ravi records the choices in `docs/team/decisions.md`.
 
 ## Issue list (created by the Tech Lead)
 
