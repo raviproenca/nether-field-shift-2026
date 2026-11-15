@@ -1,4 +1,4 @@
-# AI-assisted: generated with Claude Code, reviewed by Periélio (pending Ravi)
+# AI-assisted: generated with Claude Code & Antigravity, reviewed by Periélio & Lucas Feitosa
 # Product API (apps/api) for Cloud Run. CPU only. Build from the repository root:
 #   docker build -t field-shift-api .
 FROM python:3.12-slim
@@ -6,6 +6,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8080 \
+    API_CACHE_DIR=/app/data/cache/api \
     FORECAST_CACHE_DIR=/tmp/forecast-cache
 
 WORKDIR /app
@@ -20,6 +21,8 @@ COPY apps/api ./apps/api
 COPY apps/web/public/data ./apps/web/public/data
 COPY data/reference/zarc ./data/reference/zarc
 COPY data/sample/ibge_se_municipalities.geojson ./data/sample/ibge_se_municipalities.geojson
+
+RUN python -m apps.api.cache && chown -R 10001:10001 /app/data/cache
 
 RUN useradd --system --uid 10001 --no-create-home appuser
 USER appuser

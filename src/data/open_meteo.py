@@ -1,4 +1,4 @@
-# AI-assisted: generated with Antigravity, reviewed by dudxyz
+# AI-assisted: generated with Antigravity, reviewed by dudxyz & Lucas Feitosa
 """Open-Meteo weather & FAO-56 ET0 forecast connector (up to 15 days, free CC BY 4.0, no key)."""
 
 import hashlib
@@ -135,10 +135,41 @@ def parse_response(payload: dict) -> pd.DataFrame:
     return frame.sort_index()
 
 
+def _norm_coord_str(val: str | int | float) -> str:
+    r = round(float(val), 2)
+    return "0.00" if r == 0.0 else f"{r:.2f}"
+
+
+def _normalize_params_for_cache(params: dict[str, str | int]) -> dict[str, str | int]:
+    normalized = dict(params)
+    if "latitude" in normalized:
+        normalized["latitude"] = _norm_coord_str(normalized["latitude"])
+    if "longitude" in normalized:
+        normalized["longitude"] = _norm_coord_str(normalized["longitude"])
+    return normalized
+
+
 def cache_path(cache_dir: Path, params: dict[str, str | int]) -> Path:
     stamp = datetime.now(UTC).strftime("%Y-%m-%d")
-    digest = hashlib.sha256(json.dumps({**params, "day": stamp}, sort_keys=True).encode()).hexdigest()[:16]
+    norm_params = _normalize_params_for_cache(params)
+    digest = hashlib.sha256(json.dumps({**norm_params, "day": stamp}, sort_keys=True).encode()).hexdigest()[:16]
     return cache_dir / f"{digest}.json"
+
+
+def stale_cache_path(cache_dir: Path, params: dict[str, str | int]) -> Path:
+    norm_params = _normalize_params_for_cache(params)
+    digest = hashlib.sha256(json.dumps(norm_params, sort_keys=True).encode()).hexdigest()[:16]
+    return cache_dir / f"{digest}.stale.json"
+
+
+def _read_cache_file(path: Path | None) -> dict | None:
+    if path is None or not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (OSError, ValueError):
+        return None
 
 
 def _fresh_cache(path: Path, ttl_seconds: int) -> dict | None:
@@ -171,16 +202,27 @@ def fetch_forecast(
     selected = variables if variables is not None else list(DEFAULT_VARIABLES)
     params = build_params(lat, lon, selected, forecast_days=forecast_days, model=model, timezone=timezone)
     target = cache_path(cache_dir, params) if cache_dir else None
+    stale_target = stale_cache_path(cache_dir, params) if cache_dir else None
     if target and not refresh:
         cached = _fresh_cache(target, ttl_seconds)
         if cached is not None:
             return parse_response(cached)
     http = session or requests.Session()
-    payload = _request_json(http, params, timeout=timeout, retries=retries, sleep=sleep)
+    try:
+        payload = _request_json(http, params, timeout=timeout, retries=retries, sleep=sleep)
+    except RemoteDataError:
+        if cache_dir:
+            stale_payload = _read_cache_file(target) or _read_cache_file(stale_target)
+            if stale_payload is not None:
+                return parse_response(stale_payload)
+        raise
     frame = parse_response(payload)
     if target:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload), encoding="utf-8")
+        payload_str = json.dumps(payload)
+        target.write_text(payload_str, encoding="utf-8")
+        if stale_target:
+            stale_target.write_text(payload_str, encoding="utf-8")
     return frame
 
 

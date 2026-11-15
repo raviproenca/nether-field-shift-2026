@@ -458,7 +458,9 @@ def _fetch_open_meteo_frame(
         model=model_key,
     )
     cache_file = open_meteo.cache_path(resolved_cache_dir, params_for_cache)
+    stale_file = open_meteo.stale_cache_path(resolved_cache_dir, params_for_cache)
     was_cached = open_meteo._fresh_cache(cache_file, open_meteo.CACHE_TTL_SECONDS) is not None
+    cache_mtime_before = cache_file.stat().st_mtime if cache_file.is_file() else None
 
     try:
         frame = open_meteo.fetch_forecast(
@@ -470,20 +472,30 @@ def _fetch_open_meteo_frame(
             cache_dir=resolved_cache_dir,
             session=session,
         )
+        if cache_file.is_file() and cache_mtime_before is not None and cache_file.stat().st_mtime == cache_mtime_before:
+            was_cached = True
     except InputError as err:
         raise APIError(status_code=400, code="invalid_parameter", message=str(err)) from err
     except RemoteDataError as err:
-        err_msg = str(err)
-        err_lower = err_msg.lower()
-        if "timeout" in err_lower or "timed out" in err_lower:
-            raise APIError(status_code=504, code="upstream_timeout", message=err_msg) from err
-        if (
-            "only null values" in err_lower
-            or "no daily forecast data" in err_lower
-            or "no forecast variables" in err_lower
-        ):
-            raise APIError(status_code=422, code="no_data", message=err_msg) from err
-        raise APIError(status_code=502, code="upstream_error", message=err_msg) from err
+        cached_payload = open_meteo._read_cache_file(cache_file) or open_meteo._read_cache_file(stale_file)
+        if cached_payload is not None:
+            try:
+                frame = open_meteo.parse_response(cached_payload)
+                was_cached = True
+            except Exception:
+                cached_payload = None
+        if cached_payload is None:
+            err_msg = str(err)
+            err_lower = err_msg.lower()
+            if "timeout" in err_lower or "timed out" in err_lower:
+                raise APIError(status_code=504, code="upstream_timeout", message=err_msg) from err
+            if (
+                "only null values" in err_lower
+                or "no daily forecast data" in err_lower
+                or "no forecast variables" in err_lower
+            ):
+                raise APIError(status_code=422, code="no_data", message=err_msg) from err
+            raise APIError(status_code=502, code="upstream_error", message=err_msg) from err
 
     frame = frame.sort_index()
     if frame.empty:
@@ -654,7 +666,11 @@ def build_forecast_response(
 
     plot = _resolve_plot(lat=lat, lon=lon, radius_km=radius_km, region=region)
     resolved_cache_dir = resolve_forecast_cache_dir(cache_dir)
-    cache_key = f"open-meteo:{round(lat, 2):.2f}:{round(lon, 2):.2f}:{horizon_days}d:{model_key}"
+    r_lat = round(lat, 2)
+    lat_str = "0.00" if r_lat == 0.0 else f"{r_lat:.2f}"
+    r_lon = round(lon, 2)
+    lon_str = "0.00" if r_lon == 0.0 else f"{r_lon:.2f}"
+    cache_key = f"open-meteo:{lat_str}:{lon_str}:{horizon_days}d:{model_key}"
 
     frame, was_cached = _fetch_open_meteo_frame(
         lat=lat,

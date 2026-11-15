@@ -1,4 +1,4 @@
-# AI-assisted: generated with Antigravity, reviewed by Lucas Feitosa
+# AI-assisted: generated with Antigravity, reviewed by Team Nether & Lucas Feitosa
 """Diagnosis service, snapshot reader, spatial matching, and response models for /diagnosis."""
 
 from __future__ import annotations
@@ -13,6 +13,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from apps.api.cache import (
+    read_diagnosis_cache,
+    resolve_api_cache_dir,
+    write_diagnosis_cache,
+)
 from apps.api.errors import APIError
 from apps.api.sources_catalog import SOURCES_BY_ID
 from src.data.municipality import municipality_code
@@ -1564,20 +1569,121 @@ def _load_and_process_diagnosis(
     }
 
 
+def _reconstruct_engine_plot_and_diagnosis(
+    cached: dict[str, Any],
+    lat: float,
+    lon: float,
+    radius_km: float,
+) -> tuple[Plot, Diagnosis]:
+    """Reconstruct domain Plot and Diagnosis dataclasses from cached diagnosis response."""
+    plot_dict = cached.get("plot", {})
+    code = plot_dict.get("municipality_code") or municipality_code(lat, lon)
+    plot = Plot(
+        lat=lat,
+        lon=lon,
+        radius_km=radius_km,
+        id=plot_dict.get("id"),
+        name=plot_dict.get("name"),
+        region=plot_dict.get("region", "sergipe"),
+        municipality_code=code,
+        elevation_m=plot_dict.get("elevation_m"),
+        slope_mean_pct=plot_dict.get("slope_mean_pct"),
+    )
+    summary_dict = cached.get("summary", {})
+    bare_windows = tuple(
+        BareSoilWindow(
+            start=bw["start"],
+            end=bw["end"],
+            ndvi_mean=bw.get("ndvi_mean"),
+            description=bw.get("description"),
+        )
+        for bw in cached.get("bare_soil_windows", [])
+    )
+    sources = tuple(
+        SourceAttribution(
+            source=s["source"],
+            dataset=s["dataset"],
+            nasa=bool(s.get("nasa", True)),
+            url=s["url"],
+            doi=s.get("doi"),
+            notice=s.get("notice"),
+        )
+        for s in cached.get("sources", [])
+    )
+    diagnosis = Diagnosis(
+        period_start=summary_dict.get("period_start", ""),
+        period_end=summary_dict.get("period_end", ""),
+        rain_total_mm=summary_dict.get("rain_total_mm"),
+        rain_daily_mean_mm=summary_dict.get("rain_daily_mean_mm"),
+        et0_daily_mean_mm=summary_dict.get("et0_daily_mean_mm"),
+        water_balance_mm=summary_dict.get("water_balance_mm"),
+        soil_moisture_surface_m3m3=summary_dict.get("soil_moisture_surface_m3m3"),
+        soil_moisture_root_kgm2=summary_dict.get("soil_moisture_root_kgm2"),
+        temperature_mean_c=summary_dict.get("temperature_mean_c"),
+        temperature_max_c=summary_dict.get("temperature_max_c"),
+        ndvi_mean=summary_dict.get("ndvi_mean"),
+        elevation_m=summary_dict.get("elevation_m"),
+        slope_mean_pct=summary_dict.get("slope_mean_pct"),
+        bare_soil_windows=bare_windows,
+        sources=sources,
+    )
+    return plot, diagnosis
+
+
 def build_engine_diagnosis(
     lat: float,
     lon: float,
     radius_km: float = 5.0,
     data_dir: Path | str | None = None,
+    cache_dir: Path | str | None = None,
 ) -> tuple[Plot, Diagnosis]:
     """Build src.engine.model.Plot and src.engine.model.Diagnosis for recommendation pipeline."""
-    result = _load_and_process_diagnosis(
-        lat=lat,
-        lon=lon,
-        radius_km=radius_km,
-        data_dir=data_dir,
-    )
-    return result["engine_plot"], result["engine_diagnosis"]
+    _validate_diagnosis_params(lat, lon, radius_km)
+    resolved_cache_dir = resolve_api_cache_dir(cache_dir, data_dir=data_dir)
+
+    try:
+        result = _load_and_process_diagnosis(
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            data_dir=data_dir,
+        )
+        engine_plot = result["engine_plot"]
+        engine_diagnosis = result["engine_diagnosis"]
+        try:
+            resp = DiagnosisResponse(
+                plot=result["plot_model"],
+                rain=result["rain"],
+                soil_moisture=result["soil_moisture"],
+                gldas=result["gldas"],
+                temperature=result["temperature"],
+                ndvi=result["ndvi"],
+                et0=result["et0"],
+                water_balance=result["water_balance"],
+                terrain=result["terrain"],
+                bare_soil_windows=result["bare_windows_responses"],
+                summary=result["summary_model"],
+                coverage=result["coverage"],
+                sources=result["source_attribution_responses"],
+                domain_sources=result["domain_sources"],
+            )
+            write_diagnosis_cache(resolved_cache_dir, lat, lon, resp.model_dump())
+        except OSError:
+            pass
+        return engine_plot, engine_diagnosis
+    except (APIError, OSError) as err:
+        if isinstance(err, APIError) and err.status_code < 500:
+            raise
+        cached = read_diagnosis_cache(resolved_cache_dir, lat, lon)
+        if cached is not None:
+            return _reconstruct_engine_plot_and_diagnosis(cached, lat, lon, radius_km)
+        if isinstance(err, APIError):
+            raise
+        raise APIError(
+            status_code=503,
+            code="server_not_configured",
+            message=f"Snapshot data unavailable: {err}",
+        ) from err
 
 
 def build_diagnosis_response(
@@ -1585,27 +1691,61 @@ def build_diagnosis_response(
     lon: float,
     radius_km: float = 5.0,
     data_dir: Path | str | None = None,
+    cache_dir: Path | str | None = None,
 ) -> DiagnosisResponse:
     """Build the complete DiagnosisResponse for GET /diagnosis."""
-    result = _load_and_process_diagnosis(
-        lat=lat,
-        lon=lon,
-        radius_km=radius_km,
-        data_dir=data_dir,
-    )
-    return DiagnosisResponse(
-        plot=result["plot_model"],
-        rain=result["rain"],
-        soil_moisture=result["soil_moisture"],
-        gldas=result["gldas"],
-        temperature=result["temperature"],
-        ndvi=result["ndvi"],
-        et0=result["et0"],
-        water_balance=result["water_balance"],
-        terrain=result["terrain"],
-        bare_soil_windows=result["bare_windows_responses"],
-        summary=result["summary_model"],
-        coverage=result["coverage"],
-        sources=result["source_attribution_responses"],
-        domain_sources=result["domain_sources"],
-    )
+    _validate_diagnosis_params(lat, lon, radius_km)
+    resolved_cache_dir = resolve_api_cache_dir(cache_dir, data_dir=data_dir)
+
+    try:
+        result = _load_and_process_diagnosis(
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            data_dir=data_dir,
+        )
+        resp = DiagnosisResponse(
+            plot=result["plot_model"],
+            rain=result["rain"],
+            soil_moisture=result["soil_moisture"],
+            gldas=result["gldas"],
+            temperature=result["temperature"],
+            ndvi=result["ndvi"],
+            et0=result["et0"],
+            water_balance=result["water_balance"],
+            terrain=result["terrain"],
+            bare_soil_windows=result["bare_windows_responses"],
+            summary=result["summary_model"],
+            coverage=result["coverage"],
+            sources=result["source_attribution_responses"],
+            domain_sources=result["domain_sources"],
+        )
+        try:
+            write_diagnosis_cache(resolved_cache_dir, lat, lon, resp.model_dump())
+        except OSError:
+            pass
+        return resp
+    except (APIError, OSError) as err:
+        if isinstance(err, APIError) and err.status_code < 500:
+            raise
+        cached = read_diagnosis_cache(resolved_cache_dir, lat, lon)
+        if cached is not None:
+            cached.setdefault("plot", {})["lat"] = lat
+            cached["plot"]["lon"] = lon
+            cached["plot"]["radius_km"] = radius_km
+            if "coverage" not in cached:
+                cached["coverage"] = {
+                    "aligned": True,
+                    "complete": True,
+                    "expected_days": 0,
+                    "paired_days": 0,
+                    "missing_days": 0,
+                }
+            return DiagnosisResponse.model_validate(cached)
+        if isinstance(err, APIError):
+            raise
+        raise APIError(
+            status_code=503,
+            code="server_not_configured",
+            message=f"Snapshot data unavailable: {err}",
+        ) from err
