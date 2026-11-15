@@ -6,13 +6,21 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, Query, Request
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp
 
+from .diagnosis import DiagnosisResponse, build_diagnosis_response
 from .errors import APIError, ErrorResponse, register_exception_handlers
+from .forecast import ForecastResponse, build_forecast_response
+from .recommendation import (
+    RecommendationRequest,
+    RecommendationResponse,
+    build_recommendation_response,
+)
 from .sources_catalog import (
     SOURCES_BY_ID,
     SOURCES_CATALOG,
@@ -109,7 +117,11 @@ def _reject_unknown_query_params(request: Request, allowed: set[str]) -> None:
         raise APIError(status_code=400, code="invalid_parameter", message=message)
 
 
-def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
+def create_app(
+    cors_origins: Sequence[str] | None = None,
+    data_dir: Path | None = None,
+    forecast_cache_dir: Path | None = None,
+) -> FastAPI:
     """Create and configure the FastAPI application instance."""
     app_instance = FastAPI(
         title="Field Shift API",
@@ -118,7 +130,11 @@ def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
         responses={
             400: {"model": ErrorResponse, "description": "Invalid parameter / Bad Request"},
             404: {"model": ErrorResponse, "description": "Resource not found"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
             500: {"model": ErrorResponse, "description": "Internal server error"},
+            502: {"model": ErrorResponse, "description": "Upstream error from Open-Meteo"},
+            503: {"model": ErrorResponse, "description": "Snapshot data unavailable or server not configured"},
+            504: {"model": ErrorResponse, "description": "Upstream timeout"},
         },
     )
 
@@ -170,6 +186,80 @@ def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
             filtered = [s for s in filtered if s.kind == kind]
 
         return SourcesResponse(sources=filtered)
+
+    @app_instance.get(
+        "/diagnosis",
+        response_model=DiagnosisResponse,
+        responses={
+            400: {"model": ErrorResponse, "description": "Invalid parameter / Bad Request"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
+            503: {"model": ErrorResponse, "description": "Snapshot data unavailable or server not configured"},
+        },
+    )
+    async def get_diagnosis(
+        request: Request,
+        lat: float = Query(...),
+        lon: float = Query(...),
+        radius_km: float = Query(default=5.0),
+    ) -> DiagnosisResponse:
+        _reject_unknown_query_params(request, allowed={"lat", "lon", "radius_km"})
+        return build_diagnosis_response(
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            data_dir=data_dir,
+        )
+
+    @app_instance.get(
+        "/forecast",
+        response_model=ForecastResponse,
+        responses={
+            400: {"model": ErrorResponse, "description": "Invalid parameter / Bad Request"},
+            422: {"model": ErrorResponse, "description": "No data returned for location"},
+            502: {"model": ErrorResponse, "description": "Upstream error from Open-Meteo"},
+            504: {"model": ErrorResponse, "description": "Upstream timeout"},
+        },
+    )
+    async def get_forecast(
+        request: Request,
+        lat: float = Query(..., description="Latitude in degrees (-89.0 to 89.0)"),
+        lon: float = Query(..., description="Longitude in degrees (-180.0 to 180.0)"),
+        radius_km: float = Query(default=5.0, description="Plot radius in km (default 5.0)"),
+        days: int | None = Query(default=None, description="Forecast horizon in days (1 to 16)"),
+        forecast_days: int | None = Query(default=None, description="Alias for days (1 to 16)"),
+        model: str = Query(default="best_match", description="Weather forecast model"),
+        variables: str | None = Query(default=None, description="Comma-separated daily variables"),
+    ) -> ForecastResponse:
+        _reject_unknown_query_params(
+            request,
+            allowed={"lat", "lon", "radius_km", "days", "forecast_days", "model", "variables"},
+        )
+        return build_forecast_response(
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            days=days,
+            forecast_days=forecast_days,
+            model=model,
+            variables=variables,
+            cache_dir=forecast_cache_dir,
+        )
+
+    @app_instance.post(
+        "/recommendation",
+        response_model=RecommendationResponse,
+        responses={
+            400: {"model": ErrorResponse, "description": "Invalid request body"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
+            503: {"model": ErrorResponse, "description": "Snapshot data or engine rules unavailable"},
+        },
+    )
+    async def post_recommendation(body: RecommendationRequest) -> RecommendationResponse:
+        return build_recommendation_response(
+            body,
+            data_dir=data_dir,
+            forecast_cache_dir=forecast_cache_dir,
+        )
 
     return app_instance
 
