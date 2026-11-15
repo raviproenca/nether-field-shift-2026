@@ -5,7 +5,9 @@ import { GIBS_LAYERS } from "../gibs/layers";
 import { getRegion } from "../regions";
 import { RecommendationError, USING_SAMPLE, fetchDemo, fetchRecommendation } from "./api";
 import { DEMO_PILOTS, type DemoPilot } from "./demo";
-import { CROPS, PRIORITIES } from "./labels";
+import { COPY, DEFAULT_LANG, type Lang } from "./i18n";
+import { LangContext } from "./LangContext";
+import { CROP_IDS, PRIORITY_IDS } from "./labels";
 import PlotView from "./PlotView";
 import type { Crop, Priority, RecommendationResponse } from "./types";
 
@@ -21,13 +23,15 @@ type Outcome = { key: string } & ({ ok: true; response: RecommendationResponse }
 export default function PlotApp() {
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [demo, setDemo] = useState<DemoPilot | null>(null);
+  const [lang, setLang] = useState<Lang>(DEFAULT_LANG);
+  const copy = COPY[lang];
   const [crop, setCrop] = useState<Crop>("maize");
   const [priority, setPriority] = useState<Priority>("water");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [problem, setProblem] = useState<MapProblem>(null);
 
   // The outcome is tied to the inputs that produced it, so a change shows "loading" without a state reset.
-  const key = demo ? `demo:${demo.id}` : point ? `${point.lat},${point.lon},${crop},${priority}` : null;
+  const key = demo ? `demo:${demo.id}:${lang}` : point ? `${point.lat},${point.lon},${crop},${priority},${lang}` : null;
 
   useEffect(() => {
     if (key === null) {
@@ -35,8 +39,8 @@ export default function PlotApp() {
     }
     const controller = new AbortController();
     const request = demo
-      ? fetchDemo(demo.id, controller.signal)
-      : fetchRecommendation({ ...point!, radius_km: RADIUS_KM, crop, priority, lang: "en" }, controller.signal);
+      ? fetchDemo(demo.id, lang, controller.signal)
+      : fetchRecommendation({ ...point!, radius_km: RADIUS_KM, crop, priority, lang }, controller.signal);
     request
       .then((response) => setOutcome({ key, ok: true, response }))
       .catch((error: unknown) => {
@@ -46,11 +50,11 @@ export default function PlotApp() {
         setOutcome({
           key,
           ok: false,
-          message: error instanceof RecommendationError ? error.message : "Something went wrong. Try again.",
+          message: error instanceof RecommendationError ? error.message : COPY[lang].genericError,
         });
       });
     return () => controller.abort();
-  }, [key, point, demo, crop, priority]);
+  }, [key, point, demo, crop, priority, lang]);
 
   const current = outcome !== null && outcome.key === key ? outcome : null;
 
@@ -58,88 +62,97 @@ export default function PlotApp() {
   const noop = useCallback(() => undefined, []);
 
   return (
-    <div className="plot-app">
-      <header className="plot-header">
-        <h1 className="panel-title">Field Shift: planting decision</h1>
-        <p className="muted">Click a point on the map, choose a crop and a priority, and compare three strategies.</p>
-        <div className="demo-bar" role="group" aria-label="Demo pilots">
-          <span className="muted">Quick demo:</span>
-          {DEMO_PILOTS.map((pilot) => (
+    <LangContext.Provider value={lang}>
+      <div className="plot-app" lang={lang}>
+        <header className="plot-header">
+          <div className="plot-title-row">
+            <h1 className="panel-title">{copy.title}</h1>
             <button
-              key={pilot.id}
               type="button"
               className="demo-button"
-              aria-pressed={demo?.id === pilot.id}
-              onClick={() => setDemo(pilot)}
+              lang={lang === "en" ? "pt-BR" : "en"}
+              aria-label={copy.languageButtonLabel}
+              onClick={() => setLang(lang === "en" ? "pt-BR" : "en")}
             >
-              {pilot.label}
+              {copy.languageButton}
             </button>
-          ))}
-        </div>
-        <div className="plot-form">
-          <label className="field">
-            <span>Crop</span>
-            <select value={crop} onChange={(event) => setCrop(event.target.value as Crop)}>
-              {CROPS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>Priority</span>
-            <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
-              {PRIORITIES.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {(demo ?? point) && (
-          <p className="num muted">
-            Selected point: {(demo ?? point)!.lat.toFixed(3)}, {(demo ?? point)!.lon.toFixed(3)}
-          </p>
-        )}
-        {USING_SAMPLE && !demo && (
-          <p className="notice-inline">
-            Sample result: no analysis service is configured, so this shows one saved engine run (Itabaiana, maize) for any point.
-          </p>
-        )}
-      </header>
-      <div className="plot-map" aria-label="Map of Sergipe. Click to choose the plot.">
-        <BaseMap
-          region={REGION}
-          overlays={NO_OVERLAYS}
-          onOverlayError={noop}
-          getPadding={getPadding}
-          onProblem={setProblem}
-          onPick={(lat, lon) => {
-            setDemo(null);
-            setPoint({ lat, lon });
-          }}
-          marker={demo ?? point}
-        />
-        {problem && (
-          <p className="notice-inline map-notice" role="alert">
-            {problem === "tiles" ? "Map tiles couldn't load. Check your connection, then reload." : "This browser can't draw the map."}
-          </p>
-        )}
-      </div>
-      <main className="plot-results" aria-live="polite">
-        {key === null && <p className="muted">No plot selected yet.</p>}
-        {key !== null && current === null && <p>Analysing the plot…</p>}
-        {current && !current.ok && (
-          <div className="notice-inline" role="alert">
-            {current.message}
           </div>
-        )}
-        {current?.ok && (
-          <PlotView recommendation={current.response.recommendation} explanation={current.response.explanation} />
-        )}
-      </main>
-    </div>
+          <p className="muted">{copy.intro}</p>
+          <div className="demo-bar" role="group" aria-label={copy.demoGroup}>
+            <span className="muted">{copy.quickDemo}</span>
+            {DEMO_PILOTS.map((pilot) => (
+              <button
+                key={pilot.id}
+                type="button"
+                className="demo-button"
+                aria-pressed={demo?.id === pilot.id}
+                onClick={() => setDemo(pilot)}
+              >
+                {pilot.label}
+              </button>
+            ))}
+          </div>
+          <div className="plot-form">
+            <label className="field">
+              <span>{copy.crop}</span>
+              <select value={crop} onChange={(event) => setCrop(event.target.value as Crop)}>
+                {CROP_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {copy.crops[id]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>{copy.priority}</span>
+              <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
+                {PRIORITY_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {copy.priorities[id]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {(demo ?? point) && (
+            <p className="num muted">
+              {copy.selectedPoint}: {(demo ?? point)!.lat.toFixed(3)}, {(demo ?? point)!.lon.toFixed(3)}
+            </p>
+          )}
+          {USING_SAMPLE && !demo && <p className="notice-inline">{copy.sampleNotice}</p>}
+        </header>
+        <div className="plot-map" aria-label={copy.mapLabel}>
+          <BaseMap
+            region={REGION}
+            overlays={NO_OVERLAYS}
+            onOverlayError={noop}
+            getPadding={getPadding}
+            onProblem={setProblem}
+            onPick={(lat, lon) => {
+              setDemo(null);
+              setPoint({ lat, lon });
+            }}
+            marker={demo ?? point}
+          />
+          {problem && (
+            <p className="notice-inline map-notice" role="alert">
+              {problem === "tiles" ? copy.tilesProblem : copy.webglProblem}
+            </p>
+          )}
+        </div>
+        <main className="plot-results" aria-live="polite">
+          {key === null && <p className="muted">{copy.noPlot}</p>}
+          {key !== null && current === null && <p>{copy.analysing}</p>}
+          {current && !current.ok && (
+            <div className="notice-inline" role="alert">
+              {current.message}
+            </div>
+          )}
+          {current?.ok && (
+            <PlotView recommendation={current.response.recommendation} explanation={current.response.explanation} />
+          )}
+        </main>
+      </div>
+    </LangContext.Provider>
   );
 }

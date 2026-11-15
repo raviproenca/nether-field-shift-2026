@@ -1,6 +1,7 @@
 // AI-assisted: generated with Claude Code, reviewed by Periélio (pending human review)
 import type { Diagnosis, Projection, Strategy } from "./types";
-import { STRATEGY_TITLES, formatNumber } from "./labels";
+import { formatNumber } from "./labels";
+import { useCopy } from "./LangContext";
 
 interface Bar {
   label: string;
@@ -10,6 +11,7 @@ interface Bar {
 
 /** Horizontal bars with a zero axis, so negative water balances read correctly. */
 function BarChart({ title, unit, bars, caption }: { title: string; unit: string; bars: Bar[]; caption: string }) {
+  const copy = useCopy();
   const max = Math.max(...bars.map((bar) => Math.abs(bar.value)), 1);
   const hasNegative = bars.some((bar) => bar.value < 0);
   const zero = hasNegative ? 50 : 0;
@@ -27,7 +29,7 @@ function BarChart({ title, unit, bars, caption }: { title: string; unit: string;
               <span className="chart-track" aria-hidden="true">
                 <span className={`chart-bar chart-bar-${bar.tone}`} style={{ left: `${left}%`, width: `${width}%` }} />
               </span>
-              <span className="chart-value num">{formatNumber(bar.value, unit)}</span>
+              <span className="chart-value num">{formatNumber(bar.value, unit, copy.noData)}</span>
             </li>
           );
         })}
@@ -40,24 +42,25 @@ function BarChart({ title, unit, bars, caption }: { title: string; unit: string;
 const present = (value: number | null): value is number => value !== null;
 
 export function ClimateCharts({ diagnosis, projection }: { diagnosis: Diagnosis; projection: Projection }) {
+  const copy = useCopy();
   const compare = (observed: number | null, forecast: number | null): Bar[] => [
-    ...(present(observed) ? [{ label: "Observed", value: observed, tone: "observed" as const }] : []),
-    ...(projection.available && present(forecast) ? [{ label: "Forecast", value: forecast, tone: "forecast" as const }] : []),
+    ...(present(observed) ? [{ label: copy.observedLabel, value: observed, tone: "observed" as const }] : []),
+    ...(projection.available && present(forecast) ? [{ label: copy.forecastLabel, value: forecast, tone: "forecast" as const }] : []),
   ];
   const charts = [
     {
-      title: "Rain per day",
-      unit: "mm/day",
+      title: copy.chartRain,
+      unit: copy.units.mmDay,
       bars: compare(diagnosis.rain_daily_mean_mm, projection.rain_daily_mean_mm),
     },
     {
-      title: "Crop water loss (ET0) per day",
-      unit: "mm/day",
+      title: copy.chartEt0,
+      unit: copy.units.mmDay,
       bars: compare(diagnosis.et0_daily_mean_mm, projection.et0_daily_mean_mm),
     },
     {
-      title: "Water balance",
-      unit: "mm",
+      title: copy.chartBalance,
+      unit: copy.units.mm,
       bars: compare(diagnosis.water_balance_mm, projection.water_balance_mm),
     },
   ].filter((chart) => chart.bars.length > 0);
@@ -69,27 +72,29 @@ export function ClimateCharts({ diagnosis, projection }: { diagnosis: Diagnosis;
           title={chart.title}
           unit={chart.unit}
           bars={chart.bars}
-          caption={`Observed: ${diagnosis.period_start} to ${diagnosis.period_end}.${
-            projection.available ? ` Forecast: ${projection.period_start} to ${projection.period_end}.` : ""
-          }`}
+          caption={copy.chartCaption(
+            `${diagnosis.period_start} - ${diagnosis.period_end}`,
+            projection.available ? `${projection.period_start} - ${projection.period_end}` : null,
+          )}
         />
       ))}
-      {!projection.available && <p className="notice-inline">The 15-day forecast is not available right now.</p>}
+      {!projection.available && <p className="notice-inline">{copy.forecastMissing}</p>}
     </div>
   );
 }
 
 export function WaterDemandChart({ strategies }: { strategies: Strategy[] }) {
+  const copy = useCopy();
   return (
     <BarChart
-      title="Water demand over the cycle, by strategy"
-      unit="mm"
+      title={copy.chartDemand}
+      unit={copy.units.mm}
       bars={strategies.map((strategy) => ({
-        label: STRATEGY_TITLES[strategy.kind] ?? strategy.title,
+        label: copy.strategyTitles[strategy.kind] ?? strategy.title,
         value: strategy.water_demand_mm,
         tone: "plain" as const,
       }))}
-      caption="Crop profile water need summed over the planting schedule."
+      caption={copy.chartDemandCaption}
     />
   );
 }

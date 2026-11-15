@@ -8,15 +8,13 @@
       "id": "sergipe_agreste_itabaiana",
       "name": "Itabaiana (Agreste)",
       "region": "sergipe",
-      "municipality_code": null,
+      "municipality_code": "2802908",
       "elevation_m": 181.7,
       "slope_mean_deg": null,
       "slope_mean_pct": 4.77,
       "soil": null,
       "season": null,
-      "previous_crops": [
-        "beans"
-      ]
+      "previous_crops": []
     },
     "crop": "maize",
     "priority": "water",
@@ -112,7 +110,7 @@
       {
         "kind": "soil_water_conservation",
         "rank": 1,
-        "score": 0.529725,
+        "score": 0.549725,
         "title": "soil water conservation",
         "crops": [
           "maize",
@@ -139,7 +137,7 @@
         ],
         "water_demand_mm": 950.0,
         "breaks_pest_cycle": true,
-        "pest_cycle_note": "Introduces Poaceae, outside Fabaceae.",
+        "pest_cycle_note": "More than one botanical family is in the strategy.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -182,8 +180,8 @@
           }
         ],
         "water_demand_mm": 600.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "Introduces Poaceae, outside Fabaceae.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "A single family does not break a pest cycle.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -229,7 +227,7 @@
         ],
         "water_demand_mm": 1600.0,
         "breaks_pest_cycle": true,
-        "pest_cycle_note": "Introduces Poaceae, Euphorbiaceae, outside Fabaceae.",
+        "pest_cycle_note": "More than one botanical family is in the strategy.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -247,7 +245,7 @@
       }
     ],
     "uncertainty_note": "The forecast is not an observation. Water balance is below the severe deficit threshold.",
-    "validation_note": "A local technician must confirm this advice. The ZARC check is not done yet.",
+    "validation_note": "A local technician must confirm this advice. ZARC check (MAPA, safra 2026/2027): every window is inside the zoning. Source: https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico",
     "sources": [
       {
         "source": "imerg",
@@ -307,6 +305,7 @@
       }
     ]
   },
-  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nUncertainty: The forecast is not an observation. Water balance is below the severe deficit threshold.",
-  "lang": "en"
+  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nIncerteza: The forecast is not an observation. Water balance is below the severe deficit threshold.",
+  "lang": "pt-BR",
+  "generated_at": "2026-11-15T20:08:08Z"
 }

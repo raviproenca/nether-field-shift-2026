@@ -30,7 +30,7 @@ npm run preview     # serves the built dist/ locally
 
 The default screen (`src/plot/`): click a point in Sergipe, pick a crop and a priority, and compare the three strategies with planting dates, trade-offs, Diagnosis and Projection charts, and the source of every number. The internal data map stays at `/#internal`.
 
-The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. Without it the screen shows one saved real engine run (`src/plot/fixture.json`, Itabaiana, maize) and says so on screen.
+The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. Without it the screen shows one saved real engine run (`public/demo/`, Itabaiana, maize) and says so on screen. The PT-BR button switches every label, unit and the template explanation (the API is called with `lang=pt-BR`); the engine evidence lines and notes stay in English.
 
 ## What the internal map shows
 

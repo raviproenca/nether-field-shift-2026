@@ -1,10 +1,12 @@
 // AI-assisted: generated with Claude Code, reviewed by Periélio (pending human review)
 // The only place the dashboard talks to the outside (AD-1). Without VITE_API_URL it serves a
-// real engine output saved in fixture.json, so the screen works before the API is deployed.
-import fixture from "./fixture.json";
+// real engine output saved in public/demo/, so the screen works before the API is deployed.
+import type { Lang } from "./i18n";
 import type { ApiErrorBody, RecommendationRequest, RecommendationResponse } from "./types";
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
+const SAMPLE_PILOT = "sergipe_agreste_itabaiana";
 
 export const USING_SAMPLE = API_URL === "";
 
@@ -15,7 +17,7 @@ export async function fetchRecommendation(
   signal?: AbortSignal,
 ): Promise<RecommendationResponse> {
   if (USING_SAMPLE) {
-    return fixture as RecommendationResponse;
+    return fetchDemo(SAMPLE_PILOT, request.lang, signal);
   }
   let response: Response;
   try {
@@ -39,10 +41,10 @@ export async function fetchRecommendation(
 }
 
 /** Pre-computed result for a pilot (written by scripts/build_demo_cache.py); no API and no login needed. */
-export async function fetchDemo(pilotId: string, signal?: AbortSignal): Promise<RecommendationResponse> {
+export async function fetchDemo(pilotId: string, lang: Lang, signal?: AbortSignal): Promise<RecommendationResponse> {
   let response: Response;
   try {
-    response = await fetch(`${import.meta.env.BASE_URL}demo/${pilotId}.json`, { signal });
+    response = await fetch(`${import.meta.env.BASE_URL}demo/${pilotId}${lang === "en" ? "" : `.${lang}`}.json`, { signal });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;
