@@ -19,15 +19,15 @@
     "crop": "maize",
     "priority": "water",
     "diagnosis": {
-      "period_start": "2026-10-09",
-      "period_end": "2026-11-13",
-      "rain_total_mm": 28.2,
-      "rain_daily_mean_mm": 0.94,
-      "et0_daily_mean_mm": 6.96,
-      "water_balance_mm": -189.33,
-      "soil_moisture_surface_m3m3": 0.067,
+      "period_start": "2026-10-15",
+      "period_end": "2026-11-07",
+      "rain_total_mm": 27.3,
+      "rain_daily_mean_mm": 1.19,
+      "et0_daily_mean_mm": 7.1,
+      "water_balance_mm": -135.95,
+      "soil_moisture_surface_m3m3": 0.065,
       "soil_moisture_root_kgm2": 59.28,
-      "temperature_mean_c": 28.51,
+      "temperature_mean_c": 28.92,
       "temperature_max_c": 41.8,
       "ndvi_mean": 0.461,
       "elevation_m": 181.7,
@@ -40,7 +40,7 @@
           "nasa": true,
           "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
           "doi": "10.5067/GPM/IMERGDL/DAY/07",
-          "notice": null
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
         },
         {
           "source": "smap",
@@ -48,7 +48,7 @@
           "nasa": true,
           "url": "https://nsidc.org/data/spl3smp_e/versions/6",
           "doi": "10.5067/M20OXIZHY3RJ",
-          "notice": null
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
         },
         {
           "source": "power",
@@ -56,7 +56,7 @@
           "nasa": true,
           "url": "https://power.larc.nasa.gov/",
           "doi": null,
-          "notice": null
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
         },
         {
           "source": "srtm",
@@ -110,7 +110,7 @@
       {
         "kind": "soil_water_conservation",
         "rank": 1,
-        "score": 0.549725,
+        "score": 0.5806,
         "title": "soil water conservation",
         "crops": [
           "maize",
@@ -143,26 +143,20 @@
             "code": "wait_for_window",
             "summary": "Wait for the planting window.",
             "timing": "2027-04-01/2027-06-30",
-            "evidence": "Diagnosis period end 2026-11-13 is outside the profile planting window."
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
           },
           {
             "code": "protect_soil",
             "summary": "Keep the soil covered.",
             "timing": "through the cycle",
             "evidence": "This strategy adds a cover or legume from the crop profiles."
-          },
-          {
-            "code": "delay_if_dry",
-            "summary": "Do not plant until the water balance recovers.",
-            "timing": "before planting",
-            "evidence": "Water balance -189.33 mm is at or below the severe deficit threshold -150.0 mm."
           }
         ]
       },
       {
         "kind": "current_practice",
         "rank": 2,
-        "score": 0.49085,
+        "score": 0.52985,
         "title": "current practice",
         "crops": [
           "maize"
@@ -187,20 +181,14 @@
             "code": "wait_for_window",
             "summary": "Wait for the planting window.",
             "timing": "2027-04-01/2027-06-30",
-            "evidence": "Diagnosis period end 2026-11-13 is outside the profile planting window."
-          },
-          {
-            "code": "delay_if_dry",
-            "summary": "Do not plant until the water balance recovers.",
-            "timing": "before planting",
-            "evidence": "Water balance -189.33 mm is at or below the severe deficit threshold -150.0 mm."
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
           }
         ]
       },
       {
         "kind": "resilient_income_forage",
         "rank": 3,
-        "score": 0.4743,
+        "score": 0.5263,
         "title": "resilient income forage",
         "crops": [
           "maize",
@@ -233,18 +221,12 @@
             "code": "wait_for_window",
             "summary": "Wait for the planting window.",
             "timing": "2027-04-01/2027-06-30",
-            "evidence": "Diagnosis period end 2026-11-13 is outside the profile planting window."
-          },
-          {
-            "code": "delay_if_dry",
-            "summary": "Do not plant until the water balance recovers.",
-            "timing": "before planting",
-            "evidence": "Water balance -189.33 mm is at or below the severe deficit threshold -150.0 mm."
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
           }
         ]
       }
     ],
-    "uncertainty_note": "The forecast is not an observation. Water balance is below the severe deficit threshold.",
+    "uncertainty_note": "The forecast is not an observation.",
     "validation_note": "A local technician must confirm this advice. ZARC check (MAPA, safra 2026/2027): every window is inside the zoning. Source: https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico",
     "sources": [
       {
@@ -253,7 +235,7 @@
         "nasa": true,
         "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
         "doi": "10.5067/GPM/IMERGDL/DAY/07",
-        "notice": null
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
       },
       {
         "source": "smap",
@@ -261,7 +243,7 @@
         "nasa": true,
         "url": "https://nsidc.org/data/spl3smp_e/versions/6",
         "doi": "10.5067/M20OXIZHY3RJ",
-        "notice": null
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
       },
       {
         "source": "power",
@@ -269,7 +251,7 @@
         "nasa": true,
         "url": "https://power.larc.nasa.gov/",
         "doi": null,
-        "notice": null
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
       },
       {
         "source": "srtm",
@@ -305,7 +287,7 @@
       }
     ]
   },
-  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nUncertainty: The forecast is not an observation. Water balance is below the severe deficit threshold.",
+  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nUncertainty: The forecast is not an observation.",
   "lang": "en",
-  "generated_at": "2026-11-15T20:08:08Z"
+  "generated_at": "2026-11-15T20:24:13Z"
 }
