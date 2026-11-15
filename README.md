@@ -115,6 +115,10 @@ Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requiremen
 | [pystac-client](https://github.com/stac-utils/pystac-client) (STAC search for Planetary Computer; added because the `planetary` source queries the STAC API) | Apache-2.0 |
 | [planetary-computer](https://github.com/microsoft/planetary-computer-sdk-for-python) (signs asset URLs, no key; added for the same reason) | MIT |
 | [pytest](https://pytest.org/) | MIT |
+| [fastapi](https://fastapi.tiangolo.com/) | MIT |
+| [uvicorn](https://www.uvicorn.org/) | BSD-3-Clause |
+| [pydantic](https://docs.pydantic.dev/) | MIT |
+| [httpx](https://www.python-httpx.org/) | BSD-3-Clause |
 
 Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.json)):
 
