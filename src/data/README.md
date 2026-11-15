@@ -8,7 +8,7 @@ source .venv/bin/activate          # after the setup in the root README (require
 python -m src.data <source> [region] --start YYYY-MM-DD --end YYYY-MM-DD --variable NAME [--out PATH]
 ```
 
-Sources: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls` (NASA) and `planetary` (Sentinel-2, ESA/Copernicus, **not NASA**).
+Sources: `power`, `gldas`, `imerg`, `smap`, `modis`, `viirs`, `hls`, `srtm` (NASA), `planetary` (Sentinel-2, ESA/Copernicus, **not NASA**), and `open-meteo` (ECMWF/GFS forecasts, **not NASA**).
 
 ## Region
 
@@ -129,6 +129,16 @@ Granules returned for Sergipe in 2025-01-01..2025-01-31: GLDAS 248, IMERG 31, SM
 - Real test (2026-11-14): `--point -10.91,-37.07 --radius-km 2`, `B04`, January 2025, cloud < 20% gave 2 items and two 404 x 401 pixel uint16 GeoTIFFs (EPSG:32724, 10 m, about 317 KiB each).
 - Sentinel-2 is ESA/Copernicus data: credit "Contains modified Copernicus Sentinel data [year]". Use `hls` for the NASA 30 m alternative.
 
+### `srtm` (NASADEM 30 m elevation & slope)
+
+- Static DEM from Planetary Computer `nasadem` (`NASADEM_HGT v001`, no login, no `--start`/`--end` required).
+- `--variable` accepts `elevation` (default), `slope_deg`, `slope_pct`, or `all`.
+- Writes GeoTIFFs + `srtm_summary.json` into a folder (default `data/processed/srtm/`), or writes only the terrain summary when `--out` ends with `.json`.
+
+### `open-meteo` (15-day weather & FAO-56 ET0 forecast)
+
+- Public forecast API (ECMWF IFS / GFS, up to 15–16 days, no login, no `--start`/`--end` required). Attribution required: Open-Meteo (CC BY 4.0).
+- Supports `--point LAT,LON`, `--forecast-days 1..16` (default `15`), `--model best_match|ecmwf_ifs|ecmwf_ifs025|gfs_seamless`, and `--out` `.csv`, `.parquet`, or `.json` (API-contract envelope).
 ### IBGE SIDRA (Produção Agrícola Municipal), third-party data
 
 Not NASA data. `python -m src.data.sidra` downloads any SIDRA table for all municipalities of one UF (default Sergipe, code 28) through the public API, no login. The table, variable and product codes are yours to choose (see [docs/research/brazil-data-sources.md](../../docs/research/brazil-data-sources.md)).

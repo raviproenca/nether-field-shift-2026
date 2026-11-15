@@ -101,6 +101,10 @@ def test_compute_slope_of_a_known_plane():
     assert slope_pct.shape == (5, 5)
     assert float(slope_pct.mean()) == pytest.approx(10.18, abs=0.5)
     assert float(slope_deg.mean()) == pytest.approx(5.81, abs=0.4)
+    summary = srtm.summarize_terrain(da)
+    assert summary["elevation_min_m"] == pytest.approx(100.0)
+    assert summary["elevation_max_m"] == pytest.approx(112.0)
+    assert "erosion_risk" not in summary and "slope_class" not in summary
 
 
 def test_compute_slope_handles_single_pixel_raster():
@@ -127,4 +131,16 @@ def test_write_rasters_merges_tiles_and_builds_summary(tmp_path):
     assert summary["elevation_min_m"] == pytest.approx(120.0)
     assert summary["elevation_max_m"] == pytest.approx(135.0)
     assert summary["nasa"] is True
+
+
+def test_cli_srtm_writes_json_summary(tmp_path, monkeypatch, capsys):
+    tif = _write_dem_tif(tmp_path / "dem.tif", -37.45, -10.65, np.full((40, 40), 180.0), step=0.001)
+    client = _FakeClient([_make_nasadem_item("NASADEM_HGT_s11w038", str(tif))])
+    monkeypatch.setattr(planetary, "open_client", lambda: client)
+    out_json = tmp_path / "terrain.json"
+    code = cli.main(["srtm", "--point", "-10.67,-37.43", "--radius-km", "1", "--out", str(out_json)])
+    assert code == 0
+    saved = json.loads(out_json.read_text(encoding="utf-8"))
+    assert saved["source"] == "srtm" and saved["elevation_mean_m"] == pytest.approx(180.0)
+    assert "NASADEM summary" in capsys.readouterr().out
     assert not {"slope_class", "erosion_risk", "contour_planting_recommended"} & set(summary)  # no product rules

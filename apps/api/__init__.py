@@ -2,6 +2,14 @@
 """Product API package for Field Shift."""
 
 from .diagnosis import build_diagnosis_response, build_engine_diagnosis
+from .forecast import build_engine_projection, build_forecast_response
 from .main import app, create_app
 
-__all__ = ["app", "create_app", "build_diagnosis_response", "build_engine_diagnosis"]
+__all__ = [
+    "app",
+    "build_diagnosis_response",
+    "build_engine_diagnosis",
+    "build_engine_projection",
+    "build_forecast_response",
+    "create_app",
+]
