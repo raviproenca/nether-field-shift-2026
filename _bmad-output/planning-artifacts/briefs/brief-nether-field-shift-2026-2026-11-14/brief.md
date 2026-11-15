@@ -1,15 +1,17 @@
 ---
-title: "Product Brief: Field Shift decision support for family farming in Sergipe"
+title: "Product Brief: Field Shift decision support for planting decisions in Sergipe"
 status: draft
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-15
 ---
 
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad product brief, headless fast path) from the team's own idea and notes; pending review by Ravi (Tech Lead). The idea is the team's: see docs/team/decisions.md. -->
 
-# Product Brief: Field Shift decision support for family farming in Sergipe
+# Product Brief: Field Shift decision support for planting decisions in Sergipe
 
 > Working title. The team has not chosen a product name. `[ASSUMPTION]` tags mark points inferred from the team notes that still need confirmation.
+
+> **Change of Nov 15, 2026 (Ravi, Tech Lead; `sprint-change-proposal-2026-11-15.md`):** the primary user is now a **technical professional who leads planting decisions**, not the low-literacy family farmer. The persona is chosen by the team from the discovery research (E7, `docs/research/persona-discovery.md`). The product is **one web dashboard** with an interactive analysis of the strategies. The **Telegram bot and voice are out of v1**. The role of AI is decided by the team after discovery, and AI never changes a number. Sections below that describe the bot, voice or the low-literacy farmer are kept as the Nov 14 record and are superseded by this note.
 
 ## Executive Summary
 

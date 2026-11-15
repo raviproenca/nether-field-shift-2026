@@ -17,6 +17,7 @@ from src.engine.model import (
     StrategyKind,
     serialize_recommendation,
 )
+from src.engine.recommend import recommend
 from src.engine.rules import (
     DEFAULT_RULES_DIR,
     CropProfile,
@@ -72,5 +73,6 @@ __all__ = [
     "parse_crop_profiles",
     "parse_rules",
     "parse_thresholds",
+    "recommend",
     "serialize_recommendation",
 ]

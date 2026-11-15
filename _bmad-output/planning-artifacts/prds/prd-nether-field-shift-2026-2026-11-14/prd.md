@@ -1,19 +1,19 @@
 ---
-title: "PRD: Field Shift decision support for family farming in Sergipe"
+title: "PRD: Field Shift decision support for planting decisions in Sergipe"
 status: draft
 created: 2026-11-14
-updated: 2026-11-14
-revision: 'Nov 14 (3): priority change: engine first, then validation, then dashboard; bot after validation'
+updated: 2026-11-15
+revision: 'Nov 15 (4): technical decision-maker as the user; Telegram bot and voice out of v1; role of AI defined after discovery (sprint-change-proposal-2026-11-15.md)'
 ---
 
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad PRD, headless fast path) from the team's brief, docs/requirements.md and docs/team/*; pending review by Ravi (Tech Lead). The idea is the team's (docs/team/decisions.md). -->
 
-# PRD: Field Shift decision support for family farming in Sergipe
+# PRD: Field Shift decision support for planting decisions in Sergipe
 *Working title. The team names the product.*
 
 ## 0. Document Purpose
 
-This PRD is for the team and for the BMad steps that follow it: architecture, then epics and stories. It turns the confirmed idea into features and requirements for **front B, the farmer product**, for the 48-hour hackathon.
+This PRD is for the team and for the BMad steps that follow it: architecture, then epics and stories. It turns the confirmed idea into features and requirements for **front B, the product**, for the 48-hour hackathon.
 
 It builds on:
 - the brief, `briefs/brief-nether-field-shift-2026-2026-11-14/brief.md`;
@@ -24,45 +24,40 @@ Technology choices live in `addendum.md` and in the architecture document. Infer
 
 > **Priority change (Nov 14, Ravi, Tech Lead):** the decision engine comes first, then its validation (ZARC and a historical backtest), then the producer dashboard. The Telegram bot with voice is no longer the core of v1: the channel and the audience are decided after the engine is validated. Details in `addendum.md` and in `docs/scope.md`.
 
+> **Audience and channel change (Nov 15, Ravi, Tech Lead):** the user is a technical professional who leads planting decisions; the persona comes from discovery (E7, `docs/research/persona-discovery.md`). The product is the dashboard with an interactive analysis. The Telegram bot and voice are out of v1. The role of AI is defined by the team after discovery. No other technology changes. Details in `sprint-change-proposal-2026-11-15.md`.
+
 ## 1. Vision
 
-A family farmer in Sergipe sends a location and a crop and gets back **what to do next**. The answer compares at least three strategies for the plot, ranked by what the farmer cares about most. It is based on NASA observations of the recent past plus a short-term forecast. It is said in plain language and states its uncertainty honestly.
+A technical professional who leads planting decisions in Sergipe explores a plot's NASA-based diagnosis and projection and compares at least three strategies with their evidence, trade-offs and uncertainty, in an interactive analysis. The answer says **what to do next** and states its uncertainty honestly.
 
-The first interface is the **producer web dashboard**, which shows the strategy comparison with its evidence and has a demo mode for judges. The engine is **validated** first, against ZARC and in a historical backtest on real Sergipe years. A channel for the farmer, such as a Telegram bot with voice, is decided after the engine is validated. The product goes **from projection to prescription**. Its calculations are deterministic, and AI only explains them.
+The interface is the **web dashboard**, with a demo mode for judges. The engine is **validated** first, against ZARC and in a historical backtest on real Sergipe years. The product goes **from projection to prescription**. Its calculations are deterministic. How AI helps this user is defined by the team after discovery, and AI never changes a number.
 
 ## 2. Target User
 
 ### 2.1 Jobs To Be Done
-- **Farmer:** "Tell me if and when to plant what I planned. Tell me what to plant next, and how to protect my soil, without making me read charts."
-- **Farmer:** "Talk to me in my language, by voice, on my weak connection, without installing an app."
-- **Producer or extension worker:** "Show me the evidence behind the advice for a plot, so I can trust it or adjust it."
+- **Technical decision-maker:** to be written after discovery (E7). The candidate roles found so far are in `docs/research/persona-discovery.md`; the team chooses.
 - **Judge:** "Let me try the full flow in a minute, with no login."
 
 ### 2.2 Non-Users (v1)
 - Farms outside Sergipe. The data core is global, but v1 is tuned and demoed only in Sergipe.
-- Agronomists who want a full agronomic model. This product gives guidance and points to local validation.
+- Users who expect a full agronomic or yield model. The tool is deterministic decision support and points to local validation.
 
 ### 2.3 Key User Journeys
-- **UJ-1. A smallholder in Itabaiana (Agreste) asks by voice whether to plant beans now.** *After engine validation: this journey depends on the channel decision (Nov 14).*
-  1. The farmer opens the bot with no account, taps **Share location** and records "I want to plant beans".
-  2. The bot asks for a priority with buttons: water, soil, erosion or income.
-  3. Within seconds `[ASSUMPTION]`, the farmer gets a short audio reply plus three short text cards: keep the current practice, a soil and water option, and an income or forage option. Each card says what to do this week and why, in one line each.
-  4. The bot adds "check with your local technician" where the uncertainty is high.
-
-  **Edge case:** if the voice note cannot be understood, the bot asks again with buttons for the most common crops.
-- **UJ-2. A producer in Nossa Senhora da Glória (Semiárido) checks the evidence on the dashboard.**
-  - The producer opens the public dashboard link, picks the pilot site and selects a crop and a priority.
+- **UJ-2. The technical decision-maker analyses a plot.** *Detail rewritten for the persona after E7.*
+  - The user opens the public dashboard link, picks a pilot site or clicks the map, and selects a crop and a priority.
   - The dashboard shows the three strategies side by side, with recent rain and soil moisture, the 15-day forecast, the water balance and the terrain, all on a map.
+  - The user changes the inputs (crop, priority, previous crops, season) and compares the effect on the strategies.
   - Each number names its data source.
 - **UJ-3. A judge tries the demo.**
   - The judge opens the dashboard in demo mode and clicks a pre-loaded pilot. They see the strategy comparison with its evidence.
-  - Sending `/start` to the bot is optional: it applies only if the bot ships after the engine is validated.
   - No step asks for a login.
+
+UJ-1 (a smallholder asking the Telegram bot by voice) was removed on Nov 15 with the bot.
 
 ## 3. Glossary
 - **Plot**: the place a request is about. It is a point, from the location, plus a small radius.
 - **Crop**: the crop the farmer plans or practices. The v1 list is **maize, beans and cassava** (decided Nov 14). Intercropping and cover crops are **Strategies**, not Crops.
-- **Language**: the user's interface language, either `pt-BR` or `en`. The bot defaults to `pt-BR` and the dashboard to `en`.
+- **Language**: the user's interface language, either `pt-BR` or `en`. The dashboard defaults to `en`, with a PT-BR button.
 - **Priority**: the farmer's chosen weight. It is one of **water**, **soil**, **erosion** or **income**. REQ-PRED-03.
 - **Strategy**: one option for the plot over the next season. Each **Recommendation** has at least three: **Current practice**, **Soil and water conservation** and **Resilient income or forage**. REQ-PRED-02.
 - **Diagnosis**: the plot's recent and seasonal conditions, taken from NASA data. It includes rain, soil moisture, vegetation, temperature, the water balance, terrain and **Bare-soil windows**.
@@ -76,17 +71,15 @@ The first interface is the **producer web dashboard**, which shows the strategy 
 
 ## 4. Features
 
-### 4.1 Request intake (bot and dashboard)
-**Description:** collect the **Plot**, the **Crop** and the **Priority** with as little effort as possible. This realizes UJ-1, UJ-2 and UJ-3.
+### 4.1 Request intake (dashboard)
+**Description:** collect the **Plot**, the **Crop** and the **Priority** with as little effort as possible. This realizes UJ-2 and UJ-3.
 
-#### FR-1: Location in one tap
-The farmer can send the **Plot** with Telegram's location button. The dashboard user can click the map or pick a **Pilot site**.
+#### FR-1: Location in one click
+The user clicks the map or picks a **Pilot site**.
 - If the location is outside Sergipe, the user gets a clear message, and the **Pilot sites** are offered.
 
-#### FR-2: Crop by voice, text or button
-The farmer can name the **Crop** with a voice note, with text, or with a button for the most common crops.
-- A voice note is transcribed in the user's **Language** and mapped to a **Crop** on the v1 list.
-- If the mapping fails, the bot shows buttons instead of guessing.
+#### FR-2: Crop by selection
+The user picks the **Crop** from the v1 list.
 
 #### FR-3: Priority choice
 The user picks one **Priority**. If they skip it, the default is **water** `[ASSUMPTION]`.
@@ -139,36 +132,25 @@ Every **Recommendation** includes an **Uncertainty note** and a **Validation not
 #### FR-22: Historical backtest (added Nov 14)
 The engine is run on 2 or 3 real past years in Sergipe, at least one wet and one dry, with historical NASA data. The result shows how each **Strategy** would have done in each year. Issue #79.
 
-### 4.5 Plain-language explanation
-#### FR-13: Explain, never decide
-An AI layer only rewrites the deterministic **Recommendation** in short, plain language in the user's **Language**. It must not change numbers or **Strategies**. REQ-PRED-07.
-- The explanation uses Vertex AI Gemini Flash.
-- If the call errors or the quota runs out, the system uses the fixed template text instead.
-- The numbers in the text equal the numbers in the structured output.
-- If the AI layer fails, the bot sends a fixed template text instead.
+### 4.5 Explanation and the role of AI
+#### FR-13: AI never decides
+The role of AI for the technical user is defined by the team after discovery (E7, open question 7). Whatever it is:
+- it works only from the **Recommendation**, its **Diagnosis** and its **Projection**;
+- it must not change numbers or **Strategies**;
+- any number it states must exist in the structured result; otherwise the fixed template text is used (AD-3);
+- if the call errors or the quota runs out, the fixed template text is used.
 
-### 4.6 Telegram bot with voice (after engine validation)
+The template explanation (story 3.1) is always available. The AI stack is Vertex AI Gemini Flash. REQ-PRED-07.
 
-The bot is a channel decided after the engine is validated (Nov 14). FR-14, FR-15, FR-16 and FR-20 stay as written for when it ships.
+### 4.6 Telegram bot with voice: removed from v1 (Nov 15)
 
-#### FR-14: Open bot, no account
-Anyone can start the bot with `/start`. There is no login or registration. REQ-DEV-BE-04.
+No bot and no voice in v1. FR-14, FR-15, FR-16 and FR-20 are withdrawn. They stay in the git history as possible future work.
 
-#### FR-15: Voice in and out
-The bot accepts voice notes, using speech-to-text. It replies with a short voice note, using text-to-speech, plus short text cards. Audio is OGG/Opus in both directions. REQ-DEV-BE-05, decided Nov 14.
-- Speech-to-text and text-to-speech use the user's **Language** (`pt-BR` or `en`).
-- The primary engine is Google Cloud Speech-to-Text and Text-to-Speech.
-- The fallback is faster-whisper for speech-to-text and Piper for text-to-speech. The fallback runs when the primary engine errors or runs out of quota.
-
-#### FR-20: Bot language choice
-The bot speaks Portuguese by default. The user can switch it to English, or back, with `/language` or a button. The choice applies to text, voice in and voice out for the rest of the chat.
-
-#### FR-16: Light messages
-Replies fit weak connections: short texts, small audio, and at most one small image. REQ-INFRA-05.
-
-### 4.7 Producer web dashboard
-#### FR-17: Plot view
+### 4.7 Web dashboard
+#### FR-17: Plot view and interactive analysis
 The dashboard shows the **Recommendation** for a **Plot** on a map with NASA GIBS layers and charts of the **Diagnosis** and the **Projection**. REQ-DEV-FE-02.
+- The user can change the inputs (crop, priority, previous crops, season) and compare the effect on the **Strategies**.
+- The exact interactions come from the UX document after E7.
 
 #### FR-21: Dashboard language toggle
 The dashboard is in English by default. A button switches every label, explanation and unit name to PT-BR.
@@ -177,8 +159,8 @@ The dashboard is in English by default. A button switches every label, explanati
 The dashboard has a public demo mode with the **Pilot sites** pre-loaded. A judge reaches a result in one click, with no login.
 
 ### 4.8 Shared API
-#### FR-19: One API for both interfaces
-The bot and the dashboard use the same API: request a **Recommendation**, plus read endpoints for the **Diagnosis** and the **Forecast**. REQ-DEV-BE-01 to 03.
+#### FR-19: One API for the dashboard
+The dashboard uses the API: request a **Recommendation**, plus read endpoints for the **Diagnosis** and the **Forecast**. REQ-DEV-BE-01 to 03.
 - Errors return clear JSON and never crash.
 - Cached **Pilot site** responses keep working when NASA services are slow.
 
@@ -190,9 +172,9 @@ The bot and the dashboard use the same API: request a **Recommendation**, plus r
   - Sentinel-2 is credited as ESA.
   - ZARC, MapBiomas and IBGE are credited as third-party data.
   - NFR-DEV-08.
-- **NFR-4. Licenses:** GPL components (Piper TTS) run as a separate service and are never imported into product code. The repo stays Apache-2.0.
-- **NFR-5. No secrets in Git**, English in code and UI. Telegram, AI and Earthdata credentials come only from env vars or secrets. NFR-DEV-02, NFR-DEPLOY-06.
-- **NFR-6. Voice latency:** a full voice round trip takes a few seconds on CPU `[ASSUMPTION]`. In the Nov 14 spike, Whisper small took 1.2 s to transcribe 5.5 s of audio, and Piper took 0.4 s to generate 5.5 s of audio.
+- **NFR-5. No secrets in Git**, English in code and UI. AI and Earthdata credentials come only from env vars or secrets. NFR-DEV-02, NFR-DEPLOY-06.
+
+NFR-4 (Piper GPL boundary) and NFR-6 (voice latency) were withdrawn on Nov 15 with the voice.
 
 ## 5. Non-Goals
 - Not an agronomic expert system or a yield predictor. ML is future work.
@@ -208,12 +190,14 @@ For Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava)
 2. Its validation: the ZARC check (FR-11) and the historical backtest (FR-22).
 3. The shared API, only what the dashboard needs (FR-4, FR-7, FR-19), with cached pilot data.
 4. The dashboard with demo mode (FR-17, FR-18, FR-21).
-5. The plain-language explanation (FR-13).
+5. The template explanation (story 3.1); the AI part after the team's definition (FR-13).
 6. Deploy and judge readiness (NFR-1 to NFR-5).
-7. **After the engine is validated:** the bot with voice (FR-1 to FR-3 in the bot, FR-14 to FR-16, FR-20). The channel and the audience are decided then.
+
+In parallel with items 1 and 2: persona discovery (E7).
 
 ### 6.2 Out of Scope for MVP
 - **Crop photos** (decided Nov 14).
+- **Telegram bot and voice** (decided Nov 15).
 - **Validation with real farmers.** It is skipped in the hackathon and is the next step in the pitch.
 - **Other states.**
 - **Languages other than PT-BR and English.**
@@ -221,7 +205,8 @@ For Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava)
 - **ANA HidroWeb, SoilGrids and MapBiomas integration.** Planned; research is in progress.
 
 ## 7. Success Metrics
-- **SM-1:** a judge completes UJ-3 in the dashboard demo mode without login or help. The bot is optional. Validates FR-18.
+- **SM-1:** a judge completes UJ-3 in the dashboard demo mode without login or help. Validates FR-18.
+- **SM-5:** the persona and the role of AI are chosen by the team from the cited discovery and recorded in `docs/team/decisions.md`.
 - **SM-4:** the historical backtest shows, for at least one wet and one dry year in Sergipe, how each **Strategy** would have done, and the ZARC check is reported. Validates FR-11, FR-22.
 - **SM-2:** both **Pilot sites** return a full **Recommendation** (at least 3 **Strategies**, evidence, an **Uncertainty note** and a **Validation note**), including when NASA services are offline, from the cache. Validates FR-8 to FR-12, FR-19.
 - **SM-3:** every number shown traces to a named source. Validates FR-4, FR-5, FR-7, FR-13.
@@ -230,20 +215,23 @@ For Sergipe, the two **Pilot sites** and the v1 crops (maize, beans and cassava)
 ## 8. Open Questions
 1. **Product name.** Owner: the team.
 2. **ZARC data access.** Is it a file or an API, and at what granularity? Owner: research, in progress.
-3. **Piper `pt_BR` voice license.** Piper is only the fallback now. See open question 10 in `docs/team/open-questions.md`.
+3. *(Withdrawn Nov 15: the Piper voice license no longer applies, because the voice is out of v1.)*
 4. **Cloud credit window.** The Global Offers credits last 90 days from activation. If they are activated on Nov 14, they end around Feb 12, 2027, which covers Jan 26, 2027. Confirm the activation date. Owner: Ravi.
 
 5. **Engine inputs and outputs (Nov 14).** The soil and the previous crops are new inputs, and the pest-cycle break, the planting schedule and the water demand per crop are new outputs. Which soil source, how previous crops are entered, and whether stories #44 to #47 change? Owner: Ravi, with the engine owner.
+6. **Who is the technical decision-maker?** Owner: the team, via E7. Candidate roles: `docs/research/persona-discovery.md`.
+7. **What is the role of AI for this user?** Owner: the team, after E7.
+
+**Decided Nov 15 (Ravi), no longer open:** the user is a technical decision-maker; the Telegram bot and voice are out of v1.
 
 **Decided Nov 14 (Ravi), no longer open:**
 - Hosting on Google Cloud.
 - Vertex AI Gemini Flash for the explanations.
 - Google Speech-to-Text and Text-to-Speech, with Piper and faster-whisper as the fallback.
-- The bot in PT-BR with an English option, and the dashboard in English with a PT-BR toggle.
+- The dashboard in English with a PT-BR toggle (the bot language decision is withdrawn with the bot, Nov 15).
 - The v1 crops: maize, beans and cassava.
 - Priority: engine, then validation, then dashboard; the bot after validation; crop photos out.
 
 ## 9. Assumptions Index
 - §4.1 FR-3: the default **Priority** is water.
-- §2.3 UJ-1 and §4.6: a voice reply comes back "within seconds" on CPU.
 - §5: there are no accounts or farm history in v1.
