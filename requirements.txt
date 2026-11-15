@@ -17,3 +17,9 @@ h5py==3.16.0          # HDF5 backend of h5netcdf and VIIRS tile reader (not pull
 pyhdf==0.11.7         # MODIS MOD13Q1 v061 is HDF4; the rasterio wheel has no HDF4 driver
 pystac-client==0.9.1       # STAC search of the Microsoft Planetary Computer (Sentinel-2), Apache-2.0
 planetary-computer==1.0.0  # signs Planetary Computer asset URLs, no account or key, MIT
+
+# Product API (apps/api, issue #49):
+fastapi==0.162.7      # HTTP API framework for apps/api, MIT
+uvicorn==0.54.0       # ASGI server for apps/api, BSD-3-Clause
+pydantic==2.14.3      # request/response schemas in apps/api, MIT
+httpx==0.28.1         # ASGI test client and async HTTP adapter, BSD-3-Clause
