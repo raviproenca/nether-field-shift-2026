@@ -86,6 +86,8 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 
 The municipal mesh in `data/sample/ibge_se_municipalities.geojson` (used to find the IBGE code of a plot, which selects the ZARC rows) comes from the IBGE malhas API v3, state 28, lowest quality; credit "Fonte: IBGE, Malha Municipal". Third-party data, not NASA.
 
+The Sergipe rows of the ZARC used by the engine are committed in `data/reference/zarc/` so the deployed API needs no download: `zarc_2026-2027_se.csv` (maize and beans, safra 2026/2027) and `zarc_perene_se.csv` (cassava, perennial file), both filtered by `python -m src.data.zarc` on 2026-11-15 from the MAPA open-data catalog (Tábua de Risco, portarias 45/2026, 136/2026, 237/2026, 262/2026, 372/2026 and 17/2020). Credit: "ZARC, Ministério da Agricultura e Pecuária (MAPA) / Embrapa, dados abertos, CC BY". A fresh download in `data/processed/` takes precedence. Third-party data, not NASA.
+
 Sentinel-2 is **European data** and IBGE PAM is **Brazilian data**: neither is NASA data, so they are not part of "NASA data used". Sentinel-2 is read through the `planetary` source of the toolkit (no account, no key); IBGE PAM is read with `python -m src.data.sidra` (public API, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it; if it shows PAM numbers, credit IBGE.
 
 ## Pre-generated data (internal map)
