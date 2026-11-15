@@ -13,7 +13,11 @@ the copyright. This module does not reproduce the paper's text or figures.
 
 from __future__ import annotations
 
+import calendar
+
 from src.engine.model import (
+    Action,
+    CropSchedule,
     Crop,
     Diagnosis,
     Plot,
@@ -54,7 +58,11 @@ _TRADE_OFF = {
 _FORECAST_NOT_OBSERVATION = "The forecast is not an observation."
 _FORECAST_ABSENT = "The forecast is absent."
 _SEVERE_DEFICIT = " Water balance is below the severe deficit threshold."
-_ZARC_NOT_DONE = "The ZARC check is not done yet."
+_MISSING_BALANCE = " Water balance is missing."
+_MISSING_NDVI = " NDVI is missing."
+_ZARC_NOT_DONE = (
+    "A local technician must confirm this advice. The ZARC check is not done yet."
+)
 
 
 def _clamp(value: float) -> float:
@@ -258,6 +266,162 @@ def _score(
     return round(total, 6)
 
 
+def _window_dates(period_end: str, start_month: int, end_month: int) -> tuple[str, str]:
+    """Next planting window on or after the diagnosis period, with no clock read."""
+    year = int(period_end[0:4])
+    month = int(period_end[5:7])
+    if month > end_month:
+        year += 1
+    last_day = calendar.monthrange(year, end_month)[1]
+    return (
+        f"{year:04d}-{start_month:02d}-01",
+        f"{year:04d}-{end_month:02d}-{last_day:02d}",
+    )
+
+
+def _schedules(
+    crops: tuple[Crop, ...],
+    diagnosis: Diagnosis,
+    rules: EngineRules,
+) -> tuple[CropSchedule, ...]:
+    rows: list[CropSchedule] = []
+    for crop in crops:
+        profile = rules.crops[crop]
+        calendar_rule = profile.planting_calendar
+        start, end = _window_dates(
+            diagnosis.period_end,
+            calendar_rule.start_month,
+            calendar_rule.end_month,
+        )
+        rows.append(
+            CropSchedule(
+                crop=crop.value,
+                planting_start=start,
+                planting_end=end,
+                cycle_days=profile.cycle_length.typical_days,
+                water_demand_mm=profile.water_need.typical_mm,
+            )
+        )
+    return tuple(rows)
+
+
+def _date_in_window(day: str, start: str, end: str) -> bool:
+    return start <= day <= end
+
+
+def _actions(
+    kind: StrategyKind,
+    plot: Plot,
+    diagnosis: Diagnosis,
+    schedules: tuple[CropSchedule, ...],
+    rules: EngineRules,
+) -> tuple[Action, ...]:
+    timing = f"{schedules[0].planting_start}/{schedules[0].planting_end}"
+    if any(_date_in_window(diagnosis.period_end, row.planting_start, row.planting_end) for row in schedules):
+        plant = Action(
+            code="plant_in_window",
+            summary="Plant during the open window.",
+            timing=timing,
+            evidence=(
+                f"Diagnosis period end {diagnosis.period_end} falls inside "
+                "the profile planting window."
+            ),
+        )
+    else:
+        plant = Action(
+            code="wait_for_window",
+            summary="Wait for the planting window.",
+            timing=timing,
+            evidence=(
+                f"Diagnosis period end {diagnosis.period_end} is outside "
+                "the profile planting window."
+            ),
+        )
+    actions: list[Action] = [plant]
+    vegetation = rules.thresholds.vegetation_and_bare_soil
+    if diagnosis.ndvi_mean is not None and diagnosis.ndvi_mean <= vegetation.bare_soil_ndvi_max:
+        actions.append(
+            Action(
+                code="protect_soil",
+                summary="Keep the soil covered.",
+                timing="before planting",
+                evidence=(
+                    f"NDVI {diagnosis.ndvi_mean} is at or below the bare-soil "
+                    f"threshold {vegetation.bare_soil_ndvi_max}."
+                ),
+            )
+        )
+    elif kind is StrategyKind.SOIL_WATER_CONSERVATION:
+        actions.append(
+            Action(
+                code="protect_soil",
+                summary="Keep the soil covered.",
+                timing="through the cycle",
+                evidence="This strategy adds a cover or legume from the crop profiles.",
+            )
+        )
+    slope = diagnosis.slope_mean_pct if diagnosis.slope_mean_pct is not None else plot.slope_mean_pct
+    terrain = rules.thresholds.terrain_and_erosion
+    if slope is not None and slope >= terrain.contour_planting_min_slope_pct:
+        actions.append(
+            Action(
+                code="plant_on_contour",
+                summary="Plant on the contour.",
+                timing="at planting",
+                evidence=(
+                    f"Slope {slope}% is at or above the contour-planting "
+                    f"threshold {terrain.contour_planting_min_slope_pct}%."
+                ),
+            )
+        )
+    severe = rules.thresholds.water_balance.severe_deficit_mm
+    if diagnosis.water_balance_mm is not None and diagnosis.water_balance_mm <= severe:
+        actions.append(
+            Action(
+                code="delay_if_dry",
+                summary="Do not plant until the water balance recovers.",
+                timing="before planting",
+                evidence=(
+                    f"Water balance {diagnosis.water_balance_mm} mm is at or below "
+                    f"the severe deficit threshold {severe} mm."
+                ),
+            )
+        )
+    return tuple(actions)
+
+
+def _pest_cycle(
+    profiles: tuple[CropProfile, ...],
+    previous: CropProfile | None,
+) -> tuple[bool, str]:
+    if previous is None:
+        families = {profile.botanical_family for profile in profiles}
+        if len(families) > 1:
+            return True, "More than one botanical family is in the strategy."
+        return False, "A single family does not break a pest cycle."
+    introduced = [profile for profile in profiles if profile.botanical_family != previous.botanical_family]
+    if introduced:
+        names = ", ".join(profile.botanical_family for profile in introduced)
+        return True, f"Introduces {names}, outside {previous.botanical_family}."
+    return False, f"Stays in {previous.botanical_family}; the pest cycle is not broken."
+
+
+def _uncertainty_note(
+    diagnosis: Diagnosis,
+    projection: Projection,
+    rules: EngineRules,
+) -> str:
+    note = _FORECAST_NOT_OBSERVATION if projection.available else _FORECAST_ABSENT
+    severe = rules.thresholds.water_balance.severe_deficit_mm
+    if diagnosis.water_balance_mm is None:
+        note += _MISSING_BALANCE
+    elif diagnosis.water_balance_mm <= severe:
+        note += _SEVERE_DEFICIT
+    if diagnosis.ndvi_mean is None:
+        note += _MISSING_NDVI
+    return note
+
+
 def recommend(
     plot: Plot,
     diagnosis: Diagnosis,
@@ -300,38 +464,34 @@ def recommend(
         key=lambda item: (item[2], _TIE_BREAK[item[0]]),
         reverse=True,
     )
-    strategies = tuple(
-        Strategy(
-            kind=kind,
-            rank=rank,
-            score=score,
-            title=kind.value.replace("_", " "),
-            crops=tuple(item.value for item in crops),
-            trade_offs=(_TRADE_OFF[kind],),
-            planting_schedule=(),
-            water_demand_mm=round(
-                sum(rules.crops[item].water_need.typical_mm for item in crops),
-                2,
-            ),
-            breaks_pest_cycle=False,
-            pest_cycle_note="",
-            actions=(),
+    strategies_out: list[Strategy] = []
+    for rank, (kind, crops, score) in enumerate(ranked, start=1):
+        profiles = _profiles(crops, rules)
+        schedule = _schedules(crops, diagnosis, rules)
+        breaks, pest_note = _pest_cycle(profiles, previous)
+        strategies_out.append(
+            Strategy(
+                kind=kind,
+                rank=rank,
+                score=score,
+                title=kind.value.replace("_", " "),
+                crops=tuple(item.value for item in crops),
+                trade_offs=(_TRADE_OFF[kind],),
+                planting_schedule=schedule,
+                water_demand_mm=round(sum(row.water_demand_mm for row in schedule), 2),
+                breaks_pest_cycle=breaks,
+                pest_cycle_note=pest_note,
+                actions=_actions(kind, plot, diagnosis, schedule, rules),
+            )
         )
-        for rank, (kind, crops, score) in enumerate(ranked, start=1)
-    )
-    balance = diagnosis.water_balance_mm
-    severe = rules.thresholds.water_balance.severe_deficit_mm
-    uncertainty = _FORECAST_NOT_OBSERVATION if projection.available else _FORECAST_ABSENT
-    if balance is not None and balance <= severe:
-        uncertainty += _SEVERE_DEFICIT
     return Recommendation(
         plot=plot,
         crop=crop,
         priority=priority,
         diagnosis=diagnosis,
         projection=projection,
-        strategies=strategies,
-        uncertainty_note=uncertainty,
+        strategies=tuple(strategies_out),
+        uncertainty_note=_uncertainty_note(diagnosis, projection, rules),
         validation_note=_ZARC_NOT_DONE,
         sources=diagnosis.sources + projection.sources,
     )

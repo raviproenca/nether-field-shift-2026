@@ -282,7 +282,7 @@ def test_forecast_rain_is_read_when_the_projection_is_available() -> None:
         RULES,
     )
     assert wet_forecast.strategies[0].score > dry_forecast.strategies[0].score
-    assert wet_forecast.uncertainty_note == "The forecast is not an observation."
+    assert wet_forecast.uncertainty_note.startswith("The forecast is not an observation.")
 
 
 def test_repeat_call_serializes_byte_for_byte() -> None:
@@ -310,11 +310,48 @@ def test_recommendation_validates_against_the_schema() -> None:
     )
     payload = json.loads(json.dumps(serialize_recommendation(recommendation)))
     get_validator().validate(payload)
-    assert payload["validation_note"] == "The ZARC check is not done yet."
+    assert "ZARC check is not done yet" in payload["validation_note"]
+    assert "technician" in payload["validation_note"]
     assert payload["strategies"][0]["water_demand_mm"] > 0
     for strategy in payload["strategies"]:
-        assert strategy["actions"] == []
-        assert strategy["planting_schedule"] == []
+        assert strategy["actions"]
+        assert strategy["planting_schedule"]
+        for action in strategy["actions"]:
+            assert action["evidence"]
+        for row in strategy["planting_schedule"]:
+            assert row["planting_start"] <= row["planting_end"]
+            assert row["cycle_days"] >= 1
+
+
+def test_each_strategy_has_actions_a_calendar_and_a_pest_note() -> None:
+    recommendation = recommend(
+        make_plot(),
+        make_diagnosis(),
+        make_projection(),
+        Crop.MAIZE,
+        Priority.WATER,
+        RULES,
+    )
+    by_kind = {strategy.kind: strategy for strategy in recommendation.strategies}
+    current = by_kind[StrategyKind.CURRENT_PRACTICE]
+    conservation = by_kind[StrategyKind.SOIL_WATER_CONSERVATION]
+    assert current.actions[0].code == "wait_for_window"
+    assert current.planting_schedule[0].planting_start == "2027-04-01"
+    assert current.planting_schedule[0].planting_end == "2027-06-30"
+    assert current.planting_schedule[0].cycle_days == 125
+    assert current.breaks_pest_cycle is False
+    assert conservation.breaks_pest_cycle is True
+    assert any(action.code == "protect_soil" for action in conservation.actions)
+    assert any(action.code == "delay_if_dry" for action in current.actions)
+    steep = recommend(
+        make_plot(),
+        make_diagnosis(slope_mean_pct=8.0),
+        make_projection(),
+        Crop.MAIZE,
+        Priority.EROSION,
+        RULES,
+    )
+    assert any(action.code == "plant_on_contour" for action in steep.strategies[0].actions)
 
 
 def test_recommend_does_not_read_a_file_clock_or_network(monkeypatch: pytest.MonkeyPatch) -> None:
