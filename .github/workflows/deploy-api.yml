@@ -1,0 +1,108 @@
+# AI-assisted: generated with Claude Code, reviewed by Periélio (pending Ravi)
+# Deploys the product API (apps/api) to Cloud Run with Workload Identity Federation: no JSON key anywhere.
+# Needs the repository Variables listed in docs/infra/cloud-run-api.md. Without them the job skips with a notice.
+name: Deploy API
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "apps/api/**"
+      - "src/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "data/reference/zarc/**"
+      - "data/sample/ibge_se_municipalities.geojson"
+      - "apps/web/public/data/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # lets the job exchange its GitHub OIDC token for Google credentials
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GCP_AR_REPOSITORY: ${{ vars.GCP_AR_REPOSITORY }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      GCP_RUNTIME_SA: ${{ vars.GCP_RUNTIME_SA }}
+      API_CORS_ORIGINS: ${{ vars.API_CORS_ORIGINS }}
+    steps:
+      - name: Check the repository variables
+        id: vars
+        env:
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_DEPLOY_SA: ${{ vars.GCP_DEPLOY_SA }}
+        run: |
+          missing=""
+          for name in GCP_PROJECT_ID GCP_REGION GCP_AR_REPOSITORY CLOUD_RUN_SERVICE GCP_RUNTIME_SA API_CORS_ORIGINS GCP_WIF_PROVIDER GCP_DEPLOY_SA; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloud Run is not configured yet (missing variables:$missing); skipping deploy. See docs/infra/cloud-run-api.md"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the repository
+        if: steps.vars.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        if: steps.vars.outputs.ready == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - name: Set up the gcloud CLI
+        if: steps.vars.outputs.ready == 'true'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Build and push the image
+        if: steps.vars.outputs.ready == 'true'
+        run: |
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_AR_REPOSITORY}/api:${GITHUB_SHA}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      # CPU only (no --gpu). The service is not made public here: an administrator grants
+      # roles/run.invoker to allUsers once (docs/infra/cloud-run-api.md), and later deploys keep it.
+      - name: Deploy to Cloud Run
+        if: steps.vars.outputs.ready == 'true'
+        run: |
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --image "$IMAGE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --service-account "$GCP_RUNTIME_SA" \
+            --port 8080 \
+            --cpu 1 --memory 512Mi \
+            --min-instances 0 --max-instances 3 \
+            --set-env-vars "^@^API_CORS_ORIGINS=${API_CORS_ORIGINS}" \
+            --quiet
+
+      - name: Smoke test /health
+        if: steps.vars.outputs.ready == 'true'
+        run: |
+          URL=$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project "$GCP_PROJECT_ID" --region "$GCP_REGION" --format='value(status.url)')
+          echo "Service URL: $URL"
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS "$URL/health"; then exit 0; fi
+            sleep 5
+          done
+          echo "::warning::/health did not answer. If the service is not public yet, grant roles/run.invoker to allUsers (docs/infra/cloud-run-api.md)."
