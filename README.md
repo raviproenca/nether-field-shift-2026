@@ -116,6 +116,7 @@ Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requiremen
 | [pyhdf](https://github.com/fhs/pyhdf) | MIT |
 | [pystac-client](https://github.com/stac-utils/pystac-client) (STAC search for Planetary Computer; added because the `planetary` source queries the STAC API) | Apache-2.0 |
 | [planetary-computer](https://github.com/microsoft/planetary-computer-sdk-for-python) (signs asset URLs, no key; added for the same reason) | MIT |
+| [PyYAML](https://pyyaml.org/) (reads `src/engine/rules/*.yaml`) | MIT |
 | [pytest](https://pytest.org/) | MIT |
 | [fastapi](https://fastapi.tiangolo.com/) | MIT |
 | [uvicorn](https://www.uvicorn.org/) | BSD-3-Clause |
@@ -132,6 +133,12 @@ Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.js
 | [Vite](https://vite.dev/) | MIT |
 | [Geist](https://vercel.com/font) font via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
 | NASA GIBS imagery and its official colormaps and layer styles (live, not copied into the repo; see "NASA data used") | NASA open data, EOSDIS use guidance; no NASA logo or Worldview code is used |
+
+Rules cited by the decision engine (not copied):
+
+| Work | Terms |
+|---|---|
+| Kalaivani et al., IEEE CICT 2025, DOI [10.1109/CICT67193.2025.11399212](https://doi.org/10.1109/CICT67193.2025.11399212) | IEEE copyright. The engine cites the rotation rules only: do not repeat the previous crop's botanical family, and after a nitrogen-depleting crop prefer a legume. The paper's text, figures, and logistic-regression model are not used. |
 
 ## License
 [Apache License 2.0](LICENSE)
