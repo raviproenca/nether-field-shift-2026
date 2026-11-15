@@ -4,6 +4,10 @@
 
 Only keywords and phrases the **team** (or a mentor, when marked) said in today's sessions, with the time of the session. Nothing invented; this is raw material for the team to write the pitch. Order: problem → persona → solution → NASA data → differentiator → validation → future.
 
+## Positioning (Nov 15)
+- Say "decision support": it compares three rotation strategies, checks planting windows against ZARC and shows the source of every number. Do not say it predicts or anticipates the harvest, the yield or good or bad seasons; the backtest does not support that (the ranking does not vary by year, 45/45). See [decisions.md](decisions.md).
+- The notes below are the raw session record (11:15, 12:05). A phrase such as "farmers need what comes next" refers to short-term weather information, not to a harvest forecast.
+
 ## Problem
 - Water access varies by region; in the Northeast, drought worsens fires, and the region depends on rain for water and energy (10:24).
 - "It rained yesterday" does not help: farmers need what comes next; climate change makes history alone unreliable (11:15).
