@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import calendar
 
+import pandas as pd
+
 from src.engine.model import (
     Action,
     CropSchedule,
@@ -28,6 +30,8 @@ from src.engine.model import (
     StrategyKind,
 )
 from src.engine.rules import CropProfile, EngineRules
+from src.engine.zarc_check import check_window
+from src.engine.zarc_check import validation_note as zarc_validation_note
 
 _COVER = {
     "low_initial": 0.25,
@@ -60,9 +64,7 @@ _FORECAST_ABSENT = "The forecast is absent."
 _SEVERE_DEFICIT = " Water balance is below the severe deficit threshold."
 _MISSING_BALANCE = " Water balance is missing."
 _MISSING_NDVI = " NDVI is missing."
-_ZARC_NOT_DONE = (
-    "A local technician must confirm this advice. The ZARC check is not done yet."
-)
+_TECHNICIAN_CONFIRMS = "A local technician must confirm this advice."
 
 
 def _clamp(value: float) -> float:
@@ -422,6 +424,15 @@ def _uncertainty_note(
     return note
 
 
+def _validation_note(plot: Plot, strategies: list[Strategy], zarc: pd.DataFrame | None) -> str:
+    seen: dict[tuple[str, str, str], CropSchedule] = {}
+    for strategy in strategies:
+        for item in strategy.planting_schedule:
+            seen.setdefault((item.crop, item.planting_start, item.planting_end), item)
+    checks = [check_window(zarc, plot.municipality_code, item) for item in seen.values()]
+    return zarc_validation_note(_TECHNICIAN_CONFIRMS, checks)
+
+
 def recommend(
     plot: Plot,
     diagnosis: Diagnosis,
@@ -429,6 +440,7 @@ def recommend(
     crop: Crop,
     priority: Priority,
     rules: EngineRules,
+    zarc: pd.DataFrame | None = None,
 ) -> Recommendation:
     """Return the three v1 strategies ranked by the weighted rule score.
 
@@ -492,6 +504,6 @@ def recommend(
         projection=projection,
         strategies=tuple(strategies_out),
         uncertainty_note=_uncertainty_note(diagnosis, projection, rules),
-        validation_note=_ZARC_NOT_DONE,
+        validation_note=_validation_note(plot, strategies_out, zarc),
         sources=diagnosis.sources + projection.sources,
     )
