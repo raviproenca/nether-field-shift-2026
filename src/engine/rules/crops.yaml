@@ -1,0 +1,124 @@
+# AI-assisted: generated with Antigravity, reviewed by Lucas Feitosa
+# Crop agronomic profiles and baselines for Sergipe family farming (Issue #45)
+schema_version: 1
+
+crops:
+  maize:
+    id: "maize"
+    name: "Maize (Corn)"
+    botanical_family: "Poaceae"
+    fixes_nitrogen: false
+    soil_cover_rating: "medium"
+    water_need_mm:
+      min_mm: 500.0
+      max_mm: 800.0
+      typical_mm: 550.0
+      source: "FAO-56 Allen et al. (1998) & Embrapa Milho e Sorgo"
+      url: "https://www.fao.org/land-water/databases-and-software/crop-information/maize/en/"
+    cycle_length_days:
+      min_days: 90
+      max_days: 130
+      typical_days: 110
+      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Tabuleiros Costeiros"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+    heat_limit_c:
+      max_optimal_c: 30.0
+      critical_c: 34.0
+      sensitive_stage: "flowering_and_silking"
+      source: "FAO-56 & Embrapa Milho e Sorgo agroclimatic guidelines"
+      url: "https://www.embrapa.br/milho-e-sorgo"
+    kc:
+      kc_ini: 0.30
+      kc_mid: 1.20
+      kc_end: 0.60
+      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
+      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+    planting_calendar:
+      preferred_season: "wet"
+      start_month: 4
+      end_month: 6
+      start_decendio: 10
+      end_decendio: 18
+      min_15d_rain_onset_mm: 35.0
+      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+
+  beans:
+    id: "beans"
+    name: "Common Beans"
+    botanical_family: "Fabaceae"
+    fixes_nitrogen: true
+    soil_cover_rating: "medium_high"
+    water_need_mm:
+      min_mm: 300.0
+      max_mm: 500.0
+      typical_mm: 350.0
+      source: "FAO-56 Allen et al. (1998) & Embrapa Arroz e Feijão"
+      url: "https://www.fao.org/land-water/databases-and-software/crop-information/dry-bean/en/"
+    cycle_length_days:
+      min_days: 65
+      max_days: 95
+      typical_days: 75
+      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Tabuleiros Costeiros"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+    heat_limit_c:
+      max_optimal_c: 28.0
+      critical_c: 32.0
+      sensitive_stage: "flowering_and_pod_set"
+      source: "FAO-56 & Embrapa Arroz e Feijão agroclimatic guidelines"
+      url: "https://www.embrapa.br/arroz-e-feijao"
+    kc:
+      kc_ini: 0.40
+      kc_mid: 1.15
+      kc_end: 0.35
+      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
+      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+    planting_calendar:
+      preferred_season: "wet"
+      start_month: 4
+      end_month: 6
+      start_decendio: 11
+      end_decendio: 18
+      min_15d_rain_onset_mm: 30.0
+      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+
+  cassava:
+    id: "cassava"
+    name: "Cassava"
+    botanical_family: "Euphorbiaceae"
+    fixes_nitrogen: false
+    soil_cover_rating: "low_initial"
+    water_need_mm:
+      min_mm: 400.0
+      max_mm: 750.0
+      typical_mm: 600.0
+      source: "FAO-56 Allen et al. (1998) & Embrapa Mandioca e Fruticultura"
+      url: "https://www.fao.org/land-water/databases-and-software/crop-information/cassava/en/"
+    cycle_length_days:
+      min_days: 270
+      max_days: 450
+      typical_days: 360
+      source: "FAO-56 Table 11 & MAPA ZARC Sergipe / Embrapa Mandioca e Fruticultura"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"
+    heat_limit_c:
+      max_optimal_c: 32.0
+      critical_c: 38.0
+      sensitive_stage: "sprouting_and_root_bulking"
+      source: "FAO-56 & Embrapa Mandioca e Fruticultura agroclimatic guidelines"
+      url: "https://www.embrapa.br/mandioca-e-fruticultura"
+    kc:
+      kc_ini: 0.30
+      kc_mid: 0.80
+      kc_end: 0.30
+      source: "FAO-56 Table 12 (Crop coefficient Kc for field crops)"
+      url: "https://www.fao.org/3/x0490e/x0490e0b.htm"
+    planting_calendar:
+      preferred_season: "wet"
+      start_month: 4
+      end_month: 7
+      start_decendio: 10
+      end_decendio: 21
+      min_15d_rain_onset_mm: 25.0
+      source: "MAPA ZARC Sergipe & Embrapa Tabuleiros Costeiros"
+      url: "https://indicadores.agricultura.gov.br/zarc/index.htm"

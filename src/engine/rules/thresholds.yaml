@@ -1,0 +1,44 @@
+# AI-assisted: generated with Antigravity, reviewed by Lucas Feitosa
+# Agroclimatic thresholds and multi-criteria priority weights for Field Shift decision engine (Issue #45)
+schema_version: 1
+
+water_balance:
+  severe_deficit_mm: -150.0
+  moderate_deficit_mm: -60.0
+  min_smap_surface_m3m3: 0.12
+  min_forecast_15d_rain_mm: 25.0
+  source: "FAO-56 root-zone depletion & NASA SMAP/POWER agroclimatic baselines"
+
+vegetation_and_bare_soil:
+  bare_soil_ndvi_max: 0.25
+  sparse_cover_ndvi_max: 0.35
+  healthy_cover_ndvi_min: 0.50
+  source: "MODIS/VIIRS/HLS bare-soil NDVI spectral thresholds (FAO & NASA ARSET)"
+
+terrain_and_erosion:
+  gentle_slope_max_pct: 3.0
+  contour_planting_min_slope_pct: 5.0
+  high_erosion_risk_slope_pct: 8.0
+  source: "Embrapa Solos / FAO contour-farming slope classes"
+
+priority_weights:
+  water:
+    water_efficiency: 0.50
+    soil_health: 0.20
+    erosion_control: 0.15
+    income_resilience: 0.15
+  soil:
+    water_efficiency: 0.20
+    soil_health: 0.50
+    erosion_control: 0.15
+    income_resilience: 0.15
+  erosion:
+    water_efficiency: 0.15
+    soil_health: 0.20
+    erosion_control: 0.50
+    income_resilience: 0.15
+  income:
+    water_efficiency: 0.15
+    soil_health: 0.15
+    erosion_control: 0.15
+    income_resilience: 0.55
