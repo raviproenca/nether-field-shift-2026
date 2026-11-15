@@ -14,12 +14,12 @@ Built only from recorded decisions: [decisions.md](team/decisions.md), [CONTEXT.
 
 ## 2. What we deliver
 
-A decision-support tool for the **technical professional who leads planting decisions in Sergipe** (Agreste and Semiárido), demoed on two pilot sites: Itabaiana and Nossa Senhora da Glória. v1 crops: maize, beans and cassava. The persona is chosen by the team from the discovery research ([persona-discovery.md](research/persona-discovery.md), E7). Decided Nov 15 (Ravi); see [sprint-change-proposal-2026-11-15.md](../_bmad-output/planning-artifacts/sprint-change-proposal-2026-11-15.md).
+A decision-support tool (not a harvest or yield predictor) for the **technical professional who leads planting decisions in Sergipe** (Agreste and Semiárido), demoed on two pilot sites: Itabaiana and Nossa Senhora da Glória. v1 crops: maize, beans and cassava. The persona is chosen by the team from the discovery research ([persona-discovery.md](research/persona-discovery.md), E7). Decided Nov 15 (Ravi); see [sprint-change-proposal-2026-11-15.md](../_bmad-output/planning-artifacts/sprint-change-proposal-2026-11-15.md).
 
 - **Decision engine** (`src/engine`). Deterministic rules on NASA data, no ML.
   - **In:** the farmer's crops, the soil, the region, the season and the previous crops.
   - **Out:** rotation options with trade-offs, a planting schedule and dates per crop, the water demand and the pest-cycle break.
-- **Validation** of the engine against ZARC and in a historical backtest on 2 or 3 real Sergipe years (at least one wet and one dry), showing how each strategy would have done.
+- **Validation** of the engine against ZARC and in a historical backtest on real Sergipe seasons (wet and dry years), comparing each strategy with what IBGE PAM recorded. The backtest is a check of the engine, not a claim that it predicts a season: the first-ranked strategy does not change across years (45 of 45), which we state as a limitation.
 - **Producer dashboard** with the strategy comparison and a one-click **demo mode** for the judges, on the product API (`apps/api`).
 - **Producer dashboard** is the only interface, with an interactive analysis: the user changes the inputs and compares the effect on the strategies.
 - **Explanation.** A fixed template text always works. The role of AI for the technical user is decided by the team after discovery; AI never changes a number.

@@ -38,7 +38,7 @@
 Each requirement is classified into one of four architectural pillars:
 - **`[DATA]`** — Data Acquisition, Harmonization & Storage
 - **`[DEV-BE]` / `[DEV-FE]`** — Software Development (Backend API, Telegram Bot & Web Frontends)
-- **`[PRED]`** — Crop & Rotation Prediction / Decision-Support Engine
+- **`[PRED]`** — Crop & Rotation Decision-Support Engine (the tag is historical; the engine compares strategies and does not predict yields)
 - **`[INFRA]`** — Infrastructure, Caching & Connectivity
 
 ---
@@ -58,7 +58,7 @@ Each requirement is classified into one of four architectural pillars:
 
 ---
 
-### 2.2 Crop & Rotation Prediction Requirements (`[PRED]`)
+### 2.2 Crop & Rotation Decision-Support Requirements (`[PRED]`)
 
 | ID | Category | Requirement | Description & Acceptance Criteria |
 |---|---|---|---|

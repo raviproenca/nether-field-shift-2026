@@ -6,6 +6,12 @@ Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.s
 
 **Current scope:** [docs/scope.md](docs/scope.md), the single source for what we deliver, in which order and what is out.
 
+## What it is
+
+**Decision support** for the technical professional who leads planting decisions in Sergipe, Brazil. It compares three rotation strategies (the current practice and two alternatives), checks the planting windows against the official ZARC zoning, and shows the source of every number. It does not predict the harvest or the yield.
+
+**Known limit:** the ranking does not yet change across wet and dry years (historical backtest, 45 of 45 seasons gave the same first strategy), so it should be read as a structured comparison of options, not as a forecast of how a season will turn out.
+
 > 🚧 **Work in progress.** Development happens during the hackathon (November 14–15, 2026), per the event rules.
 
 ## How to run
