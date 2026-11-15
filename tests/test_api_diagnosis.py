@@ -93,15 +93,28 @@ def test_diagnosis_pilot_itabaiana(client: TestClient) -> None:
     # 4. Engine diagnosis summary validation
     summary = data["summary"]
     VALIDATOR_DIAGNOSIS_DEF.validate(summary)
-    assert summary["rain_total_mm"] == pytest.approx(28.2, rel=1e-2)
-    assert summary["temperature_mean_c"] == pytest.approx(28.51, rel=1e-2)
-    assert summary["water_balance_mm"] == pytest.approx(-189.33, rel=1e-2)
-    assert summary["et0_daily_mean_mm"] is not None
+    assert summary["period_start"] == "2026-10-15"
+    assert summary["period_end"] == "2026-11-07"
+    assert summary["rain_total_mm"] == pytest.approx(27.3, rel=1e-2)
+    assert summary["temperature_mean_c"] == pytest.approx(28.92, rel=1e-2)
+    assert summary["water_balance_mm"] == pytest.approx(-135.95, rel=1e-2)
+    assert summary["et0_daily_mean_mm"] == pytest.approx(7.1, rel=1e-2)
     assert summary["soil_moisture_surface_m3m3"] is not None
     assert summary["soil_moisture_root_kgm2"] is not None
     assert summary["ndvi_mean"] is not None
     assert summary["elevation_m"] is not None
     assert summary["slope_mean_pct"] is not None
+
+    # 4b. Coverage disclosure validation
+    coverage = data["coverage"]
+    assert coverage["period_start"] == "2026-10-15"
+    assert coverage["period_end"] == "2026-11-07"
+    assert coverage["aligned"] is True
+    assert coverage["expected_days"] == 24
+    assert coverage["paired_days"] == 23
+    assert coverage["missing_days"] == 1
+    assert coverage["missing_dates"] == ["2026-11-05"]
+    assert coverage["complete"] is False
 
     # 5. Attributions & domain mapping
     for source_entry in data["sources"]:
@@ -129,15 +142,27 @@ def test_diagnosis_pilot_gloria(client: TestClient) -> None:
 
     summary = data["summary"]
     VALIDATOR_DIAGNOSIS_DEF.validate(summary)
+    assert summary["period_start"] == "2026-10-15"
+    assert summary["period_end"] == "2026-11-07"
     assert summary["rain_total_mm"] == pytest.approx(4.9, rel=1e-2)
-    assert summary["temperature_mean_c"] == pytest.approx(29.58, rel=1e-2)
-    assert summary["water_balance_mm"] == pytest.approx(-216.38, rel=1e-2)
-    assert summary["et0_daily_mean_mm"] is not None
+    assert summary["temperature_mean_c"] == pytest.approx(30.0, rel=1e-2)
+    assert summary["water_balance_mm"] == pytest.approx(-176.6, rel=1e-2)
+    assert summary["et0_daily_mean_mm"] == pytest.approx(7.89, rel=1e-2)
     assert summary["soil_moisture_surface_m3m3"] is not None
     assert summary["soil_moisture_root_kgm2"] is not None
     assert summary["ndvi_mean"] is not None
     assert summary["elevation_m"] is not None
     assert summary["slope_mean_pct"] is not None
+
+    coverage = data["coverage"]
+    assert coverage["period_start"] == "2026-10-15"
+    assert coverage["period_end"] == "2026-11-07"
+    assert coverage["aligned"] is True
+    assert coverage["expected_days"] == 24
+    assert coverage["paired_days"] == 23
+    assert coverage["missing_days"] == 1
+    assert coverage["missing_dates"] == ["2026-11-05"]
+    assert coverage["complete"] is False
 
 
 def test_diagnosis_grid_matching_and_bare_soil(client: TestClient) -> None:
@@ -267,6 +292,8 @@ def test_build_engine_diagnosis_integrates_with_recommend() -> None:
 
     assert plot.id == "sergipe_agreste_itabaiana"
     assert plot.region == "sergipe"
+    assert diagnosis.period_start == "2026-10-15"
+    assert diagnosis.period_end == "2026-11-07"
     assert diagnosis.rain_total_mm is not None
     assert diagnosis.temperature_mean_c is not None
     assert diagnosis.water_balance_mm is not None
@@ -348,10 +375,23 @@ def test_synthetic_tmp_path_handling(tmp_path: Path) -> None:
         "points": {"SE001": {"elevation_m": 120.0}},
     }
 
+    minimal_points = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "id": "SE001",
+                "geometry": {"type": "Point", "coordinates": [-37.425, -10.685]},
+                "properties": {"id": "SE001", "lat": -10.685, "lon": -37.425},
+            }
+        ],
+    }
+
     (sergipe_dir / "power.json").write_text(json.dumps(minimal_power), encoding="utf-8")
     (sergipe_dir / "imerg.json").write_text(json.dumps(minimal_imerg), encoding="utf-8")
     (sergipe_dir / "smap.json").write_text(json.dumps(minimal_smap), encoding="utf-8")
     (sergipe_dir / "srtm.json").write_text(json.dumps(minimal_srtm), encoding="utf-8")
+    (sergipe_dir / "points.geojson").write_text(json.dumps(minimal_points), encoding="utf-8")
 
     res = custom_client.get("/diagnosis?lat=-10.685&lon=-37.425")
     assert res.status_code == 200
@@ -359,6 +399,9 @@ def test_synthetic_tmp_path_handling(tmp_path: Path) -> None:
     assert res_data["plot"]["matched_point"]["id"] == "SE001"
     assert res_data["gldas"] is None
     assert res_data["ndvi"] is None
+    assert res_data["coverage"]["paired_days"] == 1
+    assert res_data["coverage"]["expected_days"] == 3
+    assert res_data["coverage"]["complete"] is False
 
 
 def test_synthetic_modis_fallback_and_bare_soil_windows(
@@ -563,3 +606,401 @@ def test_synthetic_modis_fallback_and_bare_soil_windows(
     assert data["bare_soil_windows"][0]["start"] == "2026-09-01"
     assert data["bare_soil_windows"][0]["end"] == "2026-10-02"
     assert data["bare_soil_windows"][0]["ndvi_mean"] == pytest.approx(0.21, abs=1e-3)
+
+
+def _write_synthetic_snapshot_dir(
+    root_dir: Path,
+    *,
+    points_features: list[dict[str, object]] | None = None,
+    power_points: dict[str, list[dict[str, object]]] | None = None,
+    imerg_points: dict[str, list[dict[str, object]]] | None = None,
+    smap_points: dict[str, list[dict[str, object]]] | None = None,
+    srtm_points: dict[str, dict[str, float | None]] | None = None,
+    power_period: dict[str, str] | None = None,
+    imerg_period: dict[str, str] | None = None,
+    smap_period: dict[str, str] | None = None,
+) -> Path:
+    """Create a schema-valid synthetic Sergipe snapshot directory for regression tests."""
+    sergipe_dir = root_dir / "sergipe"
+    sergipe_dir.mkdir(parents=True, exist_ok=True)
+
+    p_period = power_period or {"start": "2026-10-01", "end": "2026-10-03"}
+    i_period = imerg_period or {"start": "2026-10-01", "end": "2026-10-03"}
+    s_period = smap_period or {"start": "2026-10-01", "end": "2026-10-03"}
+
+    power_payload = {
+        "source": "power",
+        "region": "sergipe",
+        "variables": [
+            {"name": "T2M", "long_name": "Air temperature at 2m", "unit": "°C"},
+            {"name": "T2M_MAX", "long_name": "Max air temperature at 2m", "unit": "°C"},
+            {"name": "ET0_FAO56", "long_name": "Reference evapotranspiration", "unit": "mm/day"},
+            {"name": "WATER_BALANCE", "long_name": "Water balance", "unit": "mm/day"},
+        ],
+        "aggregation": "nearest_cell",
+        "resolution": "0.5°",
+        "period": p_period,
+        "attribution": {
+            "dataset": "POWER",
+            "doi": None,
+            "url": "https://power.larc.nasa.gov/",
+            "notice": None,
+        },
+        "points": power_points if power_points is not None else {},
+    }
+    imerg_payload = {
+        "source": "imerg",
+        "region": "sergipe",
+        "variables": [{"name": "precipitation", "long_name": "Daily precipitation", "unit": "mm/day"}],
+        "aggregation": "cell_mean",
+        "resolution": "0.1°",
+        "period": i_period,
+        "attribution": {
+            "dataset": "IMERG",
+            "doi": "10.5067/GPM/IMERGDF/DAY/07",
+            "url": "https://gpm.nasa.gov/",
+            "notice": None,
+        },
+        "points": imerg_points if imerg_points is not None else {},
+    }
+    smap_payload = {
+        "source": "smap",
+        "region": "sergipe",
+        "variables": [{"name": "soil_moisture", "long_name": "Surface soil moisture", "unit": "m3/m3"}],
+        "aggregation": "cell_mean",
+        "resolution": "9 km",
+        "period": s_period,
+        "attribution": {
+            "dataset": "SMAP",
+            "doi": "10.5067/X2QI1IKQ9NGQ",
+            "url": "https://smap.jpl.nasa.gov/",
+            "notice": None,
+        },
+        "points": smap_points if smap_points is not None else {},
+    }
+    srtm_payload = {
+        "source": "srtm",
+        "region": "sergipe",
+        "variables": [
+            {"name": "elevation_m", "long_name": "Elevation above sea level", "unit": "m"},
+            {"name": "slope_mean_pct", "long_name": "Mean terrain slope", "unit": "%"},
+        ],
+        "aggregation": "window_mean",
+        "resolution": "30 m",
+        "attribution": {
+            "dataset": "SRTM",
+            "doi": None,
+            "url": "https://planetarycomputer.microsoft.com/",
+            "notice": None,
+        },
+        "points": srtm_points if srtm_points is not None else {},
+    }
+
+    VALIDATOR_SERIES.validate(power_payload)
+    VALIDATOR_SERIES.validate(imerg_payload)
+    VALIDATOR_SERIES.validate(smap_payload)
+    VALIDATOR_STATIC.validate(srtm_payload)
+
+    (sergipe_dir / "power.json").write_text(json.dumps(power_payload), encoding="utf-8")
+    (sergipe_dir / "imerg.json").write_text(json.dumps(imerg_payload), encoding="utf-8")
+    (sergipe_dir / "smap.json").write_text(json.dumps(smap_payload), encoding="utf-8")
+    (sergipe_dir / "srtm.json").write_text(json.dumps(srtm_payload), encoding="utf-8")
+
+    if points_features is not None:
+        (sergipe_dir / "points.geojson").write_text(
+            json.dumps({"type": "FeatureCollection", "features": points_features}),
+            encoding="utf-8",
+        )
+
+    return root_dir
+
+
+def test_missing_point_in_source_does_not_leak_unrelated_point(tmp_path: Path) -> None:
+    """When a source lacks the selected point, never return or relabel another point's data."""
+    point_a = {
+        "type": "Feature",
+        "id": "A",
+        "geometry": {"type": "Point", "coordinates": [-37.425, -10.685]},
+        "properties": {"id": "A", "lat": -10.685, "lon": -37.425},
+    }
+    point_b = {
+        "type": "Feature",
+        "id": "B",
+        "geometry": {"type": "Point", "coordinates": [-37.10, -10.20]},
+        "properties": {"id": "B", "lat": -10.20, "lon": -37.10},
+    }
+    shared_power = {
+        "A": [
+            {"time": "2026-10-01", "values": {"T2M": 27.0, "T2M_MAX": 33.0, "ET0_FAO56": 5.0, "WATER_BALANCE": -5.0}},
+            {"time": "2026-10-02", "values": {"T2M": 27.5, "T2M_MAX": 33.5, "ET0_FAO56": 5.0, "WATER_BALANCE": -5.0}},
+            {"time": "2026-10-03", "values": {"T2M": 28.0, "T2M_MAX": 34.0, "ET0_FAO56": 5.0, "WATER_BALANCE": -5.0}},
+        ]
+    }
+    shared_smap = {"A": [{"time": "2026-10-01", "values": {"soil_moisture": 0.14}}]}
+    shared_srtm = {"A": {"elevation_m": 200.0, "slope_mean_pct": 2.5}}
+    imerg_only_b = {
+        "B": [
+            {"time": "2026-10-01", "values": {"precipitation": 99.0}},
+            {"time": "2026-10-02", "values": {"precipitation": 99.0}},
+            {"time": "2026-10-03", "values": {"precipitation": 99.0}},
+        ]
+    }
+
+    # Case 1: Point B has unknown coordinates (absent from points.geojson) and IMERG only has B
+    case1_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "case_unknown_b",
+        points_features=[point_a],
+        power_points=shared_power,
+        imerg_points=imerg_only_b,
+        smap_points=shared_smap,
+        srtm_points=shared_srtm,
+    )
+    client1 = TestClient(create_app(data_dir=case1_dir))
+    res1 = client1.get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res1.status_code == 200, res1.text
+    d1 = res1.json()
+    assert d1["plot"]["matched_point"]["id"] == "A"
+    assert all(pt["values"]["precipitation"] is None for pt in d1["rain"]["points"]["A"])
+    assert d1["summary"]["rain_total_mm"] is None
+    assert d1["summary"]["water_balance_mm"] is None
+    assert d1["coverage"]["aligned"] is False
+    assert d1["coverage"]["paired_days"] == 0
+
+    # Case 2: Point B is known in points.geojson (> 60 km away) and IMERG only has B
+    case2_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "case_known_distant_b",
+        points_features=[point_a, point_b],
+        power_points=shared_power,
+        imerg_points=imerg_only_b,
+        smap_points=shared_smap,
+        srtm_points=shared_srtm,
+    )
+    client2 = TestClient(create_app(data_dir=case2_dir))
+    res2 = client2.get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res2.status_code == 200, res2.text
+    d2 = res2.json()
+    assert d2["plot"]["matched_point"]["id"] == "A"
+    assert all(pt["values"]["precipitation"] is None for pt in d2["rain"]["points"]["A"])
+    assert d2["summary"]["rain_total_mm"] is None
+    assert d2["summary"]["water_balance_mm"] is None
+
+
+def test_unknown_coordinates_and_all_sources_missing_point_return_422(tmp_path: Path) -> None:
+    """Missing coordinates, all sources lacking the point, or nearest point out of range return 422."""
+    obs_b = [{"time": "2026-10-01", "values": {"precipitation": 99.0}}]
+    power_b = [{"time": "2026-10-01", "values": {"T2M": 28.0, "T2M_MAX": 34.0, "ET0_FAO56": 5.0}}]
+    smap_b = [{"time": "2026-10-01", "values": {"soil_moisture": 0.14}}]
+    srtm_b = {"elevation_m": 150.0, "slope_mean_pct": 2.0}
+
+    # 1. No points.geojson / pilots.geojson (unknown coordinates for all point IDs)
+    no_coords_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "no_coords",
+        points_features=None,
+        power_points={"B": power_b},
+        imerg_points={"B": obs_b},
+        smap_points={"B": smap_b},
+        srtm_points={"B": srtm_b},
+    )
+    res_no_coords = TestClient(create_app(data_dir=no_coords_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res_no_coords.status_code == 422
+    assert res_no_coords.json()["error"]["code"] == "no_data"
+
+    # 2. Point A is known at requested coords, but all sources only contain unrelated point B
+    point_a = {
+        "type": "Feature",
+        "id": "A",
+        "geometry": {"type": "Point", "coordinates": [-37.425, -10.685]},
+        "properties": {"id": "A", "lat": -10.685, "lon": -37.425},
+    }
+    all_missing_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "all_missing",
+        points_features=[point_a],
+        power_points={"B": power_b},
+        imerg_points={"B": obs_b},
+        smap_points={"B": smap_b},
+        srtm_points={"B": srtm_b},
+    )
+    res_missing = TestClient(create_app(data_dir=all_missing_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res_missing.status_code == 422
+    assert res_missing.json()["error"]["code"] == "no_data"
+
+    # 3. Nearest known point B is > 25 km away with default radius_km=5.0
+    distant_b = {
+        "type": "Feature",
+        "id": "B",
+        "geometry": {"type": "Point", "coordinates": [-37.90, -9.60]},
+        "properties": {"id": "B", "lat": -9.60, "lon": -37.90},
+    }
+    distant_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "distant_point",
+        points_features=[distant_b],
+        power_points={"B": power_b},
+        imerg_points={"B": obs_b},
+        smap_points={"B": smap_b},
+        srtm_points={"B": srtm_b},
+    )
+    res_distant = TestClient(create_app(data_dir=distant_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res_distant.status_code == 422
+    assert res_distant.json()["error"]["code"] == "no_data"
+
+
+def test_missing_day_paired_alignment_and_coverage_regression(tmp_path: Path) -> None:
+    """Summary aggregates only use explicitly paired dates and disclose missing days."""
+    point_se = {
+        "type": "Feature",
+        "id": "SE001",
+        "geometry": {"type": "Point", "coordinates": [-37.425, -10.685]},
+        "properties": {"id": "SE001", "lat": -10.685, "lon": -37.425},
+    }
+
+    # Case 1: 2026-10-02 has 50 mm rain in IMERG but ET0_FAO56 is None in POWER -> excluded from paired scalars
+    partial_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "partial_missing_day",
+        points_features=[point_se],
+        power_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"T2M": 26.0, "T2M_MAX": 32.0, "ET0_FAO56": 4.0, "WATER_BALANCE": -4.0}},
+                {"time": "2026-10-02", "values": {"T2M": 28.0, "T2M_MAX": 35.0, "ET0_FAO56": None, "WATER_BALANCE": None}},
+                {"time": "2026-10-03", "values": {"T2M": 27.0, "T2M_MAX": 33.0, "ET0_FAO56": 4.0, "WATER_BALANCE": -4.0}},
+            ]
+        },
+        imerg_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"precipitation": 10.0}},
+                {"time": "2026-10-02", "values": {"precipitation": 50.0}},
+                {"time": "2026-10-03", "values": {"precipitation": 10.0}},
+            ]
+        },
+        smap_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"soil_moisture": 0.14}},
+                {"time": "2026-10-03", "values": {"soil_moisture": 0.12}},
+            ]
+        },
+        srtm_points={"SE001": {"elevation_m": 180.0, "slope_mean_pct": 3.0}},
+    )
+    res = TestClient(create_app(data_dir=partial_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res.status_code == 200, res.text
+    data = res.json()
+
+    summary = data["summary"]
+    VALIDATOR_DIAGNOSIS_DEF.validate(summary)
+    assert summary["period_start"] == "2026-10-01"
+    assert summary["period_end"] == "2026-10-03"
+    assert summary["rain_total_mm"] == pytest.approx(20.0)
+    assert summary["rain_daily_mean_mm"] == pytest.approx(10.0)
+    assert summary["et0_daily_mean_mm"] == pytest.approx(4.0)
+    assert summary["water_balance_mm"] == pytest.approx(12.0)
+    assert summary["temperature_mean_c"] == pytest.approx(26.5)
+    assert summary["temperature_max_c"] == pytest.approx(33.0)
+    assert summary["soil_moisture_surface_m3m3"] == pytest.approx(0.13)
+
+    cov = data["coverage"]
+    assert cov["aligned"] is True
+    assert cov["complete"] is False
+    assert cov["expected_days"] == 3
+    assert cov["paired_days"] == 2
+    assert cov["missing_days"] == 1
+    assert cov["missing_dates"] == ["2026-10-02"]
+    assert any(s.get("notice") for s in summary["sources"])
+
+    # Case 2: Non-overlapping non-null days within the same period -> zero paired days -> aggregates unknown
+    unpaired_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "unpaired_same_period",
+        points_features=[point_se],
+        power_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"T2M": None, "T2M_MAX": None, "ET0_FAO56": None}},
+                {"time": "2026-10-02", "values": {"T2M": 28.0, "T2M_MAX": 34.0, "ET0_FAO56": 4.0}},
+            ]
+        },
+        imerg_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"precipitation": 10.0}},
+                {"time": "2026-10-02", "values": {"precipitation": None}},
+            ]
+        },
+        smap_points={"SE001": [{"time": "2026-10-01", "values": {"soil_moisture": 0.14}}]},
+        srtm_points={"SE001": {"elevation_m": 180.0, "slope_mean_pct": 3.0}},
+    )
+    res_unpaired = TestClient(create_app(data_dir=unpaired_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res_unpaired.status_code == 200, res_unpaired.text
+    du = res_unpaired.json()
+    assert du["coverage"]["aligned"] is False
+    assert du["coverage"]["paired_days"] == 0
+    assert du["summary"]["rain_total_mm"] is None
+    assert du["summary"]["et0_daily_mean_mm"] is None
+    assert du["summary"]["water_balance_mm"] is None
+    assert du["summary"]["temperature_mean_c"] is None
+
+
+def test_disjoint_source_periods_keep_aggregates_unknown(tmp_path: Path) -> None:
+    """Disjoint source date ranges keep daily aggregates None instead of mixing periods."""
+    point_se = {
+        "type": "Feature",
+        "id": "SE001",
+        "geometry": {"type": "Point", "coordinates": [-37.425, -10.685]},
+        "properties": {"id": "SE001", "lat": -10.685, "lon": -37.425},
+    }
+    disjoint_dir = _write_synthetic_snapshot_dir(
+        tmp_path / "disjoint_periods",
+        points_features=[point_se],
+        power_period={"start": "2026-11-01", "end": "2026-11-03"},
+        imerg_period={"start": "2026-10-01", "end": "2026-10-03"},
+        smap_period={"start": "2026-10-15", "end": "2026-10-17"},
+        power_points={
+            "SE001": [
+                {"time": "2026-11-01", "values": {"T2M": 28.0, "T2M_MAX": 34.0, "ET0_FAO56": 5.0}},
+                {"time": "2026-11-02", "values": {"T2M": 28.5, "T2M_MAX": 34.5, "ET0_FAO56": 5.2}},
+                {"time": "2026-11-03", "values": {"T2M": 29.0, "T2M_MAX": 35.0, "ET0_FAO56": 5.4}},
+            ]
+        },
+        imerg_points={
+            "SE001": [
+                {"time": "2026-10-01", "values": {"precipitation": 10.0}},
+                {"time": "2026-10-02", "values": {"precipitation": 12.0}},
+                {"time": "2026-10-03", "values": {"precipitation": 8.0}},
+            ]
+        },
+        smap_points={
+            "SE001": [
+                {"time": "2026-10-15", "values": {"soil_moisture": 0.14}},
+                {"time": "2026-10-16", "values": {"soil_moisture": 0.15}},
+            ]
+        },
+        srtm_points={"SE001": {"elevation_m": 210.0, "slope_mean_pct": 4.0}},
+    )
+
+    res = TestClient(create_app(data_dir=disjoint_dir)).get("/diagnosis?lat=-10.685&lon=-37.425")
+    assert res.status_code == 200, res.text
+    data = res.json()
+
+    cov = data["coverage"]
+    assert cov["aligned"] is False
+    assert cov["complete"] is False
+    assert cov["paired_days"] == 0
+    assert cov["period_start"] is None
+    assert cov["period_end"] is None
+
+    summary = data["summary"]
+    VALIDATOR_DIAGNOSIS_DEF.validate(summary)
+    for field in (
+        "rain_total_mm",
+        "rain_daily_mean_mm",
+        "et0_daily_mean_mm",
+        "water_balance_mm",
+        "temperature_mean_c",
+        "temperature_max_c",
+        "soil_moisture_surface_m3m3",
+    ):
+        assert summary[field] is None
+
+    assert summary["elevation_m"] == pytest.approx(210.0)
+    assert summary["slope_mean_pct"] == pytest.approx(4.0)
+    assert any(s.get("notice") for s in summary["sources"])
+
+    # Also verify build_engine_diagnosis integrates cleanly with unknown aggregates
+    _, engine_diag = build_engine_diagnosis(lat=-10.685, lon=-37.425, data_dir=disjoint_dir)
+    assert engine_diag.rain_total_mm is None
+    assert engine_diag.water_balance_mm is None
+    assert engine_diag.temperature_mean_c is None

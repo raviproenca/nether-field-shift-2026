@@ -23,6 +23,7 @@ DEFAULT_DATA_DIR = ROOT / "apps" / "web" / "public" / "data"
 SERGIPE_BBOX = PRESETS["sergipe"]
 MAX_RADIUS_KM = 50.0
 PILOT_MATCH_RADIUS_KM = 1.5
+MAX_GRID_MATCH_DISTANCE_KM = 25.0
 DEFAULT_BARE_SOIL_NDVI_MAX = 0.30
 
 # Memory cache for parsed JSON files keyed by (resolved_path, mtime_ns, file_size)
@@ -186,6 +187,36 @@ class DiagnosisSummary(BaseModel):
     sources: list[SourceAttributionResponse] = Field(default_factory=list)
 
 
+class DomainCoverage(BaseModel):
+    """Coverage statistics for a single domain relative to its source and the aligned period."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source: str
+    period: PeriodSchema | None = None
+    expected_days: int = 0
+    observed_days: int = 0
+    paired_days: int = 0
+    missing_days: int = 0
+    complete: bool = False
+
+
+class DiagnosisCoverage(BaseModel):
+    """Summary alignment and completeness disclosure across daily domains."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    period_start: str | None = None
+    period_end: str | None = None
+    aligned: bool
+    complete: bool
+    expected_days: int
+    paired_days: int
+    missing_days: int
+    missing_dates: list[str] = Field(default_factory=list)
+    domains: dict[str, DomainCoverage] = Field(default_factory=dict)
+
+
 class DiagnosisResponse(BaseModel):
     """Root response model for the GET /diagnosis endpoint."""
 
@@ -202,6 +233,7 @@ class DiagnosisResponse(BaseModel):
     terrain: StaticDataResponse
     bare_soil_windows: list[BareSoilWindowResponse]
     summary: DiagnosisSummary
+    coverage: DiagnosisCoverage
     sources: list[SourceAttributionResponse]
     domain_sources: dict[str, DomainSourceSpec]
 
@@ -360,6 +392,23 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return r * c
 
 
+def _is_valid_coord(lat_val: Any, lon_val: Any) -> tuple[bool, float, float]:
+    """Validate finite latitude in [-90, 90] and longitude in [-180, 180]."""
+    try:
+        lat_f = float(lat_val)
+        lon_f = float(lon_val)
+        if (
+            math.isfinite(lat_f)
+            and math.isfinite(lon_f)
+            and -90.0 <= lat_f <= 90.0
+            and -180.0 <= lon_f <= 180.0
+        ):
+            return True, lat_f, lon_f
+    except (TypeError, ValueError):
+        pass
+    return False, 0.0, 0.0
+
+
 def load_points_and_pilots(
     sergipe_dir: Path,
 ) -> tuple[dict[str, tuple[float, float, str | None]], list[dict[str, Any]]]:
@@ -373,21 +422,38 @@ def load_points_and_pilots(
         try:
             p_data = load_json_snapshot(pilots_file)
             for feat in p_data.get("features", []):
-                props = feat.get("properties", {})
+                if not isinstance(feat, dict):
+                    continue
+                props = feat.get("properties") or {}
                 pid = props.get("id") or feat.get("id")
-                coords = feat.get("geometry", {}).get("coordinates", [])
-                plat = props.get("lat", coords[1] if len(coords) >= 2 else None)
-                plon = props.get("lon", coords[0] if len(coords) >= 2 else None)
-                if pid and plat is not None and plon is not None:
-                    pilot_entry = {
-                        "id": str(pid),
-                        "name": props.get("name"),
-                        "lat": float(plat),
-                        "lon": float(plon),
-                        "radius_km": float(props.get("radius_km", 5.0)),
-                    }
-                    pilots_list.append(pilot_entry)
-                    grid_pts[str(pid)] = (float(plat), float(plon), props.get("name"))
+                geom = feat.get("geometry") or {}
+                coords = geom.get("coordinates") if isinstance(geom, dict) else None
+                plat = props.get("lat")
+                if plat is None and isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    plat = coords[1]
+                plon = props.get("lon")
+                if plon is None and isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    plon = coords[0]
+
+                if pid is not None and plat is not None and plon is not None:
+                    valid, lat_f, lon_f = _is_valid_coord(plat, plon)
+                    if valid:
+                        raw_r = props.get("radius_km", 5.0)
+                        try:
+                            radius_f = float(raw_r)
+                            if not math.isfinite(radius_f) or radius_f <= 0:
+                                radius_f = 5.0
+                        except (TypeError, ValueError):
+                            radius_f = 5.0
+                        pilot_entry = {
+                            "id": str(pid),
+                            "name": props.get("name"),
+                            "lat": lat_f,
+                            "lon": lon_f,
+                            "radius_km": radius_f,
+                        }
+                        pilots_list.append(pilot_entry)
+                        grid_pts[str(pid)] = (lat_f, lon_f, props.get("name"))
         except Exception:
             pass
 
@@ -397,23 +463,23 @@ def load_points_and_pilots(
         try:
             pt_data = load_json_snapshot(points_file)
             for feat in pt_data.get("features", []):
-                props = feat.get("properties", {})
-                ptid = str(props.get("id") or feat.get("id"))
-                coords = feat.get("geometry", {}).get("coordinates", [])
-                ptlat = props.get("lat", coords[1] if len(coords) >= 2 else None)
-                ptlon = props.get("lon", coords[0] if len(coords) >= 2 else None)
-                if ptid and ptlat is not None and ptlon is not None:
-                    grid_pts[ptid] = (float(ptlat), float(ptlon), props.get("name"))
-        except Exception:
-            pass
+                if not isinstance(feat, dict):
+                    continue
+                props = feat.get("properties") or {}
+                ptid = props.get("id") or feat.get("id")
+                geom = feat.get("geometry") or {}
+                coords = geom.get("coordinates") if isinstance(geom, dict) else None
+                ptlat = props.get("lat")
+                if ptlat is None and isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    ptlat = coords[1]
+                ptlon = props.get("lon")
+                if ptlon is None and isinstance(coords, (list, tuple)) and len(coords) >= 2:
+                    ptlon = coords[0]
 
-    # 3. Fallback: synthesize grid points if points.geojson was absent
-    if not grid_pts:
-        try:
-            from src.data.snapshots import grid_points
-
-            for pt in grid_points(SERGIPE_BBOX, 0.25, "SE"):
-                grid_pts[pt.id] = (pt.lat, pt.lon, None)
+                if ptid is not None and ptlat is not None and ptlon is not None:
+                    valid, lat_f, lon_f = _is_valid_coord(ptlat, ptlon)
+                    if valid:
+                        grid_pts[str(ptid)] = (lat_f, lon_f, props.get("name"))
         except Exception:
             pass
 
@@ -426,9 +492,10 @@ def find_matched_point(
     grid_pts: dict[str, tuple[float, float, str | None]],
     pilots_list: list[dict[str, Any]],
     available_point_ids: set[str] | None = None,
+    radius_km: float = 5.0,
 ) -> dict[str, Any]:
-    """Select the closest pilot (within 1.5 km) or nearest grid point."""
-    # 1. Pilot matching within 1.5 km
+    """Select the closest pilot (within 1.5 km) or nearest grid point within maximum distance."""
+    # 1. Pilot matching within PILOT_MATCH_RADIUS_KM (1.5 km)
     closest_pilot: dict[str, Any] | None = None
     min_pilot_dist = float("inf")
     for p in pilots_list:
@@ -448,17 +515,11 @@ def find_matched_point(
         }
 
     # 2. Nearest grid point matching
-    candidates = grid_pts
-    if available_point_ids is not None:
-        filtered = {k: v for k, v in grid_pts.items() if k in available_point_ids}
-        if filtered:
-            candidates = filtered
-
-    if not candidates:
+    if not grid_pts:
         raise APIError(
             status_code=422,
             code="no_data",
-            message="No grid or pilot points available in snapshot data.",
+            message="No grid or pilot points with known coordinates available in snapshot data.",
         )
 
     pilot_ids = {p["id"] for p in pilots_list}
@@ -466,7 +527,7 @@ def find_matched_point(
     min_grid_dist = float("inf")
 
     # Prefer non-pilot grid point
-    for pt_id, (pt_lat, pt_lon, _) in candidates.items():
+    for pt_id, (pt_lat, pt_lon, _) in grid_pts.items():
         if pt_id in pilot_ids:
             continue
         dist = haversine_km(lat, lon, pt_lat, pt_lon)
@@ -474,15 +535,33 @@ def find_matched_point(
             min_grid_dist = dist
             best_id = pt_id
 
-    # Fallback to any candidate if only pilot points were present in candidates
+    # Fallback to any point in grid_pts if only pilot points exist
     if best_id is None:
-        for pt_id, (pt_lat, pt_lon, _) in candidates.items():
+        for pt_id, (pt_lat, pt_lon, _) in grid_pts.items():
             dist = haversine_km(lat, lon, pt_lat, pt_lon)
             if dist < min_grid_dist:
                 min_grid_dist = dist
                 best_id = pt_id
 
-    pt_lat, pt_lon, pt_name = candidates[best_id]
+    if best_id is None:
+        raise APIError(
+            status_code=422,
+            code="no_data",
+            message="No grid or pilot points with known coordinates available in snapshot data.",
+        )
+
+    max_allowed_km = max(radius_km, MAX_GRID_MATCH_DISTANCE_KM)
+    if min_grid_dist > max_allowed_km:
+        raise APIError(
+            status_code=422,
+            code="no_data",
+            message=(
+                f"Nearest known point '{best_id}' is {min_grid_dist:.2f} km away, "
+                f"exceeding maximum match distance {max_allowed_km:.2f} km."
+            ),
+        )
+
+    pt_lat, pt_lon, pt_name = grid_pts[best_id]
     return {
         "id": best_id,
         "name": pt_name,
@@ -496,33 +575,14 @@ def find_matched_point(
 def extract_point_data_for_source(
     source_dict: dict[str, Any],
     matched_point: dict[str, Any],
-    grid_pts: dict[str, tuple[float, float, str | None]],
+    grid_pts: dict[str, tuple[float, float, str | None]] | None = None,
 ) -> Any:
-    """Extract observations for matched point, falling back to nearest point in that file."""
+    """Extract observations strictly for the matched point ID, returning None if absent."""
     points_map = source_dict.get("points", {})
+    if not isinstance(points_map, dict):
+        return None
     matched_id = matched_point["id"]
-    if matched_id in points_map:
-        return points_map[matched_id]
-
-    target_lat = matched_point["lat"]
-    target_lon = matched_point["lon"]
-    best_id: str | None = None
-    min_dist = float("inf")
-
-    for pt_id in points_map.keys():
-        if pt_id in grid_pts:
-            pt_lat, pt_lon, _ = grid_pts[pt_id]
-            dist = haversine_km(target_lat, target_lon, pt_lat, pt_lon)
-            if dist < min_dist:
-                min_dist = dist
-                best_id = pt_id
-
-    if best_id is not None:
-        return points_map[best_id]
-
-    if points_map:
-        return next(iter(points_map.values()))
-    return None
+    return points_map.get(matched_id)
 
 
 def _count_non_null_ndvi(points: list[dict[str, Any]] | None) -> int:
@@ -689,7 +749,7 @@ def slice_series(
         resolution=str(source_dict.get("resolution", "")),
         period=period_model,
         attribution=attr_model,
-        points={matched_point_id: series_points},
+        points={matched_point_id: series_points} if series_points else {},
     )
 
 
@@ -718,7 +778,7 @@ def slice_static(
 
     pt_vals: dict[str, float | None] = {}
     for vm in var_models:
-        val = point_data.get(vm.name) if point_data else None
+        val = point_data.get(vm.name) if isinstance(point_data, dict) else None
         pt_vals[vm.name] = float(val) if val is not None else None
 
     return StaticDataResponse(
@@ -802,6 +862,7 @@ def compute_bare_soil_windows(
 def build_source_attribution(
     source_id: str,
     snapshot_dict: dict[str, Any] | None,
+    notice_suffix: str | None = None,
 ) -> SourceAttribution:
     """Build a SourceAttribution dataclass using snapshot attribution and catalog metadata."""
     catalog_entry = SOURCES_BY_ID.get(source_id)
@@ -816,11 +877,19 @@ def build_source_attribution(
         or (catalog_entry.attribution.url if catalog_entry else "https://earthdata.nasa.gov/")
     )
     doi = raw_attr.get("doi") if "doi" in raw_attr else (catalog_entry.attribution.doi if catalog_entry else None)
-    notice = (
+    base_notice = (
         raw_attr.get("notice")
         if "notice" in raw_attr
         else (catalog_entry.attribution.notice if catalog_entry else None)
     )
+
+    combined_notice: str | None = None
+    if base_notice and notice_suffix:
+        combined_notice = f"{base_notice} {notice_suffix}".strip()
+    elif base_notice:
+        combined_notice = str(base_notice).strip()
+    elif notice_suffix:
+        combined_notice = str(notice_suffix).strip()
 
     return SourceAttribution(
         source=source_id,
@@ -828,7 +897,7 @@ def build_source_attribution(
         nasa=True,
         url=str(url),
         doi=str(doi) if doi else None,
-        notice=str(notice) if notice else None,
+        notice=combined_notice,
     )
 
 
@@ -883,6 +952,83 @@ def _collect_non_null_values(
     return result
 
 
+def _extract_dated_values(
+    points: Sequence[SeriesPoint | dict[str, Any]],
+    var_names: tuple[str, ...],
+) -> dict[str, float]:
+    """Map each ISO date string (time) to its non-null finite float value matching var_names."""
+    result: dict[str, float] = {}
+    for p in points:
+        t = p.time if isinstance(p, SeriesPoint) else p.get("time")
+        if not t or not isinstance(t, str):
+            continue
+        vals = p.values if isinstance(p, SeriesPoint) else p.get("values", {})
+        if not isinstance(vals, dict):
+            continue
+        for name in var_names:
+            if name in vals and vals[name] is not None:
+                try:
+                    val = float(vals[name])
+                    if math.isfinite(val):
+                        result[t] = val
+                        break
+                except (ValueError, TypeError):
+                    pass
+    return result
+
+
+def _calendar_dates_between(start_str: str, end_str: str) -> list[str]:
+    """Return all inclusive ISO calendar date strings between start_str and end_str."""
+    try:
+        start_d = date.fromisoformat(start_str)
+        end_d = date.fromisoformat(end_str)
+    except (ValueError, TypeError):
+        return []
+    if start_d > end_d:
+        return []
+    dates: list[str] = []
+    curr = start_d
+    one_day = timedelta(days=1)
+    while curr <= end_d:
+        dates.append(curr.isoformat())
+        curr += one_day
+    return dates
+
+
+def _build_domain_coverage(
+    source_name: str,
+    source_period: dict[str, str] | None,
+    val_map: dict[str, float],
+    overlap_dates: list[str],
+) -> DomainCoverage:
+    """Build DomainCoverage statistics for a single domain."""
+    if not source_period or not source_period.get("start") or not source_period.get("end"):
+        return DomainCoverage(
+            source=source_name,
+            period=None,
+            expected_days=0,
+            observed_days=0,
+            paired_days=0,
+            missing_days=0,
+            complete=False,
+        )
+    own_dates = _calendar_dates_between(source_period["start"], source_period["end"])
+    expected_days = len(own_dates)
+    observed_days = len(val_map)
+    paired_days = len([d for d in overlap_dates if d in val_map])
+    missing_days = max(0, expected_days - observed_days)
+    complete = (expected_days > 0 and observed_days >= expected_days)
+    return DomainCoverage(
+        source=source_name,
+        period=PeriodSchema(start=source_period["start"], end=source_period["end"]),
+        expected_days=expected_days,
+        observed_days=observed_days,
+        paired_days=paired_days,
+        missing_days=missing_days,
+        complete=complete,
+    )
+
+
 def _compute_summary_metrics(
     matched_id: str,
     rain_series: SeriesData,
@@ -893,43 +1039,162 @@ def _compute_summary_metrics(
     gldas_series: SeriesData | None,
     ndvi_series: SeriesData | None,
     terrain_static: StaticDataResponse,
-    daily_sources: list[dict[str, Any]],
-) -> tuple[str, str, dict[str, float | None]]:
-    """Compute period_start, period_end, and all summary scalar indicators."""
-    rain_pts = rain_series.points.get(matched_id, [])
-    rain_vals = _collect_non_null_values(rain_pts, ("precipitation", "precipitation_mm"))
-    rain_total = round(sum(rain_vals), 2) if rain_vals else None
-    rain_mean = round(sum(rain_vals) / len(rain_vals), 2) if rain_vals else None
-
-    temp_pts = temperature_series.points.get(matched_id, [])
-    temp_vals = _collect_non_null_values(temp_pts, ("T2M",))
-    temp_max_vals = _collect_non_null_values(temp_pts, ("T2M_MAX",))
-    temp_mean = round(sum(temp_vals) / len(temp_vals), 2) if temp_vals else None
-    temp_max = (
-        round(max(temp_max_vals or temp_vals), 2)
-        if (temp_max_vals or temp_vals)
+    power_data: dict[str, Any],
+    imerg_data: dict[str, Any],
+    smap_data: dict[str, Any],
+    power_pt: list[dict[str, Any]] | None,
+    imerg_pt: list[dict[str, Any]] | None,
+    smap_pt: list[dict[str, Any]] | None,
+    gldas_pt: list[dict[str, Any]] | None = None,
+    ndvi_pt: list[dict[str, Any]] | None = None,
+) -> tuple[str, str, dict[str, float | None], DiagnosisCoverage, dict[str, str]]:
+    """Compute period_start, period_end, summary scalar indicators, coverage disclosure, and notices."""
+    rain_period = (
+        imerg_data.get("period")
+        if (imerg_pt is not None and imerg_data.get("period") and imerg_data["period"].get("start") and imerg_data["period"].get("end"))
+        else None
+    )
+    power_period = (
+        power_data.get("period")
+        if (power_pt is not None and power_data.get("period") and power_data["period"].get("start") and power_data["period"].get("end"))
+        else None
+    )
+    smap_period = (
+        smap_data.get("period")
+        if (smap_pt is not None and smap_data.get("period") and smap_data["period"].get("start") and smap_data["period"].get("end"))
         else None
     )
 
-    et0_pts = et0_series.points.get(matched_id, [])
-    et0_vals = _collect_non_null_values(et0_pts, ("ET0_FAO56", "et0", "ET0"))
-    et0_mean = round(sum(et0_vals) / len(et0_vals), 2) if et0_vals else None
+    power_var_names = {v.get("name") for v in power_data.get("variables", []) if isinstance(v, dict)}
+    et0_declared = bool(power_var_names & {"ET0_FAO56", "et0", "ET0"})
 
-    wb_pts = water_balance_series.points.get(matched_id, [])
-    wb_vals = _collect_non_null_values(wb_pts, ("WATER_BALANCE", "water_balance"))
-    if wb_vals:
-        water_balance = round(sum(wb_vals), 2)
-    elif rain_total is not None and et0_vals:
-        water_balance = round(rain_total - sum(et0_vals), 2)
+    rain_map = (
+        _extract_dated_values(rain_series.points.get(matched_id, []), ("precipitation", "precipitation_mm"))
+        if imerg_pt is not None
+        else {}
+    )
+    temp_map = (
+        _extract_dated_values(temperature_series.points.get(matched_id, []), ("T2M",))
+        if power_pt is not None
+        else {}
+    )
+    temp_max_map = (
+        _extract_dated_values(temperature_series.points.get(matched_id, []), ("T2M_MAX",))
+        if power_pt is not None
+        else {}
+    )
+    et0_map = (
+        _extract_dated_values(et0_series.points.get(matched_id, []), ("ET0_FAO56", "et0", "ET0"))
+        if (power_pt is not None and et0_declared)
+        else {}
+    )
+    smap_map = (
+        _extract_dated_values(soil_moisture_series.points.get(matched_id, []), ("soil_moisture", "sm_surface"))
+        if smap_pt is not None
+        else {}
+    )
+
+    if (
+        rain_period
+        and power_period
+        and rain_period.get("start")
+        and power_period.get("start")
+        and rain_period.get("end")
+        and power_period.get("end")
+    ):
+        overlap_start = max(rain_period["start"], power_period["start"])
+        overlap_end = min(rain_period["end"], power_period["end"])
+        periods_overlap = overlap_start <= overlap_end
     else:
-        water_balance = None
+        overlap_start = None
+        overlap_end = None
+        periods_overlap = False
 
-    sm_pts = soil_moisture_series.points.get(matched_id, [])
-    sm_vals = _collect_non_null_values(sm_pts, ("soil_moisture", "sm_surface"))
-    sm_surface = round(sum(sm_vals) / len(sm_vals), 3) if sm_vals else None
+    if periods_overlap and overlap_start and overlap_end:
+        overlap_calendar = _calendar_dates_between(overlap_start, overlap_end)
+        expected_days = len(overlap_calendar)
+        if et0_declared:
+            paired_dates = [d for d in overlap_calendar if d in rain_map and d in temp_map and d in et0_map]
+        else:
+            paired_dates = [d for d in overlap_calendar if d in rain_map and d in temp_map]
+        paired_days = len(paired_dates)
+        missing_dates = [d for d in overlap_calendar if d not in set(paired_dates)]
+        missing_days = len(missing_dates)
+    else:
+        overlap_calendar = []
+        expected_days = 0
+        paired_dates = []
+        paired_days = 0
+        missing_dates = []
+        missing_days = 0
+
+    if (not periods_overlap) or paired_days == 0:
+        aligned = False
+        complete = False
+        rain_total = None
+        rain_mean = None
+        et0_mean = None
+        water_balance = None
+        temp_mean = None
+        temp_max = None
+        sm_surface = None
+
+        active_periods = [
+            p for p in (power_period, rain_period, smap_period)
+            if p and p.get("start") and p.get("end")
+        ]
+        if active_periods:
+            best_period = max(active_periods, key=lambda p: (str(p.get("end")), str(p.get("start"))))
+            period_start = str(best_period["start"])
+            period_end = str(best_period["end"])
+        else:
+            period_start = "2026-01-01"
+            period_end = "2026-01-01"
+        if period_start > period_end:
+            period_end = period_start
+
+        cov_period_start = overlap_start if periods_overlap else None
+        cov_period_end = overlap_end if periods_overlap else None
+    else:
+        aligned = True
+        period_start = overlap_start  # type: ignore[assignment]
+        period_end = overlap_end  # type: ignore[assignment]
+        sources_same_period = (
+            rain_period is not None
+            and power_period is not None
+            and rain_period.get("start") == overlap_start
+            and rain_period.get("end") == overlap_end
+            and power_period.get("start") == overlap_start
+            and power_period.get("end") == overlap_end
+        )
+        complete = (missing_days == 0) and sources_same_period
+
+        rain_vals = [rain_map[d] for d in paired_dates]
+        rain_total = round(sum(rain_vals), 2)
+        rain_mean = round(sum(rain_vals) / paired_days, 2)
+
+        temp_vals = [temp_map[d] for d in paired_dates]
+        temp_mean = round(sum(temp_vals) / paired_days, 2)
+
+        tmax_vals = [temp_max_map[d] for d in paired_dates if d in temp_max_map]
+        temp_max = round(max(tmax_vals), 2) if tmax_vals else None
+
+        if et0_declared:
+            et0_vals = [et0_map[d] for d in paired_dates]
+            et0_mean = round(sum(et0_vals) / paired_days, 2)
+            water_balance = round(sum(rain_map[d] - et0_map[d] for d in paired_dates), 2)
+        else:
+            et0_mean = None
+            water_balance = None
+
+        aligned_smap = [smap_map[d] for d in overlap_calendar if d in smap_map]
+        sm_surface = round(sum(aligned_smap) / len(aligned_smap), 3) if aligned_smap else None
+
+        cov_period_start = overlap_start
+        cov_period_end = overlap_end
 
     sm_root: float | None = None
-    if gldas_series is not None:
+    if gldas_series is not None and gldas_pt is not None:
         gl_pts = gldas_series.points.get(matched_id, [])
         root_vals = _collect_non_null_values(
             gl_pts,
@@ -939,7 +1204,7 @@ def _compute_summary_metrics(
             sm_root = round(sum(root_vals) / len(root_vals), 2)
 
     ndvi_mean: float | None = None
-    if ndvi_series is not None:
+    if ndvi_series is not None and ndvi_pt is not None:
         nv_pts = ndvi_series.points.get(matched_id, [])
         nv_vals = _collect_non_null_values(nv_pts, ("NDVI", "ndvi"))
         if nv_vals:
@@ -949,20 +1214,42 @@ def _compute_summary_metrics(
     elevation_m = terrain_pts.get("elevation_m")
     slope_mean_pct = terrain_pts.get("slope_mean_pct")
 
-    starts = [
-        s["period"]["start"]
-        for s in daily_sources
-        if s and s.get("period") and s["period"].get("start")
-    ]
-    ends = [
-        s["period"]["end"]
-        for s in daily_sources
-        if s and s.get("period") and s["period"].get("end")
-    ]
-    period_start = min(starts) if starts else "2026-01-01"
-    period_end = max(ends) if ends else period_start
-    if period_start > period_end:
-        period_end = period_start
+    domains: dict[str, DomainCoverage] = {
+        "rain": _build_domain_coverage("imerg", rain_period, rain_map, overlap_calendar),
+        "temperature": _build_domain_coverage("power", power_period, temp_map, overlap_calendar),
+        "soil_moisture": _build_domain_coverage("smap", smap_period, smap_map, overlap_calendar),
+    }
+    if et0_declared:
+        domains["et0"] = _build_domain_coverage("power", power_period, et0_map, overlap_calendar)
+        wb_map = {d: rain_map[d] - et0_map[d] for d in rain_map if d in et0_map}
+        domains["water_balance"] = _build_domain_coverage("power", power_period, wb_map, overlap_calendar)
+
+    coverage_model = DiagnosisCoverage(
+        period_start=cov_period_start,
+        period_end=cov_period_end,
+        aligned=aligned,
+        complete=complete,
+        expected_days=expected_days,
+        paired_days=paired_days,
+        missing_days=missing_days,
+        missing_dates=missing_dates,
+        domains=domains,
+    )
+
+    coverage_notice_by_source: dict[str, str] = {}
+    if not aligned:
+        disjoint_msg = (
+            "Disjoint or unpaired daily source periods; summary aggregates kept unknown (null)."
+        )
+        for s in ("imerg", "power", "smap"):
+            coverage_notice_by_source[s] = disjoint_msg
+    elif not complete:
+        partial_msg = (
+            f"Aligned summary period {period_start}..{period_end}: "
+            f"{paired_days}/{expected_days} paired days ({missing_days} missing)."
+        )
+        for s in ("imerg", "power", "smap"):
+            coverage_notice_by_source[s] = partial_msg
 
     scalars = {
         "rain_total_mm": rain_total,
@@ -977,7 +1264,8 @@ def _compute_summary_metrics(
         "elevation_m": elevation_m,
         "slope_mean_pct": slope_mean_pct,
     }
-    return period_start, period_end, scalars
+
+    return period_start, period_end, scalars, coverage_model, coverage_notice_by_source
 
 
 # ---------------------------------------------------------------------------
@@ -1017,7 +1305,14 @@ def _load_and_process_diagnosis(
     # Spatial matching
     grid_pts, pilots_list = load_points_and_pilots(sergipe_dir)
     available_ids = set(power_data.get("points", {}).keys())
-    matched_point = find_matched_point(lat, lon, grid_pts, pilots_list, available_ids)
+    matched_point = find_matched_point(
+        lat,
+        lon,
+        grid_pts,
+        pilots_list,
+        available_ids,
+        radius_km=radius_km,
+    )
     matched_id = matched_point["id"]
 
     # Extract point data
@@ -1034,6 +1329,13 @@ def _load_and_process_diagnosis(
         if gldas_data is not None
         else None
     )
+
+    if imerg_pt is None and smap_pt is None and power_pt is None and srtm_pt is None:
+        raise APIError(
+            status_code=422,
+            code="no_data",
+            message=f"No snapshot data available for matched point '{matched_id}'.",
+        )
 
     # Domain series slices
     rain_series = slice_series(
@@ -1113,7 +1415,13 @@ def _load_and_process_diagnosis(
     )
 
     # Summary metrics
-    period_start, period_end, scalars = _compute_summary_metrics(
+    (
+        period_start,
+        period_end,
+        scalars,
+        coverage_model,
+        coverage_notice_by_source,
+    ) = _compute_summary_metrics(
         matched_id=matched_id,
         rain_series=rain_series,
         temperature_series=temperature_series,
@@ -1123,20 +1431,27 @@ def _load_and_process_diagnosis(
         gldas_series=gldas_series,
         ndvi_series=ndvi_series,
         terrain_static=terrain_static,
-        daily_sources=[power_data, imerg_data, smap_data],
+        power_data=power_data,
+        imerg_data=imerg_data,
+        smap_data=smap_data,
+        power_pt=power_pt,
+        imerg_pt=imerg_pt,
+        smap_pt=smap_pt,
+        gldas_pt=gldas_pt,
+        ndvi_pt=ndvi_pt,
     )
 
     # Source Attributions
     source_attributions: list[SourceAttribution] = [
-        build_source_attribution("imerg", imerg_data),
-        build_source_attribution("smap", smap_data),
-        build_source_attribution("power", power_data),
-        build_source_attribution("srtm", srtm_data),
+        build_source_attribution("imerg", imerg_data, coverage_notice_by_source.get("imerg")),
+        build_source_attribution("smap", smap_data, coverage_notice_by_source.get("smap")),
+        build_source_attribution("power", power_data, coverage_notice_by_source.get("power")),
+        build_source_attribution("srtm", srtm_data, coverage_notice_by_source.get("srtm")),
     ]
     if ndvi_data is not None and ndvi_source is not None:
-        source_attributions.append(build_source_attribution(ndvi_source, ndvi_data))
+        source_attributions.append(build_source_attribution(ndvi_source, ndvi_data, coverage_notice_by_source.get(ndvi_source)))
     if gldas_data is not None:
-        source_attributions.append(build_source_attribution("gldas", gldas_data))
+        source_attributions.append(build_source_attribution("gldas", gldas_data, coverage_notice_by_source.get("gldas")))
 
     domain_sources: dict[str, DomainSourceSpec] = {
         "rain": DomainSourceSpec(source="imerg", nasa=True),
@@ -1234,6 +1549,7 @@ def _load_and_process_diagnosis(
         "bare_windows": bare_windows,
         "bare_windows_responses": bare_windows_responses,
         "summary_model": summary_model,
+        "coverage": coverage_model,
         "source_attributions": source_attributions,
         "source_attribution_responses": source_attribution_responses,
         "domain_sources": domain_sources,
@@ -1283,6 +1599,7 @@ def build_diagnosis_response(
         terrain=result["terrain"],
         bare_soil_windows=result["bare_windows_responses"],
         summary=result["summary_model"],
+        coverage=result["coverage"],
         sources=result["source_attribution_responses"],
         domain_sources=result["domain_sources"],
     )
