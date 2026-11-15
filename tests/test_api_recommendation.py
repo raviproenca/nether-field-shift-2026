@@ -95,3 +95,17 @@ def test_location_outside_sergipe_returns_422(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "no_data"
+
+
+def test_zarc_note_reaches_the_response(monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
+    import pandas as pd
+
+    from src.engine.zarc_check import DECENDIO_COLUMNS
+
+    row = {"Nome_cultura": "Milho 1ª Safra", "geocodigo": "2802908"}
+    row.update({column: (20 if 10 <= number <= 19 else 0) for number, column in enumerate(DECENDIO_COLUMNS, start=1)})
+    monkeypatch.setattr(recommendation_module, "_zarc_table", lambda: pd.DataFrame([row]))
+
+    note = client.post("/recommendation", json=VALID_BODY).json()["recommendation"]["validation_note"]
+
+    assert "ZARC" in note and "could not be done" not in note

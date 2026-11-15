@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from apps.api.errors import APIError
 from apps.api.sources_catalog import SOURCES_BY_ID
+from src.data.municipality import municipality_code
 from src.data.paths import ROOT
 from src.data.regions import PRESETS
 from src.engine.model import BareSoilWindow, Diagnosis, Plot, SourceAttribution
@@ -59,6 +60,7 @@ class DiagnosisPlot(BaseModel):
     matched_point: MatchedPoint
     id: str | None = None
     name: str | None = None
+    municipality_code: str | None = None
     elevation_m: float | None = None
     slope_mean_pct: float | None = None
 
@@ -1155,6 +1157,8 @@ def _load_and_process_diagnosis(
     bare_windows_responses = to_bare_soil_window_responses(bare_windows)
     source_attribution_responses = to_source_attribution_responses(source_attributions)
 
+    code = municipality_code(lat, lon)
+
     plot_model = DiagnosisPlot(
         lat=lat,
         lon=lon,
@@ -1170,6 +1174,7 @@ def _load_and_process_diagnosis(
         ),
         id=matched_point["id"],
         name=matched_point["name"],
+        municipality_code=code,
         elevation_m=scalars["elevation_m"],
         slope_mean_pct=scalars["slope_mean_pct"],
     )
@@ -1181,6 +1186,7 @@ def _load_and_process_diagnosis(
         id=matched_point["id"],
         name=matched_point["name"],
         region="sergipe",
+        municipality_code=code,
         elevation_m=scalars["elevation_m"],
         slope_mean_pct=scalars["slope_mean_pct"],
     )

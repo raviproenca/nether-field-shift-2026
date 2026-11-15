@@ -563,3 +563,9 @@ def test_synthetic_modis_fallback_and_bare_soil_windows(
     assert data["bare_soil_windows"][0]["start"] == "2026-09-01"
     assert data["bare_soil_windows"][0]["end"] == "2026-10-02"
     assert data["bare_soil_windows"][0]["ndvi_mean"] == pytest.approx(0.21, abs=1e-3)
+
+
+def test_diagnosis_plot_reports_the_municipality_code(client: TestClient) -> None:
+    body = client.get("/diagnosis", params={"lat": -10.685, "lon": -37.425}).json()
+
+    assert body["plot"]["municipality_code"] == "2802908"

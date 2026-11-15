@@ -84,6 +84,8 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 | Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS, up to 15 days + FAO-56 ET0) | Open-Meteo | [open-meteo.com](https://open-meteo.com/) | none | Free for non-commercial use under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); attribution required ("Weather data by Open-Meteo.com") |
 | Produção Agrícola Municipal (PAM), table 5457: area, production, yield and value by municipality and crop, 1974 to 2025 | IBGE (Instituto Brasileiro de Geografia e Estatística), via the SIDRA API | [SIDRA table 5457](https://sidra.ibge.gov.br/tabela/5457) | none | Licence **not verified yet** (the IBGE terms pages block automated access); credit "Fonte: IBGE, Pesquisa Agrícola Municipal" and the access date. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
 
+The municipal mesh in `data/sample/ibge_se_municipalities.geojson` (used to find the IBGE code of a plot, which selects the ZARC rows) comes from the IBGE malhas API v3, state 28, lowest quality; credit "Fonte: IBGE, Malha Municipal". Third-party data, not NASA.
+
 Sentinel-2 is **European data** and IBGE PAM is **Brazilian data**: neither is NASA data, so they are not part of "NASA data used". Sentinel-2 is read through the `planetary` source of the toolkit (no account, no key); IBGE PAM is read with `python -m src.data.sidra` (public API, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it; if it shows PAM numbers, credit IBGE.
 
 ## Pre-generated data (internal map)

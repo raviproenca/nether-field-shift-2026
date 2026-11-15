@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
+import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
 from apps.api.diagnosis import build_engine_diagnosis
@@ -15,6 +17,7 @@ from apps.api.forecast import build_engine_projection
 from src.engine.model import Crop, Priority
 from src.engine.recommend import recommend
 from src.engine.rules import load_rules
+from src.engine.zarc_check import load_zarc_table
 from src.explain.template import explain
 
 FORECAST_DAYS = 15
@@ -43,6 +46,12 @@ class RecommendationResponse(BaseModel):
     recommendation: dict[str, Any]
     explanation: str
     lang: Literal["en", "pt-BR"]
+
+
+@lru_cache(maxsize=1)
+def _zarc_table() -> pd.DataFrame | None:
+    """ZARC rows for Sergipe from data/processed/, read once; None when not downloaded."""
+    return load_zarc_table()
 
 
 def build_recommendation_response(
@@ -83,6 +92,7 @@ def build_recommendation_response(
         crop=request.crop,
         priority=request.priority,
         rules=rules,
+        zarc=_zarc_table(),
     )
     return RecommendationResponse(
         recommendation=result.to_dict(),
