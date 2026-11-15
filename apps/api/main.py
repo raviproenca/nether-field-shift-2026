@@ -6,12 +6,14 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, Query, Request
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp
 
+from .diagnosis import DiagnosisResponse, build_diagnosis_response
 from .errors import APIError, ErrorResponse, register_exception_handlers
 from .sources_catalog import (
     SOURCES_BY_ID,
@@ -109,7 +111,10 @@ def _reject_unknown_query_params(request: Request, allowed: set[str]) -> None:
         raise APIError(status_code=400, code="invalid_parameter", message=message)
 
 
-def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
+def create_app(
+    cors_origins: Sequence[str] | None = None,
+    data_dir: Path | None = None,
+) -> FastAPI:
     """Create and configure the FastAPI application instance."""
     app_instance = FastAPI(
         title="Field Shift API",
@@ -118,7 +123,9 @@ def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
         responses={
             400: {"model": ErrorResponse, "description": "Invalid parameter / Bad Request"},
             404: {"model": ErrorResponse, "description": "Resource not found"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
             500: {"model": ErrorResponse, "description": "Internal server error"},
+            503: {"model": ErrorResponse, "description": "Snapshot data unavailable or server not configured"},
         },
     )
 
@@ -170,6 +177,29 @@ def create_app(cors_origins: Sequence[str] | None = None) -> FastAPI:
             filtered = [s for s in filtered if s.kind == kind]
 
         return SourcesResponse(sources=filtered)
+
+    @app_instance.get(
+        "/diagnosis",
+        response_model=DiagnosisResponse,
+        responses={
+            400: {"model": ErrorResponse, "description": "Invalid parameter / Bad Request"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
+            503: {"model": ErrorResponse, "description": "Snapshot data unavailable or server not configured"},
+        },
+    )
+    async def get_diagnosis(
+        request: Request,
+        lat: float = Query(...),
+        lon: float = Query(...),
+        radius_km: float = Query(default=5.0),
+    ) -> DiagnosisResponse:
+        _reject_unknown_query_params(request, allowed={"lat", "lon", "radius_km"})
+        return build_diagnosis_response(
+            lat=lat,
+            lon=lon,
+            radius_km=radius_km,
+            data_dir=data_dir,
+        )
 
     return app_instance
 
