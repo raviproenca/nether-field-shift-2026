@@ -17,6 +17,7 @@ from src.engine.model import (
     StrategyKind,
     serialize_recommendation,
 )
+from src.engine.recommend import recommend
 
 __all__ = [
     "Action",
@@ -32,5 +33,6 @@ __all__ = [
     "SourceAttribution",
     "Strategy",
     "StrategyKind",
+    "recommend",
     "serialize_recommendation",
 ]

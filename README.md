@@ -127,5 +127,11 @@ Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.js
 | [Geist](https://vercel.com/font) font via [@fontsource-variable/geist](https://fontsource.org/fonts/geist) | SIL Open Font License 1.1 |
 | NASA GIBS imagery and its official colormaps and layer styles (live, not copied into the repo; see "NASA data used") | NASA open data, EOSDIS use guidance; no NASA logo or Worldview code is used |
 
+Rules cited by the decision engine (not copied):
+
+| Work | Terms |
+|---|---|
+| Kalaivani et al., IEEE CICT 2025, DOI [10.1109/CICT67193.2025.11399212](https://doi.org/10.1109/CICT67193.2025.11399212) | IEEE copyright. The engine cites the rotation rules only: do not repeat the previous crop's botanical family, and after a nitrogen-depleting crop prefer a legume. The paper's text, figures, and logistic-regression model are not used. |
+
 ## License
 [Apache License 2.0](LICENSE)
