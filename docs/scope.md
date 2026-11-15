@@ -2,7 +2,7 @@
 
 # Project scope (single source)
 
-_Last updated: Nov 14, 2026. This file is the single source for the current scope. If it disagrees with an issue or the board, tell Ravi (Tech Lead)._
+_Last updated: Nov 15, 2026. This file is the single source for the current scope. If it disagrees with an issue or the board, tell Ravi (Tech Lead)._
 
 **Team work (Ravi, Nov 14):** Teammates may start their assigned Todo issues now. Ravi has paused only implementation by his AI agents until he explicitly releases it. Dependencies and blocked labels still apply.
 
@@ -14,14 +14,15 @@ Built only from recorded decisions: [decisions.md](team/decisions.md), [CONTEXT.
 
 ## 2. What we deliver
 
-A decision-support tool for **family farming in Sergipe** (Agreste and Semiárido), demoed on two pilot sites: Itabaiana and Nossa Senhora da Glória. v1 crops: maize, beans and cassava.
+A decision-support tool for the **technical professional who leads planting decisions in Sergipe** (Agreste and Semiárido), demoed on two pilot sites: Itabaiana and Nossa Senhora da Glória. v1 crops: maize, beans and cassava. The persona is chosen by the team from the discovery research ([persona-discovery.md](research/persona-discovery.md), E7). Decided Nov 15 (Ravi); see [sprint-change-proposal-2026-11-15.md](../_bmad-output/planning-artifacts/sprint-change-proposal-2026-11-15.md).
 
 - **Decision engine** (`src/engine`). Deterministic rules on NASA data, no ML.
   - **In:** the farmer's crops, the soil, the region, the season and the previous crops.
   - **Out:** rotation options with trade-offs, a planting schedule and dates per crop, the water demand and the pest-cycle break.
 - **Validation** of the engine against ZARC and in a historical backtest on 2 or 3 real Sergipe years (at least one wet and one dry), showing how each strategy would have done.
 - **Producer dashboard** with the strategy comparison and a one-click **demo mode** for the judges, on the product API (`apps/api`).
-- **Plain-language explanation.** AI only rewrites the engine's result and never changes a number. A fixed template text is the fallback.
+- **Producer dashboard** is the only interface, with an interactive analysis: the user changes the inputs and compares the effect on the strategies.
+- **Explanation.** A fixed template text always works. The role of AI for the technical user is decided by the team after discovery; AI never changes a number.
 
 ## 3. Priority order (decided Nov 14)
 
@@ -31,13 +32,16 @@ After a mentor's feedback, and because the judging criteria weigh **validity** a
 2. **Validation:** ZARC check [#48](https://github.com/raviproenca/nether-field-shift-2026/issues/48) and the historical backtest [#79](https://github.com/raviproenca/nether-field-shift-2026/issues/79).
 3. **E2 Product API** [#39](https://github.com/raviproenca/nether-field-shift-2026/issues/39), only what the dashboard needs: [#49](https://github.com/raviproenca/nether-field-shift-2026/issues/49), [#50](https://github.com/raviproenca/nether-field-shift-2026/issues/50), [#51](https://github.com/raviproenca/nether-field-shift-2026/issues/51), [#53](https://github.com/raviproenca/nether-field-shift-2026/issues/53), [#54](https://github.com/raviproenca/nether-field-shift-2026/issues/54).
 4. **E5 Producer dashboard and demo mode** [#42](https://github.com/raviproenca/nether-field-shift-2026/issues/42): [#62](https://github.com/raviproenca/nether-field-shift-2026/issues/62), [#63](https://github.com/raviproenca/nether-field-shift-2026/issues/63), [#64](https://github.com/raviproenca/nether-field-shift-2026/issues/64).
-5. **E3 Plain-language explanation** [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40): [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52), [#55](https://github.com/raviproenca/nether-field-shift-2026/issues/55).
-6. **E6 Deploy and judge readiness** [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43): [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66); bot/voice deployment [#82](https://github.com/raviproenca/nether-field-shift-2026/issues/82) remains in the Backlog until validation.
-7. **E4 Telegram bot with voice** [#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), **after the engine is validated**: [#56](https://github.com/raviproenca/nether-field-shift-2026/issues/56)–[#58](https://github.com/raviproenca/nether-field-shift-2026/issues/58), [#60](https://github.com/raviproenca/nether-field-shift-2026/issues/60), [#61](https://github.com/raviproenca/nether-field-shift-2026/issues/61), and the Piper service [#59](https://github.com/raviproenca/nether-field-shift-2026/issues/59) last; deploy follows in [#82](https://github.com/raviproenca/nether-field-shift-2026/issues/82).
+5. **E3 Explanation** (template #52 now; AI #55 on hold until the team defines the role of AI) [#40](https://github.com/raviproenca/nether-field-shift-2026/issues/40): [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52), [#55](https://github.com/raviproenca/nether-field-shift-2026/issues/55).
+6. **E6 Deploy and judge readiness** [#43](https://github.com/raviproenca/nether-field-shift-2026/issues/43): [#65](https://github.com/raviproenca/nether-field-shift-2026/issues/65), [#66](https://github.com/raviproenca/nether-field-shift-2026/issues/66); bot/voice deployment #82 is removed from v1 (Nov 15).
+7. **E7 Persona discovery** (research only), in parallel with items 1 and 2. First pass: [persona-discovery.md](research/persona-discovery.md).
+8. ~~E4 Telegram bot with voice~~ ([#41](https://github.com/raviproenca/nether-field-shift-2026/issues/41), #56–#61) and its deploy #82: **removed from v1 (Nov 15)**.
 
-The **channel** (Telegram bot, voice) and the **audience** are decided only after the engine is validated. The template explanation [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52) is a prerequisite of API story #53 and therefore comes before #53; the rest of E3 remains later. The bot and voice issues are kept, at the end of the Backlog.
+**Nov 15:** the audience is the technical decision-maker and the channel is the dashboard; the Telegram bot and voice are out of v1. The template explanation [#52](https://github.com/raviproenca/nether-field-shift-2026/issues/52) is a prerequisite of API story #53 and therefore comes before #53; the rest of E3 waits for the team's decision on the role of AI.
 
 ## 4. Out of scope
+
+- Telegram bot and voice (Nov 15).
 
 - Crop photos.
 - HLS and Sentinel-2 in the internal-map snapshot. They stay available in the `src/data` command line, as GeoTIFF.
@@ -64,11 +68,11 @@ Area labels and assignees as on the [project board](https://github.com/users/rav
 | `dados` | Open-Meteo forecast #51 | Duda and Ravi |
 | `back` | API (`apps/api`): #39, #49, #50, #53, #54 | Ravi |
 | `back` | Explanation (`src/explain`): #40, #52, #55 | No assignee yet; #52 must precede #53 |
-| `back` | Bot: #41, #56, #57 (and voice #58, #60, #61) | Gabriel; Ravi and Lucas also on #56 |
+| `back` | Bot: #41, #56 to #61: **removed from v1 (Nov 15)** | — |
 | `front` | Producer dashboard: #42, #62 to #64 | Ravi |
 | `front` | Internal map: #15 (epic #19 has no assignee) | Gabriel |
-| `deploy` | Cloudflare Pages #18, API Cloud Run #65, credits and link check #66; bot/voice deploy #82 after validation | Ravi; Lucas on #65; Duda on #66 |
-| `infra` | Piper service #59 | Ravi and Gabriel |
+| `deploy` | Cloudflare Pages #18, API Cloud Run #65, credits and link check #66 | Ravi; Lucas on #65; Duda on #66 |
+| `research` | Persona discovery E7 (first pass done) | Gabriel; the team chooses |
 
 Ravi (`@raviproenca`, Tech Lead) opens and assigns issues, approves and merges every PR.
 
