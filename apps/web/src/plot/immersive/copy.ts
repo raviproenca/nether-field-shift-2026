@@ -32,6 +32,8 @@ export interface ImmersiveCopy {
   details: string;
   nearestPilot: (name: string, km: number) => string;
   liveAnalysis: string;
+  liveNotice: (cell: string) => string;
+  serviceFallback: (name: string, km: number) => string;
   close: string;
   openPanel: string;
   addressLabel: string;
@@ -86,6 +88,10 @@ const EN: ImmersiveCopy = {
   nearestPilot: (name, km) =>
     `Live analysis of any address needs the analysis service, which is not connected yet. The ranking and the figures below come from the nearest pilot (${name}, ${km} km away); the seasonal rain risk is computed for your point.`,
   liveAnalysis: "Live analysis",
+  liveNotice: (cell) =>
+    `Live analysis: the engine ran now for your point, on NASA data from the nearest data cell (${cell}).`,
+  serviceFallback: (name, km) =>
+    `The analysis service did not answer. The ranking and the figures below come from the nearest pilot (${name}, ${km} km away); the seasonal rain risk is computed for your point.`,
   close: "Close",
   openPanel: "Show the recommendation",
   addressLabel: "Address or place in Sergipe",
@@ -141,6 +147,10 @@ const PT: ImmersiveCopy = {
   nearestPilot: (name, km) =>
     `A análise ao vivo de qualquer endereço depende do serviço de análise, que ainda não está ligado. O ranking e os números abaixo vêm do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado para o seu ponto.`,
   liveAnalysis: "Análise ao vivo",
+  liveNotice: (cell) =>
+    `Análise ao vivo: o motor rodou agora para o seu ponto, com dados da NASA da célula de dados mais próxima (${cell}).`,
+  serviceFallback: (name, km) =>
+    `O serviço de análise não respondeu. O ranking e os números abaixo vêm do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado para o seu ponto.`,
   close: "Fechar",
   openPanel: "Ver a recomendação",
   addressLabel: "Endereço ou lugar em Sergipe",

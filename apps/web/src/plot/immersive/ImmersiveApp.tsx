@@ -27,7 +27,7 @@ const NO_OVERLAYS = Object.fromEntries(GIBS_LAYERS.map((layer) => [layer.id, nul
 const RADIUS_KM = 5;
 
 type Target = { kind: "pilot"; pilot: DemoPilot } | { kind: "point"; place: Place };
-type Outcome = { key: string } & ({ ok: true; response: RecommendationResponse } | { ok: false; message: string });
+type Outcome = { key: string } & ({ ok: true; response: RecommendationResponse; notice: string | null } | { ok: false; message: string });
 
 const initialLang = (): Lang => (window.location.hash === "#pt" ? "pt-BR" : "en");
 
@@ -95,17 +95,29 @@ export default function ImmersiveApp() {
   useEffect(() => {
     if (key === null || point === null) return;
     const controller = new AbortController();
-    const request = resolved.pilot
-      ? fetchPilotResult(resolved.pilot.id, crop, priority, lang, controller.signal)
-      : fetchRecommendation({ lat: point.lat, lon: point.lon, radius_km: RADIUS_KM, crop, priority, lang }, controller.signal);
+    const fromPilot = (pilot: DemoPilot, notice: string | null) =>
+      fetchPilotResult(pilot.id, crop, priority, lang, controller.signal).then((response) => ({ response, notice }));
+    // Live engine run from the API; if the service fails, the nearest pilot's saved run keeps the demo working.
+    const live = () =>
+      fetchRecommendation({ lat: point.lat, lon: point.lon, radius_km: RADIUS_KM, crop, priority, lang }, controller.signal)
+        .then((response) => {
+          const { id, name } = response.recommendation.plot;
+          return { response, notice: copy.liveNotice(name ?? id ?? `${point.lat.toFixed(3)}, ${point.lon.toFixed(3)}`) };
+        })
+        .catch((error: unknown) => {
+          if (!(error instanceof RecommendationError)) throw error;
+          const { pilot, km } = nearestPilot(point);
+          return fromPilot(pilot, copy.serviceFallback(pilot.label, Math.round(km)));
+        });
+    const request = resolved.pilot ? fromPilot(resolved.pilot, resolved.notice) : live();
     request
-      .then((response) => setOutcome({ key, ok: true, response }))
+      .then(({ response, notice }) => setOutcome({ key, ok: true, response, notice }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setOutcome({ key, ok: false, message: error instanceof RecommendationError ? error.message : base.genericError });
       });
     return () => controller.abort();
-  }, [key, point, resolved, crop, priority, lang, base]);
+  }, [key, point, resolved, crop, priority, lang, base, copy]);
 
   // Rain risk of the exact point: pre-computed for the pilots, computed live from NASA POWER elsewhere.
   const pilotRiskId = target?.kind === "pilot" ? target.pilot.id : null;
@@ -226,7 +238,7 @@ export default function ImmersiveApp() {
                   place={placeLabel}
                   lang={lang}
                   copy={copy}
-                  notice={resolved.notice}
+                  notice={current.notice}
                 />
               )}
             </div>
