@@ -26,7 +26,13 @@ npm run build       # type-checks, then builds into dist/ (dist/index.html)
 npm run preview     # serves the built dist/ locally
 ```
 
-## What it shows
+## Plot view (product dashboard, #62)
+
+The default screen (`src/plot/`): click a point in Sergipe, pick a crop and a priority, and compare the three strategies with planting dates, trade-offs, Diagnosis and Projection charts, and the source of every number. The internal data map stays at `/#internal`.
+
+The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. Without it the screen shows one saved real engine run (`src/plot/fixture.json`, Itabaiana, maize) and says so on screen.
+
+## What the internal map shows
 
 - OpenStreetMap base map, opening on Sergipe.
 - Region selector (Sergipe, Nordeste). The bounding boxes in `src/regions.ts` are copied from `src/data/regions.py` at the repo root; keep both files equal.
