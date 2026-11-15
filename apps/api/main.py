@@ -16,6 +16,11 @@ from starlette.types import ASGIApp
 from .diagnosis import DiagnosisResponse, build_diagnosis_response
 from .errors import APIError, ErrorResponse, register_exception_handlers
 from .forecast import ForecastResponse, build_forecast_response
+from .recommendation import (
+    RecommendationRequest,
+    RecommendationResponse,
+    build_recommendation_response,
+)
 from .sources_catalog import (
     SOURCES_BY_ID,
     SOURCES_CATALOG,
@@ -238,6 +243,22 @@ def create_app(
             model=model,
             variables=variables,
             cache_dir=forecast_cache_dir,
+        )
+
+    @app_instance.post(
+        "/recommendation",
+        response_model=RecommendationResponse,
+        responses={
+            400: {"model": ErrorResponse, "description": "Invalid request body"},
+            422: {"model": ErrorResponse, "description": "No data available for requested location"},
+            503: {"model": ErrorResponse, "description": "Snapshot data or engine rules unavailable"},
+        },
+    )
+    async def post_recommendation(body: RecommendationRequest) -> RecommendationResponse:
+        return build_recommendation_response(
+            body,
+            data_dir=data_dir,
+            forecast_cache_dir=forecast_cache_dir,
         )
 
     return app_instance
