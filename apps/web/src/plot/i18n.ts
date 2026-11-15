@@ -14,6 +14,7 @@ export interface Copy {
   priority: string;
   selectedPoint: string;
   sampleNotice: string;
+  savedExample: (place: string, date: string, forThisPoint: boolean) => string;
   mapLabel: string;
   tilesProblem: string;
   webglProblem: string;
@@ -68,6 +69,10 @@ const EN: Copy = {
   selectedPoint: "Selected point",
   sampleNotice:
     "Sample result: no analysis service is configured, so this shows one saved engine run (Itabaiana, maize) for any point.",
+  savedExample: (place, date, forThisPoint) =>
+    forThisPoint
+      ? `Saved example: this result was computed on ${date} for ${place}, not for the point you clicked. Crop and priority do not change it.`
+      : `Saved result for ${place}, computed on ${date}.`,
   mapLabel: "Map of Sergipe. Click to choose the plot.",
   tilesProblem: "Map tiles couldn't load. Check your connection, then reload.",
   webglProblem: "This browser can't draw the map.",
@@ -142,6 +147,10 @@ const PT: Copy = {
   selectedPoint: "Ponto selecionado",
   sampleNotice:
     "Resultado de exemplo: nenhum serviço de análise está configurado, então aparece uma execução salva do motor (Itabaiana, milho) para qualquer ponto.",
+  savedExample: (place, date, forThisPoint) =>
+    forThisPoint
+      ? `Exemplo salvo: este resultado foi calculado em ${date} para ${place}, não para o ponto clicado. Cultura e prioridade não o alteram.`
+      : `Resultado salvo para ${place}, calculado em ${date}.`,
   mapLabel: "Mapa de Sergipe. Clique para escolher o talhão.",
   tilesProblem: "Não foi possível carregar o mapa. Verifique a conexão e recarregue a página.",
   webglProblem: "Este navegador não consegue desenhar o mapa.",

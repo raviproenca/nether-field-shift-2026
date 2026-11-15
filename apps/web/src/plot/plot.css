@@ -295,3 +295,9 @@
   justify-content: space-between;
   gap: var(--space-3);
 }
+
+.saved-label {
+  margin-bottom: var(--space-3);
+  border-left: 4px solid var(--text);
+  font-size: var(--fs-body);
+}

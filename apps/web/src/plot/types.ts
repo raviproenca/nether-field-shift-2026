@@ -99,6 +99,8 @@ export interface RecommendationResponse {
   recommendation: Recommendation;
   explanation: string;
   lang: "en" | "pt-BR";
+  /** Only on saved results (demo files): when the engine run was made. */
+  generated_at?: string;
 }
 
 /** Error envelope shared by every API route (#49). */

@@ -56,6 +56,7 @@ export default function PlotApp() {
     return () => controller.abort();
   }, [key, point, demo, crop, priority, lang]);
 
+  const savedResult = demo !== null;
   const current = outcome !== null && outcome.key === key ? outcome : null;
 
   const getPadding = useCallback(() => NO_PADDING, []);
@@ -147,6 +148,15 @@ export default function PlotApp() {
             <div className="notice-inline" role="alert">
               {current.message}
             </div>
+          )}
+          {current?.ok && (savedResult || USING_SAMPLE) && (
+            <p className="notice-inline saved-label" role="status">
+              {copy.savedExample(
+                current.response.recommendation.plot.name ?? "",
+                current.response.generated_at?.slice(0, 10) ?? "",
+                !demo,
+              )}
+            </p>
           )}
           {current?.ok && (
             <PlotView recommendation={current.response.recommendation} explanation={current.response.explanation} />
