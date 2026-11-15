@@ -58,18 +58,31 @@ interface BaseMapProps {
   /** Space the floating panel covers, so the region is framed beside it. */
   getPadding: () => maplibregl.PaddingOptions;
   onProblem: (problem: MapProblem) => void;
+  /** Optional: called with the clicked position (the plot view picks its point this way). */
+  onPick?: (lat: number, lon: number) => void;
+  /** Optional: a marker for the picked point. */
+  marker?: { lat: number; lon: number } | null;
 }
 
-export default function BaseMap({ region, overlays, onOverlayError, getPadding, onProblem }: BaseMapProps) {
+export default function BaseMap({
+  region,
+  overlays,
+  onOverlayError,
+  getPadding,
+  onProblem,
+  onPick,
+  marker = null,
+}: BaseMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [styleReady, setStyleReady] = useState(false);
   const shownTiles = useRef(new Map<LayerId, string>());
   const initialRegion = useRef(region);
-  const latest = useRef({ getPadding, onProblem, onOverlayError });
+  const markerRef = useRef<maplibregl.Marker | null>(null);
+  const latest = useRef({ getPadding, onProblem, onOverlayError, onPick });
 
   useEffect(() => {
-    latest.current = { getPadding, onProblem, onOverlayError };
+    latest.current = { getPadding, onProblem, onOverlayError, onPick };
   });
 
   useEffect(() => {
@@ -102,6 +115,7 @@ export default function BaseMap({ region, overlays, onOverlayError, getPadding, 
         latest.current.onOverlayError(gibsLayer.id);
       }
     });
+    map.on("click", (event) => latest.current.onPick?.(event.lngLat.lat, event.lngLat.lng));
     map.on("load", () => setStyleReady(true));
     map.on("data", (event) => {
       if (event.dataType === "source" && "tile" in event && event.sourceId === OSM_SOURCE_ID) {
@@ -113,6 +127,7 @@ export default function BaseMap({ region, overlays, onOverlayError, getPadding, 
     return () => {
       map.remove();
       mapRef.current = null;
+      markerRef.current = null;
       shown.clear();
       setStyleReady(false);
     };
@@ -133,6 +148,20 @@ export default function BaseMap({ region, overlays, onOverlayError, getPadding, 
       map.setLayoutProperty(sourceId, "visibility", tiles === null ? "none" : "visible");
     }
   }, [overlays, styleReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) {
+      return;
+    }
+    if (!marker) {
+      markerRef.current?.remove();
+      markerRef.current = null;
+      return;
+    }
+    markerRef.current ??= new maplibregl.Marker({ color: "#0a0a0a" }).setLngLat([marker.lon, marker.lat]).addTo(map);
+    markerRef.current.setLngLat([marker.lon, marker.lat]);
+  }, [marker, styleReady]);
 
   useEffect(() => {
     const map = mapRef.current;

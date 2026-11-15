@@ -1,4 +1,4 @@
-# Nether · Field Shift (NASA Space Apps Challenge 2026)
+ ProTip# Nether · Field Shift (NASA Space Apps Challenge 2026)
 
 Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/), local event in **Aracaju, Brazil**.
 
@@ -29,6 +29,10 @@ python -m src.data power --point -10.91,-37.07 --start 2025-01-01 --end 2025-12-
 python -m src.data modis --search-only --start 2025-01-01 --end 2025-01-31
 # Sentinel-2 (ESA, not NASA) from the Planetary Computer: no account
 python -m src.data planetary --variable B04 --point -10.91,-37.07 --radius-km 2 --start 2025-01-01 --end 2025-01-31
+# NASADEM / SRTM 30 m terrain elevation & slope (no account)
+python -m src.data srtm --point -10.685,-37.425 --radius-km 5 --variable all --out data/processed/srtm
+# Open-Meteo 15-day forecast with FAO-56 ET0 (no account)
+python -m src.data open-meteo --point -10.685,-37.425 --forecast-days 15
 # GLDAS, IMERG, SMAP, MODIS, VIIRS and HLS downloads need a free NASA Earthdata account:
 scripts/earthdata-login.sh        # once; stores credentials in ~/.netrc, never in the repo
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
@@ -77,7 +81,10 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 |---|---|---|---|---|
 | Zoneamento Agrícola de Risco Climático (ZARC), "Tábua de Risco": planting periods by crop, municipality, soil class and harvest year | MAPA (Ministério da Agricultura e Pecuária), open data portal | [dados.agricultura.gov.br](https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico) | none | Creative Commons Attribution (CC BY, from the catalog metadata); credit "ZARC, MAPA" with the harvest year and portaria. The legal text is the portaria PDF. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
 | Sentinel-2 MSI Level-2A surface reflectance, 10 m (`sentinel-2-l2a`) | ESA / Copernicus, served by the Microsoft Planetary Computer | [Planetary Computer catalog](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a) | [10.5270/S2_-znk9xsj](https://doi.org/10.5270/S2_-znk9xsj) (Sentinel-2 MSI Level-2A BOA Reflectance Product, ESA) | Free, full and open under the [Copernicus Sentinel data terms](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice); attribution: "Contains modified Copernicus Sentinel data [year]". Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
+| Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS, up to 15 days + FAO-56 ET0) | Open-Meteo | [open-meteo.com](https://open-meteo.com/) | none | Free for non-commercial use under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); attribution required ("Weather data by Open-Meteo.com") |
 | Produção Agrícola Municipal (PAM), table 5457: area, production, yield and value by municipality and crop, 1974 to 2025 | IBGE (Instituto Brasileiro de Geografia e Estatística), via the SIDRA API | [SIDRA table 5457](https://sidra.ibge.gov.br/tabela/5457) | none | Licence **not verified yet** (the IBGE terms pages block automated access); credit "Fonte: IBGE, Pesquisa Agrícola Municipal" and the access date. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
+
+The municipal mesh in `data/sample/ibge_se_municipalities.geojson` (used to find the IBGE code of a plot, which selects the ZARC rows) comes from the IBGE malhas API v3, state 28, lowest quality; credit "Fonte: IBGE, Malha Municipal". Third-party data, not NASA.
 
 Sentinel-2 is **European data** and IBGE PAM is **Brazilian data**: neither is NASA data, so they are not part of "NASA data used". Sentinel-2 is read through the `planetary` source of the toolkit (no account, no key); IBGE PAM is read with `python -m src.data.sidra` (public API, no key). The NASA path to 30 m imagery is **HLS** (`hls` source, table above). If the demo shows Sentinel-2, keep the Copernicus attribution next to it; if it shows PAM numbers, credit IBGE.
 

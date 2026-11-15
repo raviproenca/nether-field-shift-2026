@@ -608,6 +608,12 @@ def test_synthetic_modis_fallback_and_bare_soil_windows(
     assert data["bare_soil_windows"][0]["ndvi_mean"] == pytest.approx(0.21, abs=1e-3)
 
 
+def test_diagnosis_plot_reports_the_municipality_code(client: TestClient) -> None:
+    body = client.get("/diagnosis", params={"lat": -10.685, "lon": -37.425}).json()
+
+    assert body["plot"]["municipality_code"] == "2802908"
+
+
 def _write_synthetic_snapshot_dir(
     root_dir: Path,
     *,
@@ -1004,3 +1010,4 @@ def test_disjoint_source_periods_keep_aggregates_unknown(tmp_path: Path) -> None
     assert engine_diag.rain_total_mm is None
     assert engine_diag.water_balance_mm is None
     assert engine_diag.temperature_mean_c is None
+

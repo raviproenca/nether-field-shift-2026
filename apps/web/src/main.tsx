@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/geist";
 import App from "./App";
+import PlotApp from "./plot/PlotApp";
 import "./tokens.css";
 import "./index.css";
 
@@ -13,6 +14,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    {window.location.hash === "#internal" ? <App /> : <PlotApp />}
   </StrictMode>,
 );
