@@ -35,7 +35,7 @@ The Recommendation is language-neutral: identifiers, numbers, and codes. There i
 
 Done means: identical inputs produce a byte-identical Recommendation; a ZARC disagreement appears in the validation note; and a backtest of two or three real past Sergipe years, at least one wet and one dry, reports how each strategy would have done.
 
-Story 1.3 ranks with the loaded rules. Inputs that change the score are the Diagnosis (rain, water balance, soil moisture, NDVI, temperature, slope), the Projection, `plot.region`, `plot.season`, and the previous crop. A strategy does not earn a family break while it still plants the previous botanical family. Priority weights change the order, not only the ties. Water demand comes from the crop profiles. Planting dates, actions, and the pest-cycle note stay with story 1.4. ZARC access stays with story 1.5.
+Story 1.3 ranks with the loaded rules. Inputs that change the score are the Diagnosis (rain, water balance, soil moisture, NDVI, temperature, slope), the Projection, `plot.region`, `plot.season`, and the previous crop. A strategy does not earn a family break while it still plants the previous botanical family. Priority weights change the order, not only the ties. Water demand comes from the crop profiles. Story 1.4 fills planting dates from the profile window and the diagnosis period, actions with one evidence line each, and the pest-cycle note. The validation note still says a technician must confirm and that the ZARC check is not done. ZARC access stays with story 1.5.
 
 ## Technical Decisions
 
