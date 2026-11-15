@@ -65,9 +65,12 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
+      # API_URL is a repository Variable (not a secret). Empty: the dashboard shows its saved example.
       - name: Build
         if: steps.web.outputs.ready == 'true'
         working-directory: apps/web
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
         run: npm run build
 
       - name: Check the build output
