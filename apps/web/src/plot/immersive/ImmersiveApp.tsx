@@ -1,7 +1,8 @@
 // AI-assisted: generated with Claude Code, reviewed by <pending Gabriel>
-// Immersive map: Sergipe fills the screen; pick a pilot or a point, and the answer floats beside it.
-// Changing the crop or the priority answers instantly from the pre-computed engine runs of the pilots;
-// any other point goes to the API when VITE_API_URL is set.
+// Immersive map: Sergipe fills the screen. The user types an address, uses their location or
+// clicks the map; the answer floats beside it. The rain risk is computed for that exact point from
+// NASA POWER. The strategy ranking comes from the API when VITE_API_URL is set; otherwise from the
+// nearest pilot's pre-computed engine runs, and the panel says so.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BaseMap, { type MapProblem, type Overlays } from "../../BaseMap";
 import { GIBS_LAYERS } from "../../gibs/layers";
@@ -12,8 +13,10 @@ import { COPY, type Lang } from "../i18n";
 import { LangContext } from "../LangContext";
 import { CROP_IDS, PRIORITY_IDS } from "../labels";
 import type { Crop, Priority, RecommendationResponse } from "../types";
+import AddressSearch, { type Place } from "./AddressSearch";
 import { IMMERSIVE_COPY } from "./copy";
-import ResultPanel from "./ResultPanel";
+import { fetchLiveRisk } from "./liveRisk";
+import ResultPanel, { type RiskState } from "./ResultPanel";
 import type { RiskData } from "./RiskChart";
 
 import "../plot.css";
@@ -23,10 +26,15 @@ const REGION = getRegion("sergipe");
 const NO_OVERLAYS = Object.fromEntries(GIBS_LAYERS.map((layer) => [layer.id, null])) as Overlays;
 const RADIUS_KM = 5;
 
-type Target = { kind: "pilot"; pilot: DemoPilot } | { kind: "point"; lat: number; lon: number };
+type Target = { kind: "pilot"; pilot: DemoPilot } | { kind: "point"; place: Place };
 type Outcome = { key: string } & ({ ok: true; response: RecommendationResponse } | { ok: false; message: string });
 
 const initialLang = (): Lang => (window.location.hash === "#pt" ? "pt-BR" : "en");
+
+function inSergipe({ lat, lon }: { lat: number; lon: number }): boolean {
+  const [west, south, east, north] = REGION.bbox;
+  return lon >= west && lon <= east && lat >= south && lat <= north;
+}
 
 function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
   const rad = Math.PI / 180;
@@ -60,7 +68,7 @@ export default function ImmersiveApp() {
   const [lang, setLang] = useState<Lang>(initialLang);
   const copy = IMMERSIVE_COPY[lang];
   const base = COPY[lang];
-  const [target, setTarget] = useState<Target>({ kind: "pilot", pilot: DEMO_PILOTS[1] });
+  const [target, setTarget] = useState<Target | null>(null);
   const [crop, setCrop] = useState<Crop>("maize");
   const [priority, setPriority] = useState<Priority>("water");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -68,24 +76,28 @@ export default function ImmersiveApp() {
   const [problem, setProblem] = useState<MapProblem>(null);
   const [panelOpen, setPanelOpen] = useState(true);
 
-  // Without the API, a clicked point is answered by the nearest pilot, and the panel says so.
+  const point = target === null ? null : target.kind === "pilot" ? target.pilot : target.place;
+  const placeLabel = target === null ? null : target.kind === "pilot" ? target.pilot.label : target.place.label;
+  const outside = point !== null && !inSergipe(point);
+
+  // Which pre-computed pilot answers the strategy ranking, and the note that says so.
   const resolved = useMemo(() => {
+    if (target === null || outside) return { pilot: null, notice: null };
     if (target.kind === "pilot") return { pilot: target.pilot, notice: null };
     if (!USING_SAMPLE) return { pilot: null, notice: null };
-    const { pilot, km } = nearestPilot(target);
+    const { pilot, km } = nearestPilot(target.place);
     return { pilot, notice: copy.nearestPilot(pilot.label, Math.round(km)) };
-  }, [target, copy]);
+  }, [target, outside, copy]);
 
-  const key = `${target.kind === "pilot" ? target.pilot.id : `${target.lat},${target.lon}`}:${crop}:${priority}:${lang}`;
+  const pointId = point === null ? null : `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`;
+  const key = pointId === null || outside ? null : `${pointId}:${crop}:${priority}:${lang}`;
 
   useEffect(() => {
+    if (key === null || point === null) return;
     const controller = new AbortController();
     const request = resolved.pilot
       ? fetchPilotResult(resolved.pilot.id, crop, priority, lang, controller.signal)
-      : fetchRecommendation(
-          { lat: (target as { lat: number }).lat, lon: (target as { lon: number }).lon, radius_km: RADIUS_KM, crop, priority, lang },
-          controller.signal,
-        );
+      : fetchRecommendation({ lat: point.lat, lon: point.lon, radius_km: RADIUS_KM, crop, priority, lang }, controller.signal);
     request
       .then((response) => setOutcome({ key, ok: true, response }))
       .catch((error: unknown) => {
@@ -93,31 +105,42 @@ export default function ImmersiveApp() {
         setOutcome({ key, ok: false, message: error instanceof RecommendationError ? error.message : base.genericError });
       });
     return () => controller.abort();
-  }, [key, resolved, target, crop, priority, lang, base]);
+  }, [key, point, resolved, crop, priority, lang, base]);
 
-  const riskId = resolved.pilot?.id ?? null;
+  // Rain risk of the exact point: pre-computed for the pilots, computed live from NASA POWER elsewhere.
+  const pilotRiskId = target?.kind === "pilot" ? target.pilot.id : null;
   useEffect(() => {
-    if (!riskId) return;
+    if (pointId === null || point === null || outside) return;
     const controller = new AbortController();
-    fetch(`${import.meta.env.BASE_URL}risk/${riskId}.json`, { signal: controller.signal })
-      .then((response) => (response.ok ? (response.json() as Promise<RiskData>) : null))
-      .then((data) => setRisk({ id: riskId, data }))
-      .catch(() => undefined);
+    const request = pilotRiskId
+      ? fetch(`${import.meta.env.BASE_URL}risk/${pilotRiskId}.json`, { signal: controller.signal }).then((response) =>
+          response.ok ? (response.json() as Promise<RiskData>) : null,
+        )
+      : fetchLiveRisk(point.lat, point.lon, controller.signal);
+    request
+      .then((data) => setRisk({ id: pointId, data }))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setRisk({ id: pointId, data: null });
+      });
     return () => controller.abort();
-  }, [riskId]);
+  }, [pointId, point, pilotRiskId, outside]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const current = outcome !== null && outcome.key === key ? outcome : null;
-  const riskData = risk !== null && risk.id === riskId ? risk.data : null;
-  const marker = target.kind === "pilot" ? target.pilot : target;
+  const current = key !== null && outcome !== null && outcome.key === key ? outcome : null;
+  const riskState: RiskState = risk !== null && risk.id === pointId ? (risk.data ? { data: risk.data } : "unavailable") : "loading";
   const getPadding = useCallback(() => {
     const wide = window.innerWidth > 900;
-    return { top: wide ? 200 : 260, right: wide ? 480 : 24, bottom: wide ? 24 : window.innerHeight * 0.5, left: 24 };
+    return { top: wide ? 24 : 300, right: wide ? 480 : 24, bottom: wide ? 24 : window.innerHeight * 0.45, left: wide ? 400 : 24 };
   }, []);
   const noop = useCallback(() => undefined, []);
+  const choose = (next: Target) => {
+    setTarget(next);
+    setPanelOpen(true);
+  };
 
   return (
     <LangContext.Provider value={lang}>
@@ -129,11 +152,8 @@ export default function ImmersiveApp() {
             onOverlayError={noop}
             getPadding={getPadding}
             onProblem={setProblem}
-            onPick={(lat, lon) => {
-              setTarget({ kind: "point", lat, lon });
-              setPanelOpen(true);
-            }}
-            marker={marker}
+            onPick={(lat, lon) => choose({ kind: "point", place: { lat, lon, label: `${lat.toFixed(3)}, ${lon.toFixed(3)}` } })}
+            marker={point}
           />
           {problem && (
             <p className="notice-inline imm-map-notice" role="alert">
@@ -149,43 +169,50 @@ export default function ImmersiveApp() {
               <h1 className="imm-title">{copy.product}</h1>
               <p className="imm-tagline">{copy.tagline}</p>
             </div>
-            <button
-              type="button"
-              className="imm-lang"
-              aria-label={base.languageButtonLabel}
-              onClick={() => setLang(lang === "en" ? "pt-BR" : "en")}
-            >
+            <button type="button" className="imm-lang" aria-label={base.languageButtonLabel} onClick={() => setLang(lang === "en" ? "pt-BR" : "en")}>
               {base.languageButton}
             </button>
           </div>
-          <div className="imm-pilots" role="group" aria-label={copy.pilots}>
+          <AddressSearch lang={lang} copy={copy} onPick={(place) => choose({ kind: "point", place })} />
+          <p className="imm-hint">{copy.pickHint}</p>
+          <Segmented label={copy.crop} value={crop} options={CROP_IDS.map((id) => ({ id, label: base.crops[id] }))} onChange={setCrop} />
+          <Segmented label={copy.priority} value={priority} options={PRIORITY_IDS.map((id) => ({ id, label: base.priorities[id] }))} onChange={setPriority} />
+          <div className="imm-examples" role="group" aria-label={copy.examples}>
+            <span className="imm-examples-label">{copy.examples}:</span>
             {DEMO_PILOTS.map((pilot) => (
               <button
                 key={pilot.id}
                 type="button"
-                className="imm-pilot"
-                aria-pressed={target.kind === "pilot" && target.pilot.id === pilot.id}
-                onClick={() => {
-                  setTarget({ kind: "pilot", pilot });
-                  setPanelOpen(true);
-                }}
+                className="imm-example"
+                aria-pressed={target?.kind === "pilot" && target.pilot.id === pilot.id}
+                onClick={() => choose({ kind: "pilot", pilot })}
               >
                 {pilot.label}
               </button>
             ))}
           </div>
-          <Segmented label={copy.crop} value={crop} options={CROP_IDS.map((id) => ({ id, label: base.crops[id] }))} onChange={setCrop} />
-          <Segmented label={copy.priority} value={priority} options={PRIORITY_IDS.map((id) => ({ id, label: base.priorities[id] }))} onChange={setPriority} />
-          <p className="imm-hint">{copy.pickHint}</p>
         </header>
 
         <aside className={`imm-panel${panelOpen ? "" : " is-closed"}`} aria-live="polite">
-          <button type="button" className="imm-toggle" aria-expanded={panelOpen} onClick={() => setPanelOpen(!panelOpen)}>
-            {panelOpen ? copy.close : copy.openPanel}
-          </button>
+          {target !== null && (
+            <button type="button" className="imm-toggle" aria-expanded={panelOpen} onClick={() => setPanelOpen(!panelOpen)}>
+              {panelOpen ? copy.close : copy.openPanel}
+            </button>
+          )}
           {panelOpen && (
             <div className="imm-panel-body">
-              {current === null && <p className="muted">{base.analysing}</p>}
+              {target === null && (
+                <div className="empty">
+                  <h2 className="empty-title">{copy.emptyTitle}</h2>
+                  <p className="muted">{copy.emptyBody}</p>
+                </div>
+              )}
+              {outside && (
+                <p className="notice-inline" role="alert">
+                  {copy.outsideSergipe}
+                </p>
+              )}
+              {key !== null && current === null && <p className="muted">{base.analysing}</p>}
               {current && !current.ok && (
                 <p className="notice-inline" role="alert">
                   {current.message}
@@ -195,7 +222,8 @@ export default function ImmersiveApp() {
                 <ResultPanel
                   recommendation={current.response.recommendation}
                   explanation={current.response.explanation}
-                  risk={riskData}
+                  risk={riskState}
+                  place={placeLabel}
                   lang={lang}
                   copy={copy}
                   notice={resolved.notice}

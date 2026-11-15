@@ -39,6 +39,8 @@ const NOTE_SENTENCES: [RegExp, string][] = [
   [/A local technician must confirm this advice\./, "Um técnico local deve confirmar esta recomendação."],
   [/The ZARC check is not done yet\./, "A checagem do ZARC ainda não foi feita."],
   [/ZARC divergence \(MAPA, safra ([\d/]+)\):/, "Divergência do ZARC (MAPA, safra $1):"],
+  [/ZARC check \(MAPA, safra ([\d/]+)\): every window is inside the zoning\./, "Checagem do ZARC (MAPA, safra $1): todas as janelas estão dentro do zoneamento."],
+  [/Source: (\S+)/, "Fonte: $1"],
   [
     /(\w+): the window (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}) is only partly inside the ZARC \((\d+) of (\d+) ten-day periods\)\./g,
     "$1: a janela de $2 a $3 fica só em parte dentro do ZARC ($4 de $5 decêndios).",

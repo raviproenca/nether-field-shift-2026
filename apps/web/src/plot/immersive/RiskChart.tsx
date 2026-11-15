@@ -70,7 +70,7 @@ export default function RiskChart({ data, crop, cropLabel, copy }: { data: RiskD
             {month}
           </text>
         ))}
-        <text className="risk-axis" x={PAD.left - 6} y={PAD.top - 2} textAnchor="end">
+        <text className="risk-axis" x={PAD.left + 4} y={PAD.top - 6}>
           mm
         </text>
       </svg>

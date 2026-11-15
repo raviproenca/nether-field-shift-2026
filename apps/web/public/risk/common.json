@@ -1,0 +1,51 @@
+{
+  "first_year": 1981,
+  "last_year": 2025,
+  "decendios": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+  ],
+  "strong_el_nino_years": [
+    1983,
+    1992,
+    1998,
+    2016,
+    2024
+  ],
+  "windows": {
+    "maize": {
+      "start": 10,
+      "end": 18
+    },
+    "beans": {
+      "start": 11,
+      "end": 18
+    },
+    "cassava": {
+      "start": 10,
+      "end": 18
+    }
+  },
+  "sources": [
+    {
+      "name": "NASA POWER daily rain (PRECTOTCORR)",
+      "url": "https://power.larc.nasa.gov/",
+      "nasa": true
+    },
+    {
+      "name": "NOAA CPC Oceanic Ni\u00f1o Index",
+      "url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
+      "nasa": false
+    }
+  ]
+}

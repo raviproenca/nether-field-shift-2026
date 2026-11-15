@@ -71,6 +71,20 @@ def main() -> int:
         for crop, profile in rules.crops.items()
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Shared by every point: the browser computes the risk of any address from NASA POWER with these.
+    strong_years = sorted(y for y, value in oni.items() if FIRST_YEAR <= y <= LAST_YEAR and value >= STRONG_EL_NINO)
+    common = {
+        "first_year": FIRST_YEAR,
+        "last_year": LAST_YEAR,
+        "decendios": list(DECENDIOS),
+        "strong_el_nino_years": strong_years,
+        "windows": windows,
+        "sources": [
+            {"name": "NASA POWER daily rain (PRECTOTCORR)", "url": "https://power.larc.nasa.gov/", "nasa": True},
+            {"name": "NOAA CPC Oceanic Niño Index", "url": ONI_URL, "nasa": False},
+        ],
+    }
+    (OUT_DIR / "common.json").write_text(json.dumps(common, indent=2) + "\n", encoding="utf-8")
     for pilot in PILOTS:
         seasons = rain_by_decendio(pilot.lat, pilot.lon)
         strong = [y for y in seasons if oni.get(y, 0.0) >= STRONG_EL_NINO]

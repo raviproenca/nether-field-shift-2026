@@ -7,6 +7,8 @@ import type { ImmersiveCopy } from "./copy";
 import { actionEvidence, engineNote } from "./engineText";
 import RiskChart, { type RiskData } from "./RiskChart";
 
+export type RiskState = { data: RiskData } | "loading" | "unavailable";
+
 const BACKTEST_URL = "https://github.com/raviproenca/nether-field-shift-2026/pull/96";
 const SEVERE_DEFICIT_MM = -150; // thresholds.yaml water_balance.severe_deficit_mm
 
@@ -72,13 +74,15 @@ export default function ResultPanel({
   recommendation,
   explanation,
   risk,
+  place,
   lang,
   copy,
   notice,
 }: {
   recommendation: Recommendation;
   explanation: string;
-  risk: RiskData | null;
+  risk: RiskState;
+  place: string | null;
   lang: Lang;
   copy: ImmersiveCopy;
   notice: string | null;
@@ -91,6 +95,7 @@ export default function ResultPanel({
     <div className="result">
       {notice && <p className="notice-inline">{notice}</p>}
       <section className="answer" aria-labelledby="answer-heading">
+        {place && <p className="answer-place">{place}</p>}
         <p className="answer-kicker" id="answer-heading">
           {copy.recommendation} · {base.crops[recommendation.crop]} · {base.priorities[recommendation.priority]}
         </p>
@@ -131,14 +136,16 @@ export default function ResultPanel({
         </div>
       </section>
 
-      {risk && (
-        <section aria-labelledby="risk-heading">
-          <h3 id="risk-heading" className="panel-heading">
-            {copy.risk}
-          </h3>
-          <RiskChart data={risk} crop={recommendation.crop} cropLabel={base.crops[recommendation.crop]?.toLowerCase() ?? recommendation.crop} copy={copy} />
-        </section>
-      )}
+      <section aria-labelledby="risk-heading">
+        <h3 id="risk-heading" className="panel-heading">
+          {copy.risk}
+        </h3>
+        {risk === "loading" && <p className="muted small">{copy.riskLoading}</p>}
+        {risk === "unavailable" && <p className="muted small">{copy.riskUnavailable}</p>}
+        {typeof risk === "object" && (
+          <RiskChart data={risk.data} crop={recommendation.crop} cropLabel={base.crops[recommendation.crop]?.toLowerCase() ?? recommendation.crop} copy={copy} />
+        )}
+      </section>
 
       <p className="note-line muted small">{engineNote(recommendation.validation_note, lang)}</p>
 

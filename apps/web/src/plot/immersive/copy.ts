@@ -34,13 +34,30 @@ export interface ImmersiveCopy {
   liveAnalysis: string;
   close: string;
   openPanel: string;
+  addressLabel: string;
+  addressPlaceholder: string;
+  search: string;
+  searching: string;
+  useMyLocation: string;
+  locating: string;
+  myLocation: string;
+  searchError: string;
+  noResults: string;
+  results: string;
+  searchCredit: string;
+  examples: string;
+  outsideSergipe: string;
+  riskLoading: string;
+  riskUnavailable: string;
+  emptyTitle: string;
+  emptyBody: string;
 }
 
 const EN: ImmersiveCopy = {
   product: "Field Shift",
   tagline: "Planting decision support for Sergipe, built on NASA data",
   pilots: "Pilot plots",
-  pickHint: "Pick a pilot or click the map.",
+  pickHint: "Or click anywhere on the map.",
   crop: "Crop",
   priority: "Priority",
   recommendation: "Recommendation",
@@ -59,7 +76,7 @@ const EN: ImmersiveCopy = {
   next15: "next 15 days",
   risk: "Seasonal rain risk",
   riskCaption: (years, others) =>
-    `Median rain per 10-day period at this pilot, NASA POWER 1981–2025. Strong El Niño seasons (${years}) against the other ${others}.`,
+    `Median rain per 10-day period at this point, NASA POWER 1981–2025. Strong El Niño seasons (${years}) against the other ${others}.`,
   strongYears: "Strong El Niño years",
   otherYears: "Other years",
   window: (crop) => `Planting window (${crop})`,
@@ -67,17 +84,34 @@ const EN: ImmersiveCopy = {
   months: ["Apr", "May", "Jun", "Jul"],
   details: "All details and sources",
   nearestPilot: (name, km) =>
-    `Live analysis for any point is not connected yet. Showing the nearest pilot: ${name}, ${km} km away.`,
+    `Live analysis of any address needs the analysis service, which is not connected yet. The ranking and the figures below come from the nearest pilot (${name}, ${km} km away); the seasonal rain risk is computed for your point.`,
   liveAnalysis: "Live analysis",
   close: "Close",
   openPanel: "Show the recommendation",
+  addressLabel: "Address or place in Sergipe",
+  addressPlaceholder: "e.g. Povoado Lagoa Funda, Glória",
+  search: "Search",
+  searching: "Searching…",
+  useMyLocation: "Use my location",
+  locating: "Locating…",
+  myLocation: "My location",
+  searchError: "The search did not work. Check the address or click the map instead.",
+  noResults: "No place found in Sergipe with that name. Try the town name or click the map.",
+  results: "Places found",
+  searchCredit: "Address search © OpenStreetMap contributors (Nominatim).",
+  examples: "Examples",
+  outsideSergipe: "This point is outside Sergipe. The rules and data are tuned for Sergipe; pick a point inside the state.",
+  riskLoading: "Computing the rain risk for this point from NASA POWER…",
+  riskUnavailable: "The rain risk for this point could not be loaded from NASA POWER right now.",
+  emptyTitle: "Where is the plot?",
+  emptyBody: "Type an address, use your location or click the map. You will see when to plant and which of three strategies best withstands a lack of water.",
 };
 
 const PT: ImmersiveCopy = {
   product: "Field Shift",
   tagline: "Apoio à decisão de plantio em Sergipe, com dados da NASA",
   pilots: "Talhões piloto",
-  pickHint: "Escolha um piloto ou clique no mapa.",
+  pickHint: "Ou clique em qualquer lugar do mapa.",
   crop: "Cultura",
   priority: "Prioridade",
   recommendation: "Recomendação",
@@ -97,7 +131,7 @@ const PT: ImmersiveCopy = {
   next15: "próximos 15 dias",
   risk: "Risco de chuva na safra",
   riskCaption: (years, others) =>
-    `Chuva mediana por decêndio neste piloto, NASA POWER 1981–2025. Safras de El Niño forte (${years}) contra as outras ${others}.`,
+    `Chuva mediana por decêndio neste ponto, NASA POWER 1981–2025. Safras de El Niño forte (${years}) contra as outras ${others}.`,
   strongYears: "Anos de El Niño forte",
   otherYears: "Outros anos",
   window: (crop) => `Janela de plantio (${crop})`,
@@ -105,10 +139,27 @@ const PT: ImmersiveCopy = {
   months: ["abr", "mai", "jun", "jul"],
   details: "Todos os detalhes e fontes",
   nearestPilot: (name, km) =>
-    `A análise ao vivo de qualquer ponto ainda não está ligada. Mostrando o piloto mais próximo: ${name}, a ${km} km.`,
+    `A análise ao vivo de qualquer endereço depende do serviço de análise, que ainda não está ligado. O ranking e os números abaixo vêm do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado para o seu ponto.`,
   liveAnalysis: "Análise ao vivo",
   close: "Fechar",
   openPanel: "Ver a recomendação",
+  addressLabel: "Endereço ou lugar em Sergipe",
+  addressPlaceholder: "ex.: Povoado Lagoa Funda, Glória",
+  search: "Buscar",
+  searching: "Buscando…",
+  useMyLocation: "Usar minha localização",
+  locating: "Localizando…",
+  myLocation: "Minha localização",
+  searchError: "A busca não funcionou. Confira o endereço ou clique no mapa.",
+  noResults: "Nenhum lugar com esse nome em Sergipe. Tente o nome da cidade ou clique no mapa.",
+  results: "Lugares encontrados",
+  searchCredit: "Busca de endereço © colaboradores do OpenStreetMap (Nominatim).",
+  examples: "Exemplos",
+  outsideSergipe: "Este ponto está fora de Sergipe. As regras e os dados são ajustados para Sergipe; escolha um ponto dentro do estado.",
+  riskLoading: "Calculando o risco de chuva deste ponto com a NASA POWER…",
+  riskUnavailable: "Não foi possível carregar agora o risco de chuva deste ponto na NASA POWER.",
+  emptyTitle: "Onde fica o talhão?",
+  emptyBody: "Digite um endereço, use sua localização ou clique no mapa. Você vai ver quando plantar e qual de três estratégias aguenta melhor a falta de água.",
 };
 
 export const IMMERSIVE_COPY: Record<Lang, ImmersiveCopy> = { en: EN, "pt-BR": PT };
