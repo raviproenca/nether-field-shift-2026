@@ -7,8 +7,8 @@ paradigm: 'layered ports-and-adapters (data adapters -> pure engine -> API -> cl
 scope: 'Front B: shared API, decision engine, Telegram bot with voice, producer dashboard; reuses src/data and the snapshot format'
 status: draft
 created: '2026-11-14'
-updated: '2026-11-14'
-revision: 'Nov 14 (2): Google Cloud hosting, Gemini and Google voice with fallbacks, i18n'
+updated: '2026-11-15'
+revision: 'Nov 15 (3): Telegram bot and voice out of v1 (apps/bot, apps/tts, AD-6); dashboard is the only client'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18, FR-19, FR-20, FR-21, NFR-1, NFR-2, NFR-3, NFR-4, NFR-5, NFR-6]
 sources: ['prds/prd-nether-field-shift-2026-2026-11-14/prd.md', 'prds/prd-nether-field-shift-2026-2026-11-14/addendum.md', 'docs/team/decisions.md', 'src/data', 'docs/data-format']
 companions: []
@@ -17,6 +17,15 @@ companions: []
 <!-- AI-assisted: drafted with Claude Code (Periélio, BMad architecture, headless fast path) from the PRD and the existing code; pending review by Ravi (Tech Lead). -->
 
 # Architecture Spine — Field Shift farmer product (front B)
+
+> **Change of Nov 15 (Ravi, Tech Lead; `sprint-change-proposal-2026-11-15.md`):** the Telegram bot and voice are **out of v1**. In this document:
+> - `apps/bot`, `apps/tts`, **AD-6** and the stack rows python-telegram-bot, google-cloud-speech, google-cloud-texttospeech, faster-whisper and piper-tts no longer apply;
+> - the bot and TTS Cloud Run services leave **AD-10**;
+> - **AD-1:** the only product client is `apps/web`;
+> - **AD-9:** the dashboard defaults to `en`; the bot default is dropped;
+> - **AD-3** stays as the rule for any AI use the team defines after discovery.
+>
+> The diagrams below still show the bot as the Nov 14 record. Nothing else changes.
 
 ## Design Paradigm
 
@@ -87,7 +96,7 @@ graph LR
   - Every forecast series carries `nasa: false` and the Open-Meteo attribution.
   - The snapshot generator never imports `open_meteo`.
 
-### AD-6 — Voice port with fallback; GPL boundary for Piper [ADOPTED]
+### AD-6 — Voice port with fallback; GPL boundary for Piper [ADOPTED] — WITHDRAWN Nov 15 (no voice in v1)
 - **Binds:** FR-15, FR-20, NFR-4, NFR-6.
 - **Prevents:** GPL code entering the Apache-2.0 product, and the voice going silent when the primary engine fails.
 - **Rule:**

@@ -93,6 +93,8 @@ Built with the help of AI coding assistants; the idea and decisions are the team
 
 On Nov 14, 2026 an AI assistant was also used to critique our scope against the Field Shift challenge text (what the challenge asks for versus what we had planned). The team discussed that critique and decided the priority itself: decision engine first, then its validation against ZARC and past seasons, then the dashboard (see [docs/team/decisions.md](docs/team/decisions.md)).
 
+On Nov 15, 2026 an AI assistant (Claude Code, BMad deep-recon) was used to research, with cited sources, who leads or advises planting decisions in Sergipe ([docs/research/persona-discovery.md](docs/research/persona-discovery.md)). It did not rank the roles or choose a persona; the team chooses the persona and the role of AI.
+
 ## Credits
 
 Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requirements-dev.txt](requirements-dev.txt)):

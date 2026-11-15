@@ -26,11 +26,11 @@ Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms
 
 | Item | Decision |
 |---|---|
-| Language / runtime | Python 3.12 (`src/data/`, `apps/api/`, `apps/bot/`); Node.js 24 + TypeScript (`apps/web/`) |
-| App / UI framework | `apps/web/`: Vite + React + TypeScript + MapLibre GL JS (internal map now; producer dashboard reuses it). `apps/api/`: FastAPI. `apps/bot/`: python-telegram-bot |
+| Language / runtime | Python 3.12 (`src/data/`, `apps/api/`); Node.js 24 + TypeScript (`apps/web/`) |
+| App / UI framework | `apps/web/`: Vite + React + TypeScript + MapLibre GL JS (internal map now; producer dashboard reuses it). `apps/api/`: FastAPI. (The Telegram bot and voice are out of v1, Nov 15.) |
 | Data access | `src/data/` toolkit: NASA POWER API, `earthaccess` for Earthdata Login sources, Planetary Computer STAC for Sentinel-2. The internal map reads pre-generated snapshots in `apps/web/public/data/` and NASA GIBS tiles; product clients call `apps/api/` over HTTP only |
 | Tests | `pytest` (Python); `npm run lint` (ESLint) and `npm run typecheck` (`tsc --noEmit`) in `apps/web/` |
-| Deploy (public URL, no login) | Internal map: Cloudflare Pages (`*.pages.dev`) via [`.github/workflows/deploy-internal-map.yml`](.github/workflows/deploy-internal-map.yml). API, bot and voice: Google Cloud Run (see the architecture spine) |
+| Deploy (public URL, no login) | Internal map: Cloudflare Pages (`*.pages.dev`) via [`.github/workflows/deploy-internal-map.yml`](.github/workflows/deploy-internal-map.yml). API: Google Cloud Run (see the architecture spine) |
 
 Folder layout (adjust once the stack is chosen, keep it flat and simple):
 
