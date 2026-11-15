@@ -26,6 +26,7 @@ from src.engine.model import Crop, CropSchedule
 SAFRA = "2026/2027"
 ZARC_FILES = ("zarc_2026-2027_se.csv", "zarc_perene_se.csv")
 PROCESSED_DIR = ROOT / "data" / "processed"
+REFERENCE_DIR = ROOT / "data" / "reference" / "zarc"
 SOURCE_URL = "https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico"
 DECENDIO_COLUMNS = [f"dec{i}" for i in range(1, 37)]
 RISK_CLASSES = (20, 30, 40)
@@ -53,14 +54,16 @@ def _plain(text: str) -> str:
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
 
 
-def load_zarc_table(directory: Path | None = None) -> pd.DataFrame | None:
-    """Read the Sergipe ZARC CSVs; None when none is there (run src.data.zarc first)."""
-    folder = directory or PROCESSED_DIR
-    frames = [
-        pd.read_csv(path, dtype={"geocodigo": str})
-        for name in ZARC_FILES
-        if (path := folder / name).is_file()
-    ]
+def load_zarc_table(directory: Path | None = None, fallback: Path | None = None) -> pd.DataFrame | None:
+    """Read the Sergipe ZARC CSVs; None when none is there.
+
+    A fresh download in ``data/processed/`` wins; the copy committed in
+    ``data/reference/zarc/`` is the fallback, so a deployed API needs no download.
+    """
+    folders = (directory or PROCESSED_DIR, fallback or REFERENCE_DIR)
+    paths = [path for name in ZARC_FILES for folder in folders if (path := folder / name).is_file()]
+    chosen = {path.name: path for path in reversed(paths)}
+    frames = [pd.read_csv(path, dtype={"geocodigo": str}) for path in chosen.values()]
     return pd.concat(frames, ignore_index=True) if frames else None
 
 

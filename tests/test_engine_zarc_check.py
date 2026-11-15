@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
 from src.engine.model import Crop, CropSchedule
 from src.engine.zarc_check import (
     DECENDIO_COLUMNS,
-    PROCESSED_DIR,
     ZarcResult,
     check_window,
     load_zarc_table,
@@ -95,7 +96,7 @@ def test_validation_note_when_all_inside_and_when_unchecked(table: pd.DataFrame)
     assert "could not be done" in validation_note("Base.", [])
 
 
-@pytest.mark.skipif(load_zarc_table() is None, reason=f"run python -m src.data.zarc first ({PROCESSED_DIR})")
+@pytest.mark.skipif(load_zarc_table() is None, reason="no ZARC CSV in data/processed/ or data/reference/zarc/")
 def test_real_itabaiana_maize_window_is_april_to_june() -> None:
     real = load_zarc_table()
 
@@ -125,3 +126,31 @@ def test_recommend_reports_divergence_and_inside(table: pd.DataFrame) -> None:
     assert "beans" in partial.validation_note and "maize" not in partial.validation_note
     assert "could not be done" in unchecked.validation_note
     assert "ZARC divergence" in diverging.validation_note
+
+
+def test_fallback_reference_is_used_when_processed_is_missing(tmp_path, table: pd.DataFrame) -> None:
+    reference = tmp_path / "reference"
+    reference.mkdir()
+    table.to_csv(reference / "zarc_2026-2027_se.csv", index=False)
+
+    loaded = load_zarc_table(tmp_path / "missing", fallback=reference)
+
+    assert loaded is not None and len(loaded) == len(table)
+    assert load_zarc_table(tmp_path / "missing", fallback=tmp_path / "none") is None
+
+
+def test_processed_download_wins_over_the_reference_copy(tmp_path, table: pd.DataFrame) -> None:
+    processed, reference = tmp_path / "processed", tmp_path / "reference"
+    processed.mkdir()
+    reference.mkdir()
+    table.head(1).to_csv(processed / "zarc_2026-2027_se.csv", index=False)
+    table.to_csv(reference / "zarc_2026-2027_se.csv", index=False)
+
+    assert len(load_zarc_table(processed, fallback=reference)) == 1
+
+
+def test_committed_reference_covers_the_pilots() -> None:
+    real = load_zarc_table(Path("/nonexistent"))
+
+    assert real is not None
+    assert zarc_decendios(real, "2804508", Crop.MAIZE)
