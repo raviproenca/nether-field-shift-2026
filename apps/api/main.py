@@ -13,6 +13,7 @@ from fastapi import FastAPI, Query, Request
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp
 
+from .cache import prewarm_pilots
 from .diagnosis import DiagnosisResponse, build_diagnosis_response
 from .errors import APIError, ErrorResponse, register_exception_handlers
 from .forecast import ForecastResponse, build_forecast_response
@@ -121,8 +122,17 @@ def create_app(
     cors_origins: Sequence[str] | None = None,
     data_dir: Path | None = None,
     forecast_cache_dir: Path | None = None,
+    api_cache_dir: Path | None = None,
+    prewarm: bool = True,
 ) -> FastAPI:
     """Create and configure the FastAPI application instance."""
+    if prewarm:
+        prewarm_pilots(
+            cache_dir=api_cache_dir,
+            data_dir=data_dir,
+            forecast_cache_dir=forecast_cache_dir,
+        )
+
     app_instance = FastAPI(
         title="Field Shift API",
         version=API_VERSION,
@@ -208,6 +218,7 @@ def create_app(
             lon=lon,
             radius_km=radius_km,
             data_dir=data_dir,
+            cache_dir=api_cache_dir,
         )
 
     @app_instance.get(
@@ -259,6 +270,7 @@ def create_app(
             body,
             data_dir=data_dir,
             forecast_cache_dir=forecast_cache_dir,
+            cache_dir=api_cache_dir,
         )
 
     return app_instance
