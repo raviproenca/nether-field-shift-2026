@@ -1,0 +1,329 @@
+{
+  "recommendation": {
+    "schema_version": 1,
+    "plot": {
+      "lat": -10.218,
+      "lon": -37.42,
+      "radius_km": 5.0,
+      "id": "sergipe_semiarido_ns_gloria",
+      "name": "Nossa Senhora da Gl\u00f3ria (Semi\u00e1rido)",
+      "region": "sergipe",
+      "municipality_code": "2804508",
+      "elevation_m": 249.2,
+      "slope_mean_deg": null,
+      "slope_mean_pct": 7.39,
+      "soil": null,
+      "season": null,
+      "previous_crops": []
+    },
+    "crop": "maize",
+    "priority": "income",
+    "diagnosis": {
+      "period_start": "2026-10-15",
+      "period_end": "2026-11-07",
+      "rain_total_mm": 4.9,
+      "rain_daily_mean_mm": 0.21,
+      "et0_daily_mean_mm": 7.89,
+      "water_balance_mm": -176.6,
+      "soil_moisture_surface_m3m3": 0.037,
+      "soil_moisture_root_kgm2": 61.67,
+      "temperature_mean_c": 30.0,
+      "temperature_max_c": 42.0,
+      "ndvi_mean": 0.354,
+      "elevation_m": 249.2,
+      "slope_mean_pct": 7.39,
+      "bare_soil_windows": [],
+      "sources": [
+        {
+          "source": "imerg",
+          "dataset": "GPM IMERG Late Precipitation L3 1 day 0.1 degree x 0.1 degree V07 (GPM_3IMERGDL)",
+          "nasa": true,
+          "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
+          "doi": "10.5067/GPM/IMERGDL/DAY/07",
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+        },
+        {
+          "source": "smap",
+          "dataset": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+          "nasa": true,
+          "url": "https://nsidc.org/data/spl3smp_e/versions/6",
+          "doi": "10.5067/M20OXIZHY3RJ",
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+        },
+        {
+          "source": "power",
+          "dataset": "NASA POWER daily point API (MERRA-2 and CERES SYN1deg), community AG",
+          "nasa": true,
+          "url": "https://power.larc.nasa.gov/",
+          "doi": null,
+          "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+        },
+        {
+          "source": "srtm",
+          "dataset": "NASADEM Merged DEM Global 1 arc-second V001 (NASADEM_HGT)",
+          "nasa": true,
+          "url": "https://planetarycomputer.microsoft.com/dataset/nasadem",
+          "doi": "10.5067/MEASURES/NASADEM/NASADEM_HGT.001",
+          "notice": null
+        },
+        {
+          "source": "viirs",
+          "dataset": "VIIRS/NPP Vegetation Indices 16-Day L3 Global 500m SIN Grid V002 (VNP13A1)",
+          "nasa": true,
+          "url": "https://lpdaac.usgs.gov/products/vnp13a1v002/",
+          "doi": "10.5067/VIIRS/VNP13A1.002",
+          "notice": null
+        },
+        {
+          "source": "gldas",
+          "dataset": "GLDAS Noah Land Surface Model L4 monthly 0.25 x 0.25 degree V2.1 (GLDAS_NOAH025_M)",
+          "nasa": true,
+          "url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary",
+          "doi": "10.5067/SXAVCZFAQLNO",
+          "notice": null
+        }
+      ]
+    },
+    "projection": {
+      "period_start": "2026-11-15",
+      "period_end": "2026-11-29",
+      "horizon_days": 15,
+      "available": true,
+      "rain_total_mm": 34.9,
+      "rain_daily_mean_mm": 2.327,
+      "temperature_mean_c": 29.67,
+      "temperature_max_c": 37.8,
+      "et0_daily_mean_mm": 6.533,
+      "water_balance_mm": -63.09,
+      "sources": [
+        {
+          "source": "open-meteo",
+          "dataset": "Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS), CC BY 4.0",
+          "nasa": false,
+          "url": "https://open-meteo.com/",
+          "doi": null,
+          "notice": "Forecast from Open-Meteo (ECMWF IFS / NOAA GFS), not NASA satellite observations; free for non-commercial use under CC BY 4.0 (Weather data by Open-Meteo.com)."
+        }
+      ]
+    },
+    "strategies": [
+      {
+        "kind": "resilient_income_forage",
+        "rank": 1,
+        "score": 0.52935,
+        "title": "resilient income forage",
+        "crops": [
+          "maize",
+          "cassava"
+        ],
+        "trade_offs": [
+          "favors_forage_or_income"
+        ],
+        "planting_schedule": [
+          {
+            "crop": "maize",
+            "planting_start": "2027-04-01",
+            "planting_end": "2027-06-30",
+            "cycle_days": 125,
+            "water_demand_mm": 600.0
+          },
+          {
+            "crop": "cassava",
+            "planting_start": "2027-04-01",
+            "planting_end": "2027-06-30",
+            "cycle_days": 300,
+            "water_demand_mm": 1000.0
+          }
+        ],
+        "water_demand_mm": 1600.0,
+        "breaks_pest_cycle": true,
+        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "actions": [
+          {
+            "code": "wait_for_window",
+            "summary": "Wait for the planting window.",
+            "timing": "2027-04-01/2027-06-30",
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
+          },
+          {
+            "code": "plant_on_contour",
+            "summary": "Plant on the contour.",
+            "timing": "at planting",
+            "evidence": "Slope 7.39% is at or above the contour-planting threshold 5.0%."
+          },
+          {
+            "code": "delay_if_dry",
+            "summary": "Do not plant until the water balance recovers.",
+            "timing": "before planting",
+            "evidence": "Water balance -176.6 mm is at or below the severe deficit threshold -150.0 mm."
+          }
+        ]
+      },
+      {
+        "kind": "soil_water_conservation",
+        "rank": 2,
+        "score": 0.425325,
+        "title": "soil water conservation",
+        "crops": [
+          "maize",
+          "beans"
+        ],
+        "trade_offs": [
+          "favors_cover_and_soil"
+        ],
+        "planting_schedule": [
+          {
+            "crop": "maize",
+            "planting_start": "2027-04-01",
+            "planting_end": "2027-06-30",
+            "cycle_days": 125,
+            "water_demand_mm": 600.0
+          },
+          {
+            "crop": "beans",
+            "planting_start": "2027-04-01",
+            "planting_end": "2027-06-30",
+            "cycle_days": 100,
+            "water_demand_mm": 350.0
+          }
+        ],
+        "water_demand_mm": 950.0,
+        "breaks_pest_cycle": true,
+        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "actions": [
+          {
+            "code": "wait_for_window",
+            "summary": "Wait for the planting window.",
+            "timing": "2027-04-01/2027-06-30",
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
+          },
+          {
+            "code": "protect_soil",
+            "summary": "Keep the soil covered.",
+            "timing": "through the cycle",
+            "evidence": "This strategy adds a cover or legume from the crop profiles."
+          },
+          {
+            "code": "plant_on_contour",
+            "summary": "Plant on the contour.",
+            "timing": "at planting",
+            "evidence": "Slope 7.39% is at or above the contour-planting threshold 5.0%."
+          },
+          {
+            "code": "delay_if_dry",
+            "summary": "Do not plant until the water balance recovers.",
+            "timing": "before planting",
+            "evidence": "Water balance -176.6 mm is at or below the severe deficit threshold -150.0 mm."
+          }
+        ]
+      },
+      {
+        "kind": "current_practice",
+        "rank": 3,
+        "score": 0.357575,
+        "title": "current practice",
+        "crops": [
+          "maize"
+        ],
+        "trade_offs": [
+          "keeps_current_calendar"
+        ],
+        "planting_schedule": [
+          {
+            "crop": "maize",
+            "planting_start": "2027-04-01",
+            "planting_end": "2027-06-30",
+            "cycle_days": 125,
+            "water_demand_mm": 600.0
+          }
+        ],
+        "water_demand_mm": 600.0,
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "A single family does not break a pest cycle.",
+        "actions": [
+          {
+            "code": "wait_for_window",
+            "summary": "Wait for the planting window.",
+            "timing": "2027-04-01/2027-06-30",
+            "evidence": "Diagnosis period end 2026-11-07 is outside the profile planting window."
+          },
+          {
+            "code": "plant_on_contour",
+            "summary": "Plant on the contour.",
+            "timing": "at planting",
+            "evidence": "Slope 7.39% is at or above the contour-planting threshold 5.0%."
+          },
+          {
+            "code": "delay_if_dry",
+            "summary": "Do not plant until the water balance recovers.",
+            "timing": "before planting",
+            "evidence": "Water balance -176.6 mm is at or below the severe deficit threshold -150.0 mm."
+          }
+        ]
+      }
+    ],
+    "uncertainty_note": "The forecast is not an observation. Water balance is below the severe deficit threshold.",
+    "validation_note": "A local technician must confirm this advice. ZARC divergence (MAPA, safra 2026/2027): maize: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (7 of 9 ten-day periods). cassava: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (8 of 9 ten-day periods).",
+    "sources": [
+      {
+        "source": "imerg",
+        "dataset": "GPM IMERG Late Precipitation L3 1 day 0.1 degree x 0.1 degree V07 (GPM_3IMERGDL)",
+        "nasa": true,
+        "url": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDL_07/summary",
+        "doi": "10.5067/GPM/IMERGDL/DAY/07",
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+      },
+      {
+        "source": "smap",
+        "dataset": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006 (SPL3SMP_E)",
+        "nasa": true,
+        "url": "https://nsidc.org/data/spl3smp_e/versions/6",
+        "doi": "10.5067/M20OXIZHY3RJ",
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+      },
+      {
+        "source": "power",
+        "dataset": "NASA POWER daily point API (MERRA-2 and CERES SYN1deg), community AG",
+        "nasa": true,
+        "url": "https://power.larc.nasa.gov/",
+        "doi": null,
+        "notice": "Aligned summary period 2026-10-15..2026-11-07: 23/24 paired days (1 missing)."
+      },
+      {
+        "source": "srtm",
+        "dataset": "NASADEM Merged DEM Global 1 arc-second V001 (NASADEM_HGT)",
+        "nasa": true,
+        "url": "https://planetarycomputer.microsoft.com/dataset/nasadem",
+        "doi": "10.5067/MEASURES/NASADEM/NASADEM_HGT.001",
+        "notice": null
+      },
+      {
+        "source": "viirs",
+        "dataset": "VIIRS/NPP Vegetation Indices 16-Day L3 Global 500m SIN Grid V002 (VNP13A1)",
+        "nasa": true,
+        "url": "https://lpdaac.usgs.gov/products/vnp13a1v002/",
+        "doi": "10.5067/VIIRS/VNP13A1.002",
+        "notice": null
+      },
+      {
+        "source": "gldas",
+        "dataset": "GLDAS Noah Land Surface Model L4 monthly 0.25 x 0.25 degree V2.1 (GLDAS_NOAH025_M)",
+        "nasa": true,
+        "url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary",
+        "doi": "10.5067/SXAVCZFAQLNO",
+        "notice": null
+      },
+      {
+        "source": "open-meteo",
+        "dataset": "Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS), CC BY 4.0",
+        "nasa": false,
+        "url": "https://open-meteo.com/",
+        "doi": null,
+        "notice": "Forecast from Open-Meteo (ECMWF IFS / NOAA GFS), not NASA satellite observations; free for non-commercial use under CC BY 4.0 (Weather data by Open-Meteo.com)."
+      }
+    ]
+  },
+  "explanation": "resilient income forage: Wait for the planting window.\nsoil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nIncerteza: The forecast is not an observation. Water balance is below the severe deficit threshold.",
+  "lang": "pt-BR",
+  "generated_at": "2026-11-15T20:40:49Z"
+}

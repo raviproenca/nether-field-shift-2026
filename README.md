@@ -110,6 +110,8 @@ On Nov 14, 2026 an AI assistant was also used to critique our scope against the 
 
 On Nov 15, 2026 an AI assistant (Claude Code, BMad deep-recon) was used to research, with cited sources, who leads or advises planting decisions in Sergipe ([docs/research/persona-discovery.md](docs/research/persona-discovery.md)). It did not rank the roles or choose a persona; the team chooses the persona and the role of AI.
 
+The immersive map (`apps/web/src/plot/immersive/`, `scripts/build_risk_cache.py` and the all-combinations mode of `scripts/build_demo_cache.py`) was written with Claude Code and carries the `AI-assisted` header (review pending). For any address it computes the seasonal rain risk in the browser from the NASA POWER daily API; the strong El Niño seasons come from the NOAA CPC Oceanic Niño Index (third party).
+
 ## Credits
 
 Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requirements-dev.txt](requirements-dev.txt)):
@@ -143,6 +145,7 @@ Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.js
 | Library, data or font | License / terms |
 |---|---|
 | [OpenStreetMap](https://www.openstreetmap.org/copyright) base map tiles | Data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) |
+| [Nominatim](https://nominatim.org/) address search (OpenStreetMap data), limited to Sergipe, one request per search | Data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/) |
 | [MapLibre GL JS](https://maplibre.org/) | BSD-3-Clause |
 | [React](https://react.dev/) | MIT |
 | [Vite](https://vite.dev/) | MIT |
