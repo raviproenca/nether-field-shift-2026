@@ -36,15 +36,15 @@ PILOTS = (
 )
 
 
-def build(pilot_id: str, lat: float, lon: float, code: str, crop: Crop, priority: Priority) -> dict:
+def build(lat: float, lon: float, code: str, crop: Crop, priority: Priority, lang: str) -> dict:
     plot, diagnosis = build_engine_diagnosis(lat=lat, lon=lon, radius_km=5.0)
     plot = replace(plot, municipality_code=code)
     projection = build_engine_projection(lat=lat, lon=lon, forecast_days=15)
     result = recommend(plot, diagnosis, projection, crop, priority, load_rules(), zarc=load_zarc_table())
     return {
         "recommendation": result.to_dict(),
-        "explanation": explain(result, "en"),
-        "lang": "en",
+        "explanation": explain(result, lang),
+        "lang": lang,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
@@ -55,9 +55,10 @@ def main() -> int:
         return 2
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for pilot_id, lat, lon, code, crop, priority in PILOTS:
-        path = OUT_DIR / f"{pilot_id}.json"
-        path.write_text(json.dumps(build(pilot_id, lat, lon, code, crop, priority), indent=2) + "\n", encoding="utf-8")
-        print(f"wrote {path.relative_to(ROOT)}")
+        for lang, suffix in (("en", ""), ("pt-BR", ".pt-BR")):
+            path = OUT_DIR / f"{pilot_id}{suffix}.json"
+            path.write_text(json.dumps(build(lat, lon, code, crop, priority, lang), indent=2) + "\n", encoding="utf-8")
+            print(f"wrote {path.relative_to(ROOT)}")
     return 0
 
 
