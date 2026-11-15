@@ -1,0 +1,11 @@
+# Allowlist: only what the API image copies. Nothing else (credentials, git history, raw data) enters the build context.
+*
+!Dockerfile
+!src
+!apps/__init__.py
+!apps/api
+!apps/web/public/data
+!data/reference/zarc
+!data/sample/ibge_se_municipalities.geojson
+**/__pycache__
+**/*.pyc
