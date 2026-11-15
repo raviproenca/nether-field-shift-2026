@@ -310,7 +310,7 @@ def test_recommendation_validates_against_the_schema() -> None:
     )
     payload = json.loads(json.dumps(serialize_recommendation(recommendation)))
     get_validator().validate(payload)
-    assert "ZARC check is not done yet" in payload["validation_note"]
+    assert "ZARC check could not be done" in payload["validation_note"]
     assert "technician" in payload["validation_note"]
     assert payload["strategies"][0]["water_demand_mm"] > 0
     for strategy in payload["strategies"]:
