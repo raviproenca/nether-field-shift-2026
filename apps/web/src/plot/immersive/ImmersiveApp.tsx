@@ -17,6 +17,7 @@ import { demoHistoryMatches, recommendationQueryKey, recommendationSource, toRec
 import AddressSearch, { type Place } from "./AddressSearch";
 import { IMMERSIVE_COPY } from "./copy";
 import { fetchLiveRisk } from "./liveRisk";
+import { engineNote } from "./engineText";
 import ResultPanel, { type RiskState } from "./ResultPanel";
 import type { RiskData } from "./RiskChart";
 
@@ -138,7 +139,7 @@ export default function ImmersiveApp() {
       .then(({ response, notice }) => setOutcome({ key, ok: true, response, notice }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setOutcome({ key, ok: false, message: error instanceof RecommendationError ? error.message : base.genericError });
+        setOutcome({ key, ok: false, message: error instanceof RecommendationError ? engineNote(error.message, lang) : base.genericError });
       });
     return () => controller.abort();
   }, [key, point, request, resolved, crop, lastCrop, priority, lang, base, copy]);
