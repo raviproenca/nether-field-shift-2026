@@ -164,6 +164,76 @@ def test_same_cell_coordinates_share_cache_keys_and_files(tmp_path: Path) -> Non
     assert open_meteo.stale_cache_path(fdir, p1) == open_meteo.stale_cache_path(fdir, p2)
 
 
+def test_recommendation_cache_fallback_keeps_previous_crop_dimension(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "recommendation_cache"
+    recommendation = {"plot": {"previous_crops": ["beans"]}, "strategies": []}
+    explanations = {"en": "beans history", "pt-BR": "histórico de feijão"}
+    write_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        recommendation_dict=recommendation,
+        explanations=explanations,
+        season=None,
+        previous_crops=("beans",),
+    )
+
+    matching = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        season="dry",
+        previous_crops=("beans",),
+    )
+    mismatched = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        season="dry",
+        previous_crops=("cassava",),
+    )
+
+    assert matching is not None
+    assert matching["recommendation"]["plot"]["previous_crops"] == ["beans"]
+    assert mismatched is None
+
+
+def test_recommendation_cache_ignores_pre_rotation_scoring_entries(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "recommendation_cache"
+    path = write_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        recommendation_dict={"plot": {"previous_crops": []}, "strategies": []},
+        explanations={"en": "legacy ranking", "pt-BR": "ranking antigo"},
+        season=None,
+        previous_crops=(),
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    legacy_entry = next(iter(payload["entries"].values()))
+    payload["entries"] = {"maize:water::": legacy_entry}
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        previous_crops=(),
+    )
+
+    assert result is None
+
+
 # ---------------------------------------------------------------------------
 # Test 3: Pre-warm Pilots, Schema Validation, and Multi-language (AD-9)
 # ---------------------------------------------------------------------------
@@ -197,7 +267,7 @@ def test_prewarm_pilots_schema_validation_and_multi_lang(tmp_path: Path) -> None
 
         for crop in Crop:
             for priority in Priority:
-                entry_key = f"{crop.value}:{priority.value}::"
+                entry_key = f"v2:{crop.value}:{priority.value}::"
                 assert entry_key in entries, f"Missing entry key {entry_key}"
                 entry = entries[entry_key]
                 rec_dict = entry["recommendation"]

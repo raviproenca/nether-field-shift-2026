@@ -85,16 +85,16 @@
       ]
     },
     "projection": {
-      "period_start": "2026-11-15",
-      "period_end": "2026-11-29",
+      "period_start": "2026-11-16",
+      "period_end": "2026-11-16",
       "horizon_days": 15,
-      "available": true,
-      "rain_total_mm": 60.9,
-      "rain_daily_mean_mm": 4.06,
-      "temperature_mean_c": 28.067,
-      "temperature_max_c": 36.0,
-      "et0_daily_mean_mm": 5.688,
-      "water_balance_mm": -24.42,
+      "available": false,
+      "rain_total_mm": null,
+      "rain_daily_mean_mm": null,
+      "temperature_mean_c": null,
+      "temperature_max_c": null,
+      "et0_daily_mean_mm": null,
+      "water_balance_mm": null,
       "sources": [
         {
           "source": "open-meteo",
@@ -110,7 +110,7 @@
       {
         "kind": "resilient_income_forage",
         "rank": 1,
-        "score": 0.5263,
+        "score": 0.4063,
         "title": "resilient income forage",
         "crops": [
           "cassava",
@@ -136,8 +136,8 @@
           }
         ],
         "water_demand_mm": 1600.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -150,7 +150,7 @@
       {
         "kind": "soil_water_conservation",
         "rank": 2,
-        "score": 0.5193,
+        "score": 0.3993,
         "title": "soil water conservation",
         "crops": [
           "cassava",
@@ -176,8 +176,8 @@
           }
         ],
         "water_demand_mm": 1350.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -196,7 +196,7 @@
       {
         "kind": "current_practice",
         "rank": 3,
-        "score": 0.40725,
+        "score": 0.28725,
         "title": "current practice",
         "crops": [
           "cassava"
@@ -215,7 +215,7 @@
         ],
         "water_demand_mm": 1000.0,
         "breaks_pest_cycle": false,
-        "pest_cycle_note": "A single family does not break a pest cycle.",
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -226,7 +226,7 @@
         ]
       }
     ],
-    "uncertainty_note": "The forecast is not an observation.",
+    "uncertainty_note": "The forecast is absent.",
     "validation_note": "A local technician must confirm this advice. ZARC check (MAPA, safra 2026/2027): every window is inside the zoning. Source: https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico",
     "sources": [
       {
@@ -287,7 +287,7 @@
       }
     ]
   },
-  "explanation": "resilient income forage: Wait for the planting window.\nsoil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nUncertainty: The forecast is not an observation.",
+  "explanation": "Inputs \u2014 last crop grown: unknown / none; intended crop: cassava; priority: water.\nRule scores compare fit to the selected priority and available evidence; they are not yield probabilities.\n#1 resilient income forage \u2014 rotation: cassava + maize; score: 0.4063. Trade-off: favors forage and income. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#2 soil water conservation \u2014 rotation: cassava + beans; score: 0.3993. Trade-off: favors soil cover and soil health. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#3 current practice \u2014 rotation: cassava; score: 0.28725. Trade-off: keeps the current calendar and routine. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\nUncertainty: The forecast is absent.",
   "lang": "en",
-  "generated_at": "2026-11-15T20:40:47Z"
+  "generated_at": "2026-11-16T01:30:29Z"
 }

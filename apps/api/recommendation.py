@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from apps.api.cache import (
     read_recommendation_cache,
@@ -40,7 +40,7 @@ class RecommendationRequest(BaseModel):
     crop: Crop
     priority: Priority
     season: str | None = None
-    previous_crops: list[str] = Field(default_factory=list)
+    previous_crops: list[Crop] | None = None
     lang: Literal["en", "pt-BR"] = "en"
 
 
@@ -71,6 +71,7 @@ def build_recommendation_response(
     resolved_cache_dir = resolve_api_cache_dir(cache_dir, data_dir=data_dir)
 
     try:
+        plot = None
         plot, diagnosis = build_engine_diagnosis(
             lat=request.lat,
             lon=request.lon,
@@ -81,7 +82,11 @@ def build_recommendation_response(
         plot = replace(
             plot,
             season=request.season if request.season is not None else plot.season,
-            previous_crops=tuple(request.previous_crops) or plot.previous_crops,
+            previous_crops=(
+                tuple(crop.value for crop in request.previous_crops)
+                if request.previous_crops is not None
+                else plot.previous_crops
+            ),
         )
         projection = build_engine_projection(
             lat=request.lat,
@@ -121,7 +126,7 @@ def build_recommendation_response(
                 recommendation_dict=rec_dict,
                 explanations=explanations,
                 season=request.season,
-                previous_crops=request.previous_crops,
+                previous_crops=plot.previous_crops,
             )
         except OSError:
             pass
@@ -133,6 +138,9 @@ def build_recommendation_response(
     except (APIError, RemoteDataError, OSError) as err:
         if isinstance(err, APIError) and err.status_code < 500:
             raise
+        effective_previous_crops = request.previous_crops
+        if effective_previous_crops is None and plot is not None:
+            effective_previous_crops = plot.previous_crops
         cached = read_recommendation_cache(
             cache_dir=resolved_cache_dir,
             lat=request.lat,
@@ -141,7 +149,7 @@ def build_recommendation_response(
             priority=request.priority.value,
             lang=request.lang,
             season=request.season,
-            previous_crops=request.previous_crops,
+            previous_crops=effective_previous_crops or (),
             allow_default_fallback=True,
         )
         if cached is not None:

@@ -38,6 +38,16 @@ const NOTE_SENTENCES: [RegExp, string][] = [
   [/NDVI is missing\./, "Sem dado de NDVI."],
   [/A local technician must confirm this advice\./, "Um técnico local deve confirmar esta recomendação."],
   [/The ZARC check is not done yet\./, "A checagem do ZARC ainda não foi feita."],
+  [/The analysis service is not reachable\. Check your connection and try again\./, "O serviço de análise está indisponível. Verifique sua conexão e tente novamente."],
+  [/The analysis service returned an error \((\d+)\)\./, "O serviço de análise retornou um erro ($1)."],
+  [/current practice/g, "prática atual"],
+  [/soil water[_ ]conservation/g, "conservação de solo e água"],
+  [/resilient income[_ ]forage/g, "renda resiliente e forragem"],
+  [/Plant during the open window\./g, "Plante durante a janela de plantio."],
+  [/Wait for the planting window\./g, "Aguarde a janela de plantio."],
+  [/Keep the soil covered\./g, "Mantenha o solo coberto."],
+  [/Plant on the contour\./g, "Plante em curva de nível."],
+  [/Do not plant until the water balance recovers\./g, "Não plante até que o balanço hídrico se recupere."],
   [/ZARC divergence \(MAPA, safra ([\d/]+)\):/, "Divergência do ZARC (MAPA, safra $1):"],
   [/ZARC check \(MAPA, safra ([\d/]+)\): every window is inside the zoning\./, "Checagem do ZARC (MAPA, safra $1): todas as janelas estão dentro do zoneamento."],
   [/Source: (\S+)/, "Fonte: $1"],
@@ -45,10 +55,10 @@ const NOTE_SENTENCES: [RegExp, string][] = [
     /(\w+): the window (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}) is only partly inside the ZARC \((\d+) of (\d+) ten-day periods\)\./g,
     "$1: a janela de $2 a $3 fica só em parte dentro do ZARC ($4 de $5 decêndios).",
   ],
-  [/More than one botanical family is in the strategy\./, "Mais de uma família botânica na estratégia."],
-  [/A single family does not break a pest cycle\./, "Uma só família não quebra o ciclo de pragas."],
-  [/Introduces (.+), outside (\w+)\./, "Introduz $1, fora de $2."],
-  [/Stays in (\w+); the pest cycle is not broken\./, "Continua em $1; o ciclo de pragas não é quebrado."],
+  [/Previous crop history is unknown; pest-cycle break cannot be assessed\./, "O histórico da cultura anterior é desconhecido; não é possível avaliar a quebra do ciclo de pragas."],
+  [/Previous botanical family remains in this strategy; a complete pest-cycle break cannot be claimed\./, "A família botânica da cultura anterior permanece nesta estratégia; não é possível afirmar uma quebra completa do ciclo de pragas."],
+  [/Introduces (.+), outside (\w+)\./g, "Introduz $1, fora de $2."],
+  [/Stays in (\w+); the pest cycle is not broken\./g, "Continua em $1; o ciclo de pragas não é quebrado."],
 ];
 
 const CROP_PT: Record<string, string> = { maize: "milho", beans: "feijão", cassava: "mandioca" };
@@ -59,5 +69,6 @@ export function engineNote(text: string, lang: Lang): string {
   for (const [pattern, replacement] of NOTE_SENTENCES) {
     result = result.replace(pattern, replacement);
   }
-  return result.replace(/\b(maize|beans|cassava)(?=:)/g, (crop) => CROP_PT[crop] ?? crop);
+  result = result.replace(/\b(maize|beans|cassava)(?=:)/g, (crop) => CROP_PT[crop] ?? crop);
+  return result;
 }

@@ -79,15 +79,37 @@ def test_strategies_are_ordered_by_rank_and_an_empty_list_still_states_uncertain
     high = _strategy(rank=1, title="first")
     recommendation = _recommendation((low, high))
     text = explain(recommendation)
-    assert text.index("first:") < text.index("second:")
+    assert text.index("#1 first") < text.index("#2 second")
     empty = explain(_recommendation(()), lang="pt-BR")
-    assert empty.startswith("Esta recomendação não tem estratégias.")
+    assert "Esta recomendação não tem estratégias." in empty
     assert "Incerteza: The forecast is absent." in empty
 
 
 def test_portuguese_names_a_strategy_with_no_action() -> None:
     text = explain(_one_strategy(water_balance_mm=1.0, actions=()), lang="pt-BR")
-    assert "current practice: Esta estratégia não tem ação." in text
+    assert "#1 current practice" in text
+    assert "Esta estratégia não tem ação." in text
+
+
+def test_explanation_connects_last_crop_to_intended_crop_and_rule_scores() -> None:
+    recommendation = make_sample_recommendation()
+    recommendation = Recommendation(
+        plot=Plot(lat=-10.7, lon=-37.4, radius_km=5.0, previous_crops=("beans",)),
+        crop=Crop.MAIZE,
+        priority=recommendation.priority,
+        diagnosis=recommendation.diagnosis,
+        projection=recommendation.projection,
+        strategies=recommendation.strategies,
+        uncertainty_note=recommendation.uncertainty_note,
+        validation_note=recommendation.validation_note,
+        sources=recommendation.sources,
+    )
+
+    text = explain(recommendation)
+
+    assert "last crop grown: beans; intended crop: maize" in text
+    assert "Rule scores" in text
+    assert "rotation:" in text and "score:" in text
 
 
 def test_unknown_language_is_rejected() -> None:
@@ -99,6 +121,10 @@ def _copied_numbers(recommendation: Recommendation) -> set[str]:
     parts = [recommendation.uncertainty_note]
     for strategy in recommendation.strategies:
         parts.append(strategy.title)
+        parts.append(str(strategy.rank))
+        parts.append(str(strategy.score))
+        parts.append(f"{strategy.score:g}")
+        parts.extend(strategy.trade_offs)
         if strategy.actions:
             parts.append(strategy.actions[0].summary)
     return set(_numbers("\n".join(parts)))

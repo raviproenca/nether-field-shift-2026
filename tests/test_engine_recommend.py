@@ -249,6 +249,127 @@ def test_only_the_last_previous_crop_is_recognized() -> None:
     assert kinds_of(unrecognized_last) == kinds_of(no_previous)
 
 
+def test_last_crop_changes_family_break_and_soil_priority_score() -> None:
+    diagnosis = make_diagnosis()
+    projection = make_projection()
+    after_maize = recommend(
+        make_plot(previous_crops=("maize",)),
+        diagnosis,
+        projection,
+        Crop.MAIZE,
+        Priority.SOIL,
+        RULES,
+    )
+    after_beans = recommend(
+        make_plot(previous_crops=("beans",)),
+        diagnosis,
+        projection,
+        Crop.MAIZE,
+        Priority.SOIL,
+        RULES,
+    )
+
+    current_after_maize = next(strategy for strategy in after_maize.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE)
+    current_after_beans = next(strategy for strategy in after_beans.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE)
+    assert current_after_maize.breaks_pest_cycle is False
+    assert current_after_beans.breaks_pest_cycle is True
+    assert current_after_maize.score != current_after_beans.score
+
+
+def test_previous_crop_history_scores_from_rules_without_asserting_rank() -> None:
+    diagnosis = make_diagnosis()
+    projection = make_projection()
+    histories = {
+        "maize": ("maize",),
+        "beans": ("beans",),
+        "cassava": ("cassava",),
+        "unknown": (),
+    }
+    results = {
+        name: recommend(
+            make_plot(previous_crops=previous_crops),
+            diagnosis,
+            projection,
+            Crop.MAIZE,
+            Priority.SOIL,
+            RULES,
+        )
+        for name, previous_crops in histories.items()
+    }
+    current = {
+        name: next(
+            strategy for strategy in result.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+        )
+        for name, result in results.items()
+    }
+
+    assert current["maize"].score == current["unknown"].score
+    assert current["beans"].score > current["maize"].score
+    assert current["cassava"].score > current["maize"].score
+    assert current["maize"].breaks_pest_cycle is False
+    assert current["beans"].breaks_pest_cycle is True
+    assert current["cassava"].breaks_pest_cycle is True
+    assert current["unknown"].breaks_pest_cycle is False
+    assert "history is unknown" in current["unknown"].pest_cycle_note.casefold()
+
+
+def test_unknown_history_does_not_score_or_claim_a_pest_cycle_break() -> None:
+    diagnosis = make_diagnosis()
+    projection = make_projection()
+    unknown_history = recommend(
+        make_plot(previous_crops=()),
+        diagnosis,
+        projection,
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+    same_family_history = recommend(
+        make_plot(previous_crops=("beans",)),
+        diagnosis,
+        projection,
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+
+    unknown_current = next(
+        strategy for strategy in unknown_history.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+    )
+    known_current = next(
+        strategy for strategy in same_family_history.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+    )
+    assert unknown_current.score == known_current.score
+    assert all(not strategy.breaks_pest_cycle for strategy in unknown_history.strategies)
+    assert all(
+        "unknown" in strategy.pest_cycle_note.casefold()
+        and "cannot be assessed" in strategy.pest_cycle_note.casefold()
+        for strategy in unknown_history.strategies
+    )
+
+
+def test_mixed_strategy_does_not_claim_complete_break_when_previous_family_remains() -> None:
+    recommendation = recommend(
+        make_plot(previous_crops=("beans",)),
+        make_diagnosis(),
+        make_projection(),
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+    mixed_strategy = next(
+        strategy
+        for strategy in recommendation.strategies
+        if strategy.kind is StrategyKind.SOIL_WATER_CONSERVATION
+    )
+
+    assert "beans" in mixed_strategy.crops
+    assert any(crop != "beans" for crop in mixed_strategy.crops)
+    assert mixed_strategy.breaks_pest_cycle is False
+    assert "previous botanical family remains" in mixed_strategy.pest_cycle_note.casefold()
+    assert "complete pest-cycle break cannot be claimed" in mixed_strategy.pest_cycle_note.casefold()
+
+
 def test_forecast_absent_still_returns_a_recommendation() -> None:
     recommendation = recommend(
         make_plot(),
@@ -340,7 +461,8 @@ def test_each_strategy_has_actions_a_calendar_and_a_pest_note() -> None:
     assert current.planting_schedule[0].planting_end == "2027-06-30"
     assert current.planting_schedule[0].cycle_days == 125
     assert current.breaks_pest_cycle is False
-    assert conservation.breaks_pest_cycle is True
+    assert conservation.breaks_pest_cycle is False
+    assert "previous botanical family remains" in conservation.pest_cycle_note.casefold()
     assert any(action.code == "protect_soil" for action in conservation.actions)
     assert any(action.code == "delay_if_dry" for action in current.actions)
     steep = recommend(

@@ -28,9 +28,13 @@ npm run preview     # serves the built dist/ locally
 
 ## Plot view (product dashboard, #62)
 
-The default screen (`src/plot/`): click a point in Sergipe, pick a crop and a priority, and compare the three strategies with planting dates, trade-offs, Diagnosis and Projection charts, and the source of every number. The internal data map stays at `/#internal`.
+The default screen (`src/plot/`): click a point in Sergipe, choose the **last crop grown** separately from the **intended crop**, choose a priority, and compare the three strategies with planting dates, trade-offs, Diagnosis and Projection charts, and the source of every number. The internal data map stays at `/#internal`.
 
-The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. Without it the screen shows one saved real engine run (`public/demo/`, Itabaiana, maize) and says so on screen. The PT-BR button switches every label, unit and the template explanation (the API is called with `lang=pt-BR`); the engine evidence lines and notes stay in English.
+The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. The request sends the last crop as `previous_crops` (or an explicit empty list when the history is unknown). A configured API failure is shown as an error; it is never replaced by a saved pilot result.
+
+The API accepts only the supported crop IDs (`maize`, `beans`, `cassava`) in `previous_crops`; unsupported history is rejected. When history is unknown, the engine adds no family-break score and says that a pest-cycle break cannot be assessed.
+
+Without `VITE_API_URL`, the screen uses precomputed pilot runs in `public/demo/`. It labels the pilot, generation date and saved crop history. Those files are not recalculated for a clicked address or a newly selected last crop; the UI states when the selected history differs from the saved run. The seasonal rain risk for an arbitrary point is computed separately from NASA POWER. The PT-BR button switches dashboard labels, units and template text; engine evidence and notes remain in English.
 
 ## What the internal map shows
 

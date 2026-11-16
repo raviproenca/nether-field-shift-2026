@@ -22,15 +22,17 @@ Project: NASA Space Apps Challenge 2026, challenge **Field Shift: Adapting Farms
 
 ## 2. Stack and folder structure
 
-> **Stack recorded on Nov 14.** Versions and the product services are in the [architecture spine](_bmad-output/planning-artifacts/architecture/architecture-nether-field-shift-2026-2026-11-14/ARCHITECTURE-SPINE.md#stack). Changes go through a PR approved by the Tech Lead.
+> **Current product stack updated Nov 16, 2026.** The [architecture spine](_bmad-output/planning-artifacts/architecture/architecture-nether-field-shift-2026-2026-11-14/ARCHITECTURE-SPINE.md#stack) preserves the original plan; current service status and the manual Pages runbook are in [docs/infra/azure-api.md](docs/infra/azure-api.md). Changes go through a PR approved by the Tech Lead.
 
 | Item | Decision |
 |---|---|
 | Language / runtime | Python 3.12 (`src/data/`, `apps/api/`); Node.js 24 + TypeScript (`apps/web/`) |
-| App / UI framework | `apps/web/`: Vite + React + TypeScript + MapLibre GL JS (internal map now; producer dashboard reuses it). `apps/api/`: FastAPI. (The Telegram bot and voice are out of v1, Nov 15.) |
-| Data access | `src/data/` toolkit: NASA POWER API, `earthaccess` for Earthdata Login sources, Planetary Computer STAC for Sentinel-2. The internal map reads pre-generated snapshots in `apps/web/public/data/` and NASA GIBS tiles; product clients call `apps/api/` over HTTP only |
-| Tests | `pytest` (Python); `npm run lint` (ESLint) and `npm run typecheck` (`tsc --noEmit`) in `apps/web/` |
-| Deploy (public URL, no login) | Internal map: Cloudflare Pages (`*.pages.dev`) via [`.github/workflows/deploy-internal-map.yml`](.github/workflows/deploy-internal-map.yml). API: Google Cloud Run (see the architecture spine) |
+| App / UI framework | Product: `apps/web/` Vite + React + TypeScript + MapLibre GL JS, branded Crop Helper. API: `apps/api/` FastAPI. Telegram bot and voice remain out of v1. |
+| Data access | Product API and dashboard use NASA POWER and the documented NASA data sources; Open-Meteo, MAPA ZARC, NOAA CPC and OpenStreetMap are credited third parties. `src/data/` keeps the NASA/Earthdata and Planetary Computer toolkit. |
+| Tests | `pytest` (Python); `npm test`, `npm run lint` (ESLint), and `npm run typecheck` (`tsc --noEmit`) in `apps/web/` |
+| Deploy (public URL, no login) | Crop Helper: Cloudflare Pages Direct Upload, [https://crop-helper.pages.dev](https://crop-helper.pages.dev). Product API: Azure Container Apps on a time-limited trial; do not promise availability after the trial. Internal map Pages workflow targets a separate project. |
+
+The current published Crop Helper web revision is recorded as `37552552250d42a74f61a3a9ca1676a59a38693f`; it was built with the Azure API URL. A build with empty `VITE_API_URL` uses the saved static demo. The `deploy-internal-map.yml` workflow deploys the separate `nether-field-map` project; `deploy-api.yml` is the legacy Google Cloud Run plan. Neither workflow deploys the Crop Helper Pages project.
 
 Folder layout (adjust once the stack is chosen, keep it flat and simple):
 
@@ -140,5 +142,6 @@ Not sure what to do next? Run `bmad-help`. Do not edit files inside `_bmad/` by 
 
 - Repo public; README in English with: how to run, NASA data used (with links), other data/code/credits, AI usage.
 - Demo: **video ≤ 30 s** (English, or English subtitles) **or ≤ 7 slides**. Over the limit = out of global judging.
-- All links open without login or password and stay valid until **Jan 26, 2027** (winners announcement). Do not rely on a free trial or partner offer that expires earlier.
+- All links provided in the NASA submission must open without login or password and remain publicly available through **Jan 26, 2027** (winners announcement).
+- The Azure Container Apps API is on a time-limited trial and does not meet that availability guarantee by itself. Keep a demo-only Pages build that does not call the API as the plan for preserving the app link.
 - No credentials anywhere in the history.

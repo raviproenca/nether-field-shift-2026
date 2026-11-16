@@ -2,9 +2,19 @@
 
 > Team notes — ideas and decisions are the team's; summaries assisted by AI.
 
-_Updated Nov 14, 2026 after the mentor feedback. Read [docs/scope.md](../scope.md) first, then [decisions.md](decisions.md)._
+_Updated Nov 16, 2026 at submission close. The dated Nov 14–15 planning notes below are preserved as history; current delivery status is recorded first. Read [docs/scope.md](../scope.md) for the original scope and [decisions.md](decisions.md) for dated decisions._
 
-**Current scope:** [docs/scope.md](../scope.md) is the single source for what we deliver, in which order and what is out. Teammates may start their assigned Todo issues now; only implementation by Ravi's AI agents waits for his release (Nov 14 clarification).
+## Current delivery — 2026-11-16
+
+- **Product:** Crop Helper, the web decision-support app for the official NASA Space Apps Challenge **Field Shift: Adapting Farms with NASA Data**. Public app: [https://crop-helper.pages.dev](https://crop-helper.pages.dev/).
+- **Published web code:** Ravi reported that the live Pages build was generated from commit `37552552250d42a74f61a3a9ca1676a59a38693f`. This is the app revision published on 2026-11-16, not the current documentation branch HEAD.
+- **NASA submission:** On 2026-11-16, Ravi confirmed the team submitted its NASA Space Apps entry. This is a team-reported completion status; this note does not assert independent access to the submission record.
+- **Web and API:** Cloudflare Pages Direct Upload serves the static app. The current live build calls the product API at `https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io`; Ravi/Satélite reported Azure Container Apps revision `field-shift-api--0000002` and image `cf835d52a54d`. This is an Azure trial service with a limited lifetime, not a commitment through the Jan 26, 2027 winners announcement.
+- **Demo vs. live:** With empty `VITE_API_URL`, the app reads saved demo JSON from `apps/web/public/demo/`. The demo warns when a selected last crop was not applied to a saved result. With `VITE_API_URL` set, the app sends live requests and displays an error if the API is unavailable; it does not silently fall back to saved data. The static demo build remains the durable path after the trial API ends.
+- **Inputs:** The UI has separate intended-crop and last-crop-grown fields. A known previous crop is sent in `previous_crops` and participates in the rules/cache key. Unknown history receives no score advantage and no pest-cycle claim; unsupported history is rejected rather than scored as if it were applied.
+- **Limits:** The engine is deterministic decision support, not a yield or harvest predictor. The first-ranked strategy was unchanged in 45 of 45 historical backtest seasons. ZARC checks compare planting windows with the published zoning; they are not a guarantee of yield or suitability. The supported crop set is maize, beans and cassava. Any demo or live response must retain these limits.
+
+The sections below retain the discovery and planning state recorded on Nov 14–15; their statuses are historical where they differ from the delivery status above.
 
 ## 1. Where we are
 

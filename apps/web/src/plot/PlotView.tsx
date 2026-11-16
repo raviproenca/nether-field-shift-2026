@@ -5,6 +5,8 @@ import type { Metric } from "./labels";
 import { diagnosisMetrics, formatNumber, projectionMetrics } from "./labels";
 import { ClimateCharts, WaterDemandChart } from "./Charts";
 import type { Recommendation, SourceAttribution, Strategy } from "./types";
+import { hasSupportedPreviousCrop } from "./recommendationRequest";
+import { engineNote } from "./immersive/engineText";
 
 function SourceLink({ source }: { source: SourceAttribution | undefined }) {
   const copy = useCopy();
@@ -46,7 +48,7 @@ function MetricTable({ caption, metrics, sources }: { caption: string; metrics: 
   );
 }
 
-function StrategyCard({ strategy }: { strategy: Strategy }) {
+function StrategyCard({ strategy, historyKnown }: { strategy: Strategy; historyKnown: boolean }) {
   const copy = useCopy();
   const lang = useLang();
   return (
@@ -56,12 +58,15 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
         {copy.strategyTitles[strategy.kind] ?? strategy.title}
       </h3>
       <p className="strategy-crops">{strategy.crops.map((crop) => copy.crops[crop] ?? crop).join(" + ")}</p>
+      <p className="strategy-score">
+        {copy.score}: {strategy.score.toLocaleString(lang, { maximumFractionDigits: 3 })}
+      </p>
       <h4 className="strategy-heading">{copy.tradeOffs}</h4>
       <ul>
         {strategy.trade_offs.map((tradeOff) => (
           <li key={tradeOff}>{copy.tradeOffLabels[tradeOff] ?? tradeOff}</li>
         ))}
-        <li>{strategy.breaks_pest_cycle ? copy.pestBroken : copy.pestNotBroken}</li>
+        <li>{historyKnown ? (strategy.breaks_pest_cycle ? copy.pestBroken : copy.pestNotBroken) : copy.pestNotAssessed}</li>
         <li className="num">
           {copy.waterDemand}: {formatNumber(strategy.water_demand_mm, copy.units.mm, copy.noData)}
         </li>
@@ -83,32 +88,39 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
           </li>
         ))}
       </ul>
-      <p className="muted">{strategy.pest_cycle_note}</p>
+      {historyKnown && <p className="muted">{engineNote(strategy.pest_cycle_note, lang)}</p>}
     </article>
   );
 }
 
 export default function PlotView({ recommendation, explanation }: { recommendation: Recommendation; explanation: string }) {
   const copy = useCopy();
+  const lang = useLang();
   const { diagnosis, projection, strategies } = recommendation;
   const ranked = [...strategies].sort((a, b) => a.rank - b.rank);
+  const lastCrop = recommendation.plot.previous_crops?.at(-1);
+  const historyKnown = hasSupportedPreviousCrop(recommendation.plot.previous_crops);
   return (
     <div className="plot-view">
       <section aria-labelledby="strategies-heading">
         <h2 id="strategies-heading" className="section-title">
           {copy.strategiesHeading}
         </h2>
+        <p className="muted">
+          {copy.cropHistory(lastCrop ? copy.crops[lastCrop] ?? lastCrop : copy.noPreviousCrop, copy.crops[recommendation.crop] ?? recommendation.crop)}
+        </p>
+        <p className="muted small">{copy.scoreBasis}</p>
         <div className="strategies">
           {ranked.map((strategy) => (
-            <StrategyCard key={strategy.kind} strategy={strategy} />
+            <StrategyCard key={strategy.kind} strategy={strategy} historyKnown={historyKnown} />
           ))}
         </div>
         <div className="note">
-          <p>{recommendation.uncertainty_note}</p>
-          <p>{recommendation.validation_note}</p>
+          <p>{engineNote(recommendation.uncertainty_note, lang)}</p>
+          <p>{engineNote(recommendation.validation_note, lang)}</p>
         </div>
         <h3 className="strategy-heading">{copy.summary}</h3>
-        <pre className="explanation">{explanation}</pre>
+        <pre className="explanation">{engineNote(explanation, lang)}</pre>
       </section>
       <section aria-labelledby="evidence-heading">
         <h2 id="evidence-heading" className="section-title">

@@ -9,6 +9,7 @@ export interface RecommendationRequest {
   lon: number;
   radius_km: number;
   crop: Crop;
+  previous_crops?: Crop[];
   priority: Priority;
   lang: "en" | "pt-BR";
 }
@@ -84,7 +85,15 @@ export interface Strategy {
 
 export interface Recommendation {
   schema_version: 1;
-  plot: { lat: number; lon: number; radius_km: number; id?: string | null; name: string | null; elevation_m: number | null };
+  plot: {
+    lat: number;
+    lon: number;
+    radius_km: number;
+    id?: string | null;
+    name: string | null;
+    elevation_m: number | null;
+    previous_crops?: string[];
+  };
   crop: Crop;
   priority: Priority;
   diagnosis: Diagnosis;
