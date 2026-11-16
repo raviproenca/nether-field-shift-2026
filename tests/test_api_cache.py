@@ -267,7 +267,7 @@ def test_prewarm_pilots_schema_validation_and_multi_lang(tmp_path: Path) -> None
 
         for crop in Crop:
             for priority in Priority:
-                entry_key = f"{crop.value}:{priority.value}::"
+                entry_key = f"v2:{crop.value}:{priority.value}::"
                 assert entry_key in entries, f"Missing entry key {entry_key}"
                 entry = entries[entry_key]
                 rec_dict = entry["recommendation"]
