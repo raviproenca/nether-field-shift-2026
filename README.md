@@ -80,7 +80,7 @@ npm run lint
 npm run typecheck
 
 # Python tests that do not require live data services
-cd ..
+cd ../..
 .venv/bin/python -m pytest -m "not network"
 ```
 

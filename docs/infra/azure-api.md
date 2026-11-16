@@ -16,6 +16,48 @@ The API runs under a time-limited Azure trial. The earlier operational note esti
 
 The static web build is durable relative to the API: saved demo JSON is committed under apps/web/public/demo/. With VITE_API_URL empty, the app reads those saved results and explains when the selected crop history was not applied. With VITE_API_URL configured, it calls the API and reports an error if the service is unavailable; it does not substitute a saved recommendation.
 
+## Update or roll back the existing API image
+
+This procedure updates only the image of the existing Container App. It assumes an operator is already authenticated with Azure CLI and has access to the existing Container App and Azure Container Registry (ACR). Resolve the existing resource group and registry names from the Azure portal or team configuration; do not print credentials or enable shell tracing. These commands do not create resources, change billing, registry authentication, ingress, or app environment variables. In particular, leave `API_CORS_ORIGINS` unchanged.
+
+Run from the repository root. Use a unique source commit tag and retain the previous image reference before building:
+
+```bash
+RESOURCE_GROUP="replace-with-existing-resource-group"
+APP_NAME=field-shift-api
+ACR_NAME="replace-with-existing-registry-name"
+IMAGE_NAME=field-shift-api
+IMAGE_TAG=$(git rev-parse --short=12 HEAD)
+ACR_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
+PREVIOUS_IMAGE=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query 'properties.template.containers[0].image' -o tsv)
+PREVIOUS_REVISION=$(az containerapp revision list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "[?properties.trafficWeight==\`100\`].name | [0]" -o tsv)
+CORS_BEFORE=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='API_CORS_ORIGINS'].value | [0]" -o tsv)
+
+az acr build --registry "$ACR_NAME" --image "$IMAGE_NAME:$IMAGE_TAG" --file Dockerfile .
+az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG"
+CORS_AFTER=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='API_CORS_ORIGINS'].value | [0]" -o tsv)
+test "$CORS_BEFORE" = "$CORS_AFTER"
+```
+
+Replace the two placeholder names before running the commands. The equality check prints no environment values and stops the command block if `API_CORS_ORIGINS` changed. The update command intentionally changes only the image. Do not append `--set-env-vars`, registry, ingress, scale, or billing options. Check `/health` and the Crop Helper origin's CORS preflight before considering the revision usable:
+
+```bash
+API_URL=https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io
+curl -fsS "$API_URL/health"
+curl -i -X OPTIONS "$API_URL/recommendation" \
+  -H 'Origin: https://crop-helper.pages.dev' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: content-type'
+```
+
+For the general rollback path, apply the captured previous image. This creates an image-only revision using the app's current configuration, including its current `API_CORS_ORIGINS`:
+
+```bash
+az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$PREVIOUS_IMAGE"
+```
+
+In multiple-revision mode, an operator may instead reactivate and route traffic to `$PREVIOUS_REVISION` with `az containerapp revision activate` and `az containerapp ingress traffic set --revision-weight "$PREVIOUS_REVISION=100"`. Only use that route after confirming the saved revision has the intended CORS origin; a revision restores its own configuration. Single-revision mode may deprovision old revisions, so the captured immutable image reference is the portable rollback record. Azure documents [revision behavior](https://learn.microsoft.com/en-us/azure/container-apps/revisions), [revision activation](https://learn.microsoft.com/en-us/cli/azure/containerapp/revision), and [traffic weights](https://learn.microsoft.com/en-us/cli/azure/containerapp/ingress/traffic).
+
 ## Reproduce locally without cloud resources
 
 Requirements: Node.js 24 or newer, uv, and Python 3.12.
@@ -47,7 +89,7 @@ Focused web/API contract checks:
     npm test
     npm run lint
     npm run typecheck
-    cd ..
+    cd ../..
     .venv/bin/python -m pytest -m "not network"
 
 The network marker is for tests that call live data services. A local build and test run do not create cloud resources or deploy anything.

@@ -142,5 +142,6 @@ Not sure what to do next? Run `bmad-help`. Do not edit files inside `_bmad/` by 
 
 - Repo public; README in English with: how to run, NASA data used (with links), other data/code/credits, AI usage.
 - Demo: **video ≤ 30 s** (English, or English subtitles) **or ≤ 7 slides**. Over the limit = out of global judging.
-- The static Pages demo link must remain usable without login through **Jan 26, 2027** (winners announcement). Azure Container Apps is on a time-limited trial and is not a durability commitment; preserve a demo-only build that does not call the API.
+- All links provided in the NASA submission must open without login or password and remain publicly available through **Jan 26, 2027** (winners announcement).
+- The Azure Container Apps API is on a time-limited trial and does not meet that availability guarantee by itself. Keep a demo-only Pages build that does not call the API as the plan for preserving the app link.
 - No credentials anywhere in the history.
