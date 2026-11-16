@@ -1,6 +1,6 @@
- ProTip# Nether · Field Shift (NASA Space Apps Challenge 2026)
+# Crop Helper · Field Shift: Adapting Farms with NASA Data
 
-Team **Nether**'s project for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/), local event in **Aracaju, Brazil**.
+**Crop Helper** is Team **Nether**'s decision-support dashboard for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/), local event in **Aracaju, Brazil**.
 
 **Challenge:** [Field Shift: Adapting Farms with NASA Data](https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/)
 
