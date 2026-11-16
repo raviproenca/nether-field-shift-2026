@@ -56,6 +56,9 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
         {copy.strategyTitles[strategy.kind] ?? strategy.title}
       </h3>
       <p className="strategy-crops">{strategy.crops.map((crop) => copy.crops[crop] ?? crop).join(" + ")}</p>
+      <p className="strategy-score">
+        {copy.score}: {strategy.score.toLocaleString(lang, { maximumFractionDigits: 3 })}
+      </p>
       <h4 className="strategy-heading">{copy.tradeOffs}</h4>
       <ul>
         {strategy.trade_offs.map((tradeOff) => (
@@ -92,12 +95,17 @@ export default function PlotView({ recommendation, explanation }: { recommendati
   const copy = useCopy();
   const { diagnosis, projection, strategies } = recommendation;
   const ranked = [...strategies].sort((a, b) => a.rank - b.rank);
+  const lastCrop = recommendation.plot.previous_crops?.at(-1);
   return (
     <div className="plot-view">
       <section aria-labelledby="strategies-heading">
         <h2 id="strategies-heading" className="section-title">
           {copy.strategiesHeading}
         </h2>
+        <p className="muted">
+          {copy.cropHistory(lastCrop ? copy.crops[lastCrop] ?? lastCrop : copy.noPreviousCrop, copy.crops[recommendation.crop] ?? recommendation.crop)}
+        </p>
+        <p className="muted small">{copy.scoreBasis}</p>
         <div className="strategies">
           {ranked.map((strategy) => (
             <StrategyCard key={strategy.kind} strategy={strategy} />

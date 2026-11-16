@@ -164,6 +164,46 @@ def test_same_cell_coordinates_share_cache_keys_and_files(tmp_path: Path) -> Non
     assert open_meteo.stale_cache_path(fdir, p1) == open_meteo.stale_cache_path(fdir, p2)
 
 
+def test_recommendation_cache_fallback_keeps_previous_crop_dimension(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "recommendation_cache"
+    recommendation = {"plot": {"previous_crops": ["beans"]}, "strategies": []}
+    explanations = {"en": "beans history", "pt-BR": "histórico de feijão"}
+    write_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        recommendation_dict=recommendation,
+        explanations=explanations,
+        season=None,
+        previous_crops=("beans",),
+    )
+
+    matching = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        season="dry",
+        previous_crops=("beans",),
+    )
+    mismatched = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        season="dry",
+        previous_crops=("cassava",),
+    )
+
+    assert matching is not None
+    assert matching["recommendation"]["plot"]["previous_crops"] == ["beans"]
+    assert mismatched is None
+
+
 # ---------------------------------------------------------------------------
 # Test 3: Pre-warm Pilots, Schema Validation, and Multi-language (AD-9)
 # ---------------------------------------------------------------------------

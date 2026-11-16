@@ -7,7 +7,11 @@ export interface ImmersiveCopy {
   tagline: string;
   pilots: string;
   pickHint: string;
-  crop: string;
+  intendedCrop: string;
+  lastCrop: string;
+  noPreviousCrop: string;
+  dateUnavailable: string;
+  cropTransition: (lastCrop: string, intendedCrop: string) => string;
   priority: string;
   recommendation: string;
   waitBecause: (balance: string, threshold: string) => string;
@@ -15,6 +19,7 @@ export interface ImmersiveCopy {
   onContour: string;
   keepCovered: string;
   confidence: string;
+  scoreBasis: string;
   backtestLink: string;
   alternatives: string;
   score: string;
@@ -31,9 +36,9 @@ export interface ImmersiveCopy {
   months: string[];
   details: string;
   nearestPilot: (name: string, km: number) => string;
+  savedRun: (pilot: string, date: string, crop: string, priority: string, savedPrevious: string, selectedPrevious: string, historyMatches: boolean) => string;
   liveAnalysis: string;
   liveNotice: (cell: string) => string;
-  serviceFallback: (name: string, km: number) => string;
   close: string;
   openPanel: string;
   addressLabel: string;
@@ -60,7 +65,11 @@ const EN: ImmersiveCopy = {
   tagline: "Planting decision support for Sergipe, built on NASA data",
   pilots: "Pilot plots",
   pickHint: "Or click anywhere on the map.",
-  crop: "Crop",
+  intendedCrop: "Intended crop",
+  lastCrop: "Last crop grown",
+  noPreviousCrop: "Unknown / none",
+  dateUnavailable: "date unavailable",
+  cropTransition: (lastCrop, intendedCrop) => `Last grown: ${lastCrop} · Intended: ${intendedCrop}`,
   priority: "Priority",
   recommendation: "Recommendation",
   waitBecause: (balance, threshold) => `Wait: the water balance is ${balance} mm, below the severe-deficit limit of ${threshold} mm.`,
@@ -68,7 +77,8 @@ const EN: ImmersiveCopy = {
   onContour: ", on the contour",
   keepCovered: " Keep the soil covered.",
   confidence:
-    "How sure is this? The ranking uses fixed agronomic rules. In a 45-season test it barely changed between dry and wet years, so confirm with a local technician.",
+    "Decision support, not a harvest or yield forecast. The deterministic ranking uses fixed agronomic rules; its top strategy was unchanged in 45 of 45 tested seasons. Confirm choices with a local technician.",
+  scoreBasis: "Rule score (0–1), not a yield probability. It combines water, soil, erosion and income fit using the selected priority and available evidence.",
   backtestLink: "See the test",
   alternatives: "Other strategies",
   score: "score",
@@ -86,12 +96,12 @@ const EN: ImmersiveCopy = {
   months: ["Apr", "May", "Jun", "Jul"],
   details: "All details and sources",
   nearestPilot: (name, km) =>
-    `Live analysis of any address needs the analysis service, which is not connected yet. The ranking and the figures below come from the nearest pilot (${name}, ${km} km away); the seasonal rain risk is computed for your point.`,
+    `This is a saved example, not a live analysis for your point. The recommendation comes from the nearest pilot (${name}, ${km} km away); seasonal rain risk is computed separately for your point.`,
+  savedRun: (pilot, date, crop, priority, savedPrevious, selectedPrevious, historyMatches) =>
+    `Saved pilot example: ${pilot}, generated ${date}. Saved inputs: intended crop ${crop}, priority ${priority}, last crop grown ${savedPrevious}. ${historyMatches ? `The saved history matches your selection (${selectedPrevious}).` : `Your selected last crop (${selectedPrevious}) was not applied; this result uses the saved history shown above.`}`,
   liveAnalysis: "Live analysis",
   liveNotice: (cell) =>
     `Live analysis: the engine ran now for your point, on NASA data from the nearest data cell (${cell}).`,
-  serviceFallback: (name, km) =>
-    `The analysis service did not answer. The ranking and the figures below come from the nearest pilot (${name}, ${km} km away); the seasonal rain risk is computed for your point.`,
   close: "Close",
   openPanel: "Show the recommendation",
   addressLabel: "Address or place in Sergipe",
@@ -110,7 +120,7 @@ const EN: ImmersiveCopy = {
   riskLoading: "Computing the rain risk for this point from NASA POWER…",
   riskUnavailable: "The rain risk for this point could not be loaded from NASA POWER right now.",
   emptyTitle: "Where is the plot?",
-  emptyBody: "Type an address, use your location or click the map. You will see when to plant and which of three strategies best withstands a lack of water.",
+  emptyBody: "Type an address, use your location or click the map. Compare three rule-based rotation strategies using the available evidence. This is decision support, not a harvest or yield forecast.",
 };
 
 const PT: ImmersiveCopy = {
@@ -118,7 +128,11 @@ const PT: ImmersiveCopy = {
   tagline: "Apoio à decisão de plantio em Sergipe, com dados da NASA",
   pilots: "Talhões piloto",
   pickHint: "Ou clique em qualquer lugar do mapa.",
-  crop: "Cultura",
+  intendedCrop: "Cultura pretendida",
+  lastCrop: "Última cultura cultivada",
+  noPreviousCrop: "Não informado",
+  dateUnavailable: "data indisponível",
+  cropTransition: (lastCrop, intendedCrop) => `Última cultura: ${lastCrop} · Pretendida: ${intendedCrop}`,
   priority: "Prioridade",
   recommendation: "Recomendação",
   waitBecause: (balance, threshold) =>
@@ -127,7 +141,8 @@ const PT: ImmersiveCopy = {
   onContour: ", em curva de nível",
   keepCovered: " Mantenha o solo coberto.",
   confidence:
-    "Qual a confiança? O ranking usa regras agronômicas fixas. Num teste com 45 safras ele quase não mudou entre anos secos e chuvosos; confirme com um técnico local.",
+    "Apoio à decisão, não previsão de colheita ou rendimento. O ranking determinístico usa regras agronômicas fixas; a primeira estratégia ficou igual em 45 de 45 safras testadas. Confirme as escolhas com um técnico local.",
+  scoreBasis: "Nota baseada em regras (0–1), não uma probabilidade de rendimento. Combina adequação hídrica, do solo, de erosão e de renda segundo a prioridade e as evidências disponíveis.",
   backtestLink: "Ver o teste",
   alternatives: "Outras estratégias",
   score: "nota",
@@ -145,12 +160,12 @@ const PT: ImmersiveCopy = {
   months: ["abr", "mai", "jun", "jul"],
   details: "Todos os detalhes e fontes",
   nearestPilot: (name, km) =>
-    `A análise ao vivo de qualquer endereço depende do serviço de análise, que ainda não está ligado. O ranking e os números abaixo vêm do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado para o seu ponto.`,
+    `Este é um exemplo salvo, não uma análise ao vivo do seu ponto. A recomendação vem do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado separadamente para o seu ponto.`,
+  savedRun: (pilot, date, crop, priority, savedPrevious, selectedPrevious, historyMatches) =>
+    `Exemplo salvo do piloto ${pilot}, gerado em ${date}. Entradas salvas: cultura pretendida ${crop}, prioridade ${priority}, última cultura ${savedPrevious}. ${historyMatches ? `O histórico salvo corresponde à sua escolha (${selectedPrevious}).` : `A última cultura escolhida (${selectedPrevious}) não foi aplicada; este resultado usa o histórico salvo acima.`}`,
   liveAnalysis: "Análise ao vivo",
   liveNotice: (cell) =>
     `Análise ao vivo: o motor rodou agora para o seu ponto, com dados da NASA da célula de dados mais próxima (${cell}).`,
-  serviceFallback: (name, km) =>
-    `O serviço de análise não respondeu. O ranking e os números abaixo vêm do piloto mais próximo (${name}, a ${km} km); o risco de chuva na safra é calculado para o seu ponto.`,
   close: "Fechar",
   openPanel: "Ver a recomendação",
   addressLabel: "Endereço ou lugar em Sergipe",
@@ -169,7 +184,7 @@ const PT: ImmersiveCopy = {
   riskLoading: "Calculando o risco de chuva deste ponto com a NASA POWER…",
   riskUnavailable: "Não foi possível carregar agora o risco de chuva deste ponto na NASA POWER.",
   emptyTitle: "Onde fica o talhão?",
-  emptyBody: "Digite um endereço, use sua localização ou clique no mapa. Você vai ver quando plantar e qual de três estratégias aguenta melhor a falta de água.",
+  emptyBody: "Digite um endereço, use sua localização ou clique no mapa. Compare três estratégias de rotação baseadas em regras e nas evidências disponíveis. Isto apoia decisões, não prevê colheita ou rendimento.",
 };
 
 export const IMMERSIVE_COPY: Record<Lang, ImmersiveCopy> = { en: EN, "pt-BR": PT };

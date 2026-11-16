@@ -13,7 +13,7 @@ from referencing import Registry, Resource
 
 from apps.api import recommendation as recommendation_module
 from apps.api.main import create_app
-from src.engine.model import Projection
+from src.engine.model import Diagnosis, Plot, Projection
 
 SCHEMAS_DIR = Path(__file__).resolve().parents[1] / "docs" / "data-format"
 REC_SCHEMA = json.loads((SCHEMAS_DIR / "recommendation.schema.json").read_text(encoding="utf-8"))
@@ -34,6 +34,16 @@ VALID_BODY = {
 
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    def fake_diagnosis(**kwargs: object) -> tuple[Plot, Diagnosis]:
+        return (
+            Plot(
+                lat=float(kwargs["lat"]),
+                lon=float(kwargs["lon"]),
+                radius_km=float(kwargs["radius_km"]),
+            ),
+            Diagnosis(period_start="2026-10-01", period_end="2026-10-31", water_balance_mm=30.0),
+        )
+
     def fake_projection(**kwargs: object) -> Projection:
         return Projection(
             period_start="2026-11-15",
@@ -42,8 +52,10 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
             available=False,
         )
 
+    monkeypatch.setattr(recommendation_module, "build_engine_diagnosis", fake_diagnosis)
     monkeypatch.setattr(recommendation_module, "build_engine_projection", fake_projection)
-    return TestClient(create_app())
+    monkeypatch.setattr(recommendation_module, "_zarc_table", lambda: None)
+    return TestClient(create_app(prewarm=False))
 
 
 def test_valid_request_matches_schema_and_has_text(client: TestClient) -> None:
@@ -56,6 +68,34 @@ def test_valid_request_matches_schema_and_has_text(client: TestClient) -> None:
     assert body["recommendation"]["plot"]["previous_crops"] == ["beans"]
     assert body["lang"] == "en"
     assert body["explanation"].strip()
+
+
+def test_explicit_empty_previous_crops_overrides_inferred_plot_history(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    plot = Plot(lat=-10.685, lon=-37.425, radius_km=5.0, previous_crops=("beans",))
+    diagnosis = Diagnosis(period_start="2026-10-01", period_end="2026-10-31", water_balance_mm=30.0)
+    projection = Projection(
+        period_start="2026-11-01",
+        period_end="2026-11-15",
+        horizon_days=15,
+        available=False,
+    )
+    monkeypatch.setattr(recommendation_module, "build_engine_diagnosis", lambda **_: (plot, diagnosis))
+    monkeypatch.setattr(recommendation_module, "build_engine_projection", lambda **_: projection)
+    monkeypatch.setattr(recommendation_module, "_zarc_table", lambda: None)
+
+    omitted = recommendation_module.build_recommendation_response(
+        recommendation_module.RecommendationRequest(**{key: value for key, value in VALID_BODY.items() if key != "previous_crops"}),
+        cache_dir=tmp_path,
+    )
+    explicitly_empty = recommendation_module.build_recommendation_response(
+        recommendation_module.RecommendationRequest(**{**VALID_BODY, "previous_crops": []}),
+        cache_dir=tmp_path,
+    )
+
+    assert omitted.recommendation["plot"]["previous_crops"] == ["beans"]
+    assert explicitly_empty.recommendation["plot"]["previous_crops"] == []
 
 
 def test_portuguese_text_on_request(client: TestClient) -> None:

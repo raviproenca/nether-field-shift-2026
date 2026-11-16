@@ -57,6 +57,7 @@ function Alternative({ strategy, best, lang, copy }: { strategy: Strategy; best:
         <span className="alt-score" aria-label={`${copy.score} ${fmt(strategy.score, lang, 2)}`}>
           <span className="alt-score-bar" style={{ transform: `scaleX(${best ? strategy.score / best : 0})` }} />
         </span>
+        <span className="alt-score-value num">{fmt(strategy.score, lang, 2)}</span>
       </summary>
       <ul className="alt-actions">
         {strategy.actions.map((action) => (
@@ -101,6 +102,26 @@ export default function ResultPanel({
         </p>
         <h2 className="answer-title">{base.strategyTitles[top.kind] ?? top.title}</h2>
         <p className="answer-crops">{top.crops.map((crop) => base.crops[crop] ?? crop).join(" + ")}</p>
+        <p className="answer-context">
+          {copy.cropTransition(
+            recommendation.plot.previous_crops?.at(-1)
+              ? base.crops[recommendation.plot.previous_crops.at(-1)!] ?? recommendation.plot.previous_crops.at(-1)!
+              : copy.noPreviousCrop,
+            base.crops[recommendation.crop] ?? recommendation.crop,
+          )}
+        </p>
+        <p className="answer-score">
+          {copy.score}: {fmt(top.score, lang, 3)} / 1
+        </p>
+        <p className="muted small">{copy.scoreBasis}</p>
+        {top.trade_offs.length > 0 && (
+          <ul className="answer-tradeoffs">
+            {top.trade_offs.map((tradeOff) => (
+              <li key={tradeOff}>{base.tradeOffLabels[tradeOff] ?? tradeOff}</li>
+            ))}
+          </ul>
+        )}
+        <p className="muted small answer-pest">{engineNote(top.pest_cycle_note, lang)}</p>
         {headline(top, recommendation, lang, copy).map((line) => (
           <p key={line} className="answer-line">
             {line}

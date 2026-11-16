@@ -236,7 +236,9 @@ def read_recommendation_cache(
     fell_back = False
 
     if entry is None and allow_default_fallback:
-        default_key = _rec_entry_key(crop, priority, None, ())
+        # A missing season may fall back to the all-season result, but a different
+        # crop history must never reuse scores calculated for another rotation.
+        default_key = _rec_entry_key(crop, priority, None, previous_crops)
         entry = entries.get(default_key)
         fell_back = True
 

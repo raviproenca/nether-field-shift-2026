@@ -2,15 +2,16 @@
 // The only place the dashboard talks to the outside (AD-1). Without VITE_API_URL it serves a
 // real engine output saved in public/demo/, so the screen works before the API is deployed.
 import type { Lang } from "./i18n";
-import type { ApiErrorBody, RecommendationRequest, RecommendationResponse } from "./types";
+import type { RecommendationRequest, RecommendationResponse } from "./types";
+import { RecommendationError, postRecommendation } from "./recommendationRequest";
+
+export { RecommendationError } from "./recommendationRequest";
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
 const SAMPLE_PILOT = "sergipe_agreste_itabaiana";
 
 export const USING_SAMPLE = API_URL === "";
-
-export class RecommendationError extends Error {}
 
 export async function fetchRecommendation(
   request: RecommendationRequest,
@@ -19,25 +20,7 @@ export async function fetchRecommendation(
   if (USING_SAMPLE) {
     return fetchDemo(SAMPLE_PILOT, request.lang, signal);
   }
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}/recommendation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-      signal,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
-    }
-    throw new RecommendationError("The analysis service is not reachable. Check your connection and try again.");
-  }
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
-    throw new RecommendationError(body?.error.message ?? `The analysis service returned an error (${response.status}).`);
-  }
-  return (await response.json()) as RecommendationResponse;
+  return postRecommendation(API_URL, request, signal);
 }
 
 /** Pre-computed result for a pilot (written by scripts/build_demo_cache.py); no API and no login needed. */

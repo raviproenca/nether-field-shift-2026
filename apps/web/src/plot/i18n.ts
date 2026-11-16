@@ -21,6 +21,10 @@ export interface Copy {
   noPlot: string;
   analysing: string;
   genericError: string;
+  score: string;
+  scoreBasis: string;
+  cropHistory: (lastCrop: string, intendedCrop: string) => string;
+  noPreviousCrop: string;
   strategiesHeading: string;
   evidenceHeading: string;
   summary: string;
@@ -79,6 +83,10 @@ const EN: Copy = {
   noPlot: "No plot selected yet.",
   analysing: "Analysing the plot…",
   genericError: "Something went wrong. Try again.",
+  score: "Rule score",
+  scoreBasis: "This is a rule-based comparison for the selected priority, not a yield probability.",
+  cropHistory: (lastCrop, intendedCrop) => `Last crop grown: ${lastCrop}. Intended crop: ${intendedCrop}.`,
+  noPreviousCrop: "unknown / none",
   strategiesHeading: "Three strategies, side by side",
   evidenceHeading: "Evidence",
   summary: "Summary",
@@ -157,6 +165,10 @@ const PT: Copy = {
   noPlot: "Nenhum talhão selecionado ainda.",
   analysing: "Analisando o talhão…",
   genericError: "Algo deu errado. Tente novamente.",
+  score: "Nota baseada em regras",
+  scoreBasis: "É uma comparação baseada em regras para a prioridade escolhida, não uma probabilidade de rendimento.",
+  cropHistory: (lastCrop, intendedCrop) => `Última cultura cultivada: ${lastCrop}. Cultura pretendida: ${intendedCrop}.`,
+  noPreviousCrop: "não informada",
   strategiesHeading: "Três estratégias, lado a lado",
   evidenceHeading: "Evidências",
   summary: "Resumo",
