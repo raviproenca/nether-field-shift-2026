@@ -1,72 +1,100 @@
-<!-- AI-assisted: drafted with Claude Code; pending review by Ravi (Tech Lead). -->
-# API on Azure Container Apps (trial)
+<!-- AI-assisted: updated with Codex; review pending by Ravi (Tech Lead). -->
+# Crop Helper web deployment and Azure API trial
 
-Decision (Ravi, Nov 15): the product API runs on **Azure Container Apps** with the US$ 200 trial credit instead of Google Cloud. This replaces the Cloud Run plan for issue #65; the files of [cloud-run-api.md](cloud-run-api.md) and `.github/workflows/deploy-api.yml` stay in the repository but are no longer needed.
+This runbook documents the existing Crop Helper deployment and how to reproduce the app locally. It does not create Azure or Cloudflare resources. The current product uses a manual Cloudflare Pages Direct Upload; no GitHub Actions workflow deploys Crop Helper.
 
-**Important limit.** Azure is only available until the trial ends (about **Dec 15, 2026**). That does **not** cover the rule that every link must stay valid until **Jan 26, 2027**. So the main submission link is the static dashboard on Cloudflare Pages (`https://nether-field-map.pages.dev`), which works without the API: it shows the saved example and the two demo pilots. The dashboard must never depend on this API to be judged.
+## Current deployment
 
-## What the script does
+- **Public app:** [https://crop-helper.pages.dev](https://crop-helper.pages.dev/)
+- **Cloudflare Pages project:** crop-helper, Direct Upload.
+- **Published web code commit:** 37552552250d42a74f61a3a9ca1676a59a38693f, reported by Ravi as the code used for the 2026-11-16 deployment. This is the published app revision, not a later documentation commit.
+- **Product API:** https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io
+- **API CORS origin:** https://crop-helper.pages.dev (API_CORS_ORIGINS).
+- **Azure status:** Ravi/Satélite reported revision field-shift-api--0000002 running image cf835d52a54d; /health returned 200. A public browser smoke after the Pages release received a live recommendation response.
 
-[`scripts/deploy_azure_api.sh`](../../scripts/deploy_azure_api.sh) (idempotent, `set -euo pipefail`, no secret inside):
+The API runs under a time-limited Azure trial. The earlier operational note estimated expiry around Dec 15, 2026, but the account's Azure portal is authoritative; do not promise API availability on a specific date or through the Jan 26, 2027 winners announcement. Do not upgrade the subscription to pay-as-you-go as an automatic fallback.
 
-1. registers the providers and the `containerapp` CLI extension;
-2. creates a resource group, an Azure Container Registry (Basic) and a Container Apps environment without a log workspace;
-3. builds the [`Dockerfile`](../../Dockerfile) with `az acr build` (falls back to local `docker build` and push if ACR Tasks are not allowed on the trial);
-4. creates or updates the app: external ingress, port 8080, 0.5 vCPU, 1 GiB, **min replicas 0 (scales to zero)**, max 2, `API_CORS_ORIGINS=https://nether-field-map.pages.dev`;
-5. tries to create a US$ 50 cost budget (best effort; see below);
-6. calls `/health` and prints the service URL.
+The static web build is durable relative to the API: saved demo JSON is committed under apps/web/public/demo/. With VITE_API_URL empty, the app reads those saved results and explains when the selected crop history was not applied. With VITE_API_URL configured, it calls the API and reports an error if the service is unavailable; it does not substitute a saved recommendation.
 
-The registry admin user is used so the app can pull the image; its password is read into a shell variable, never printed or written. After the deploy, disabling it is optional (`az acr update -n <acr> --admin-enabled false` breaks later pulls, so only do it if you switch the app to a managed identity).
+## Reproduce locally without cloud resources
 
-## Run it
+Requirements: Node.js 24 or newer, uv, and Python 3.12.
 
-```bash
-az login                      # once, in your own terminal
-az account show --query state # prints "Enabled"; do not paste ids anywhere
-scripts/deploy_azure_api.sh
-```
+    uv venv -p 3.12 .venv
+    uv pip install -r requirements-dev.txt -r apps/api/requirements.txt
+    cd apps/web
+    npm ci
 
-Settings (all optional, environment variables): `AZ_LOCATION` (default `brazilsouth`; use `eastus` if the trial cannot create resources there), `AZ_RESOURCE_GROUP`, `AZ_ENVIRONMENT`, `AZ_APP`, `AZ_ACR_NAME`, `API_CORS_ORIGINS`, `AZ_CPU`, `AZ_MEMORY`, `AZ_MIN_REPLICAS`, `AZ_MAX_REPLICAS`, `BUDGET_AMOUNT` (USD, `0` skips it) and `BUDGET_EMAIL` (alert recipient). Running it again redeploys the current commit.
+From the repository root, start the API on loopback in one terminal:
 
-## Known issues from the first run (Nov 15, 2026)
+    API_CORS_ORIGINS=http://localhost:5173 .venv/bin/uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
 
-- **`az extension add --name containerapp` fails with "Pip failed with status code 1".** An Azure CLI installed as a `uv` tool has a virtual environment without `pip`, and `az` installs extensions with pip. Fix used: `uv pip install --python ~/.local/share/uv/tools/azure-cli/bin/python pip`, then run the command again. Alternatively install the Azure CLI another way (the Microsoft package or installer), which ships with pip.
-- **`az consumption budget create` returns 400** ("Invalid budget configuration, please use filter interface with 2019-05-01-preview"). The script treats the budget as best effort and goes on. Create the US$ 50 budget in the portal instead: *Cost Management → Budgets*, scope the resource group `rg-field-shift`, add alerts at 50%, 90% and 100%. A budget only sends alerts; it does not stop the spending.
+Start the web app in another terminal. For the saved demo, leave the API URL empty:
 
-## Test
+    cd apps/web
+    VITE_API_URL= npm run dev
 
-```bash
-URL=https://<the printed fqdn>
-curl -s "$URL/health"
-# CORS: the dashboard origin is allowed, another origin is not
-curl -si -H "Origin: https://nether-field-map.pages.dev" "$URL/health" | grep -i access-control-allow-origin
-curl -si -H "Origin: https://example.org" "$URL/health" | grep -ic access-control-allow-origin   # prints 0
-# Recommendation for the two pilots
-curl -s -X POST "$URL/recommendation" -H 'content-type: application/json' \
-  -d '{"lat":-10.685,"lon":-37.425,"crop":"maize","priority":"water"}'
-curl -s -X POST "$URL/recommendation" -H 'content-type: application/json' \
-  -d '{"lat":-10.218,"lon":-37.42,"crop":"maize","priority":"water"}'
-```
+For local live mode, point the web app at the local API:
 
-The first call after idle takes a few seconds (scale from zero).
+    cd apps/web
+    VITE_API_URL=http://localhost:8000 npm run dev
 
-**Current deployment (Nov 15, 2026):** `https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io` in Brazil South. Validated after the deploy:
+To exercise the public Azure trial instead, use the public endpoint shown above as VITE_API_URL. It is public configuration, not a credential. Never put passwords, tokens or private API keys in a VITE_* variable; Vite embeds these values in browser assets.
 
-- `/health` answers 200 with no secret in the response.
-- CORS: `https://nether-field-map.pages.dev` is allowed (GET and the POST preflight); another origin (`https://example.org`) receives no `access-control-allow-origin` header.
-- `POST /recommendation` for both pilots returns 200 with 3 strategies, the 15-day forecast available and the municipality code (Itabaiana 2802908: "inside the zoning"; Nossa Senhora da Glória 2804508: "only partly inside the ZARC").
-- `/docs` answers 200.
+Focused web/API contract checks:
 
-**Cold start.** The app scales to zero, so the first request after a quiet period waits for a container to start (a few seconds). Pilot pre-warming (#111, #54) removes the slow part for the two pilots: their responses are built at image build time and served from the on-disk cache, so those calls do not wait for the weather and open-data services. It does not remove the container start itself, and other points are still computed on demand (then cached by rounded coordinates). Keep `AZ_MIN_REPLICAS=1` only if a live demo needs zero wait; that costs a little compute for as long as it runs.
+    cd apps/web
+    npm test
+    npm run lint
+    npm run typecheck
+    cd ..
+    .venv/bin/python -m pytest -m "not network"
 
-## Point the dashboard at it
+The network marker is for tests that call live data services. A local build and test run do not create cloud resources or deploy anything.
 
-Store the printed URL as the repository variable `API_URL`; the dashboard build reads it as `VITE_API_URL` (see the workflow change in its own PR). Without `API_URL` the dashboard keeps the saved example. When the trial ends, unset `API_URL` and redeploy the dashboard so it stops calling a dead address (or it will show its normal error message for live points; the demo pilots keep working either way).
+## Build and upload to the existing Pages project
 
-## Cost and what happens when the trial ends
+Build the live variant from the repository root:
 
-Approximate, check the Azure pricing page: Container Apps (consumption plan) has a monthly free grant and costs nothing while scaled to zero; with this light use the app should stay near zero. The **Container Registry Basic costs about US$ 5 per month** (about US$ 0.17 per day) and is the main cost. Total for the trial: a few US dollars of the US$ 200.
+    cd apps/web
+    npm ci
+    VITE_API_URL=https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io npm run build
+    test -f dist/index.html
 
-The budget alert only notifies; it does not stop spending. If `az consumption budget create` is refused on the trial, create it in the portal (*Cost Management → Budgets*, US$ 50 for the resource group).
+For a durable demo-only build, set VITE_API_URL to an empty value instead:
 
-When the trial ends (about Dec 15) or the credit runs out, Azure disables the subscription: the API goes offline and the resources are deleted after a retention period unless the subscription is upgraded to pay-as-you-go (do not upgrade). Nothing else breaks: the Cloudflare dashboard, the saved example and the demo pilots do not use the API. To remove everything earlier (the registry, the environment and the app): `az group delete --name rg-field-shift --yes`. If the API disappears for any reason, the dashboard returns to its saved example and the demo pilots; clear the repository variable `API_URL` and redeploy the dashboard so it stops pointing at a dead address.
+    VITE_API_URL= npm run build
+    test -f dist/index.html
+
+To upload, sign in to the Cloudflare dashboard in the operator's browser, open **Workers & Pages → crop-helper → Deployments → Create a new deployment**, choose the production environment, and upload the apps/web/dist folder (or a ZIP whose root contains index.html). Select **Save and Deploy**. Use the existing crop-helper project; do not create a new project or change its name. See Cloudflare's [Direct Upload guide](https://developers.cloudflare.com/pages/get-started/direct-upload/).
+
+The same upload can also be made with Wrangler after authenticating locally with npx wrangler login:
+
+    npx wrangler pages deploy dist --project-name=crop-helper
+
+Do not store Cloudflare credentials in this repository. The existing [internal-map workflow](../../.github/workflows/deploy-internal-map.yml) deploys a different Pages project, nether-field-map; it must not be repointed to Crop Helper. The existing [API workflow](../../.github/workflows/deploy-api.yml) is the legacy Google Cloud Run path, not the current Azure service.
+
+## Verify the API and CORS
+
+    API_URL=https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io
+    curl -fsS "$API_URL/health"
+    curl -i -X OPTIONS "$API_URL/recommendation" \
+      -H 'Origin: https://crop-helper.pages.dev' \
+      -H 'Access-Control-Request-Method: POST' \
+      -H 'Access-Control-Request-Headers: content-type'
+    curl -fsS -X POST "$API_URL/recommendation" \
+      -H 'Origin: https://crop-helper.pages.dev' \
+      -H 'Content-Type: application/json' \
+      --data '{"lat":-10.685,"lon":-37.425,"radius_km":5,"crop":"maize","previous_crops":["beans"],"priority":"water","lang":"pt-BR"}'
+
+The recommendation contract separates the intended crop from previous_crops. Unsupported history is rejected; empty or unknown history must not create a score bonus or a pest-cycle claim. Cache keys include the crop history. Treat a live request as successful only when it returns a valid recommendation for those inputs.
+
+## Roll back or return to demo mode
+
+To restore a previous production upload, open **Workers & Pages → crop-helper → Deployments**, find a successful production deployment, open its three-dot menu, and select **Rollback to this deployment**. Cloudflare documents that a successful production deployment is a valid rollback target; preview deployments are not. See [Cloudflare Pages rollbacks](https://developers.cloudflare.com/pages/configuration/rollbacks/).
+
+If the Azure trial expires, the API may stop responding while the Pages assets remain available. To keep the same public URL usable, upload the demo-only build with empty VITE_API_URL, or roll back to a known successful demo-only deployment. Verify that the selected demo clearly says its saved history was not applied where relevant. Do not leave an expired API URL baked into a build that is presented as working live mode.
+
+## Infrastructure guard
+
+[scripts/deploy_azure_api.sh](../../scripts/deploy_azure_api.sh) provisions Azure resources, including a resource group, registry and Container Apps environment. It is not part of local reproduction or the Pages Direct Upload procedure. Do not run it or create new infrastructure as part of routine builds; API provisioning, subscription changes and infrastructure removal require a separate explicit instruction from Ravi. The old Google Cloud Run plan and its workflow remain in the repository as historical material.

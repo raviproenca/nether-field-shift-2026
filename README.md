@@ -6,23 +6,49 @@
 
 **Current scope:** [docs/scope.md](docs/scope.md), the single source for what we deliver, in which order and what is out.
 
+**Public app:** [crop-helper.pages.dev](https://crop-helper.pages.dev/) · **Published web code revision:** `37552552250d42a74f61a3a9ca1676a59a38693f` (2026-11-16; this is the deployed app commit, not the documentation revision).
+
+Ravi confirmed on 2026-11-16 that the NASA Space Apps submission is complete. The current Pages build calls the product API on an Azure trial; that API is temporary and is not promised through the winners announcement. The repository also contains a demo-only build path that serves saved results without the API.
+
 ## What it is
 
 **Decision support** for the technical professional who leads planting decisions in Sergipe, Brazil. It compares three rotation strategies (the current practice and two alternatives), checks the planting windows against the official ZARC zoning, and shows the source of every number. It does not predict the harvest or the yield.
 
-**Known limit:** the ranking does not yet change across wet and dry years (historical backtest, 45 of 45 seasons gave the same first strategy), so it should be read as a structured comparison of options, not as a forecast of how a season will turn out.
+**Known limit:** the ranking did not change across wet and dry years in the historical backtest: the same strategy ranked first in 45 of 45 tested seasons ([backtest record, PR #96](https://github.com/raviproenca/nether-field-shift-2026/pull/96)). Read the ranking as a structured comparison of options, not a forecast of how a season will turn out.
 
-> 🚧 **Work in progress.** Development happens during the hackathon (November 14–15, 2026), per the event rules.
+The dashboard keeps **last crop grown** separate from **intended crop**. Live requests send the last crop as `previous_crops` to the API. The static demo shows saved recommendations and states when the selected history was not applied; it does not claim to personalize saved results. Unknown or unsupported history does not receive a rotation score benefit or a pest-cycle claim.
+
+ZARC is a check against published planting windows, not a guarantee that a crop or date is suitable. Recommendations use fixed rules and the supported crops (maize, beans and cassava); they are not yield probabilities or harvest predictions. The live API is on a time-limited Azure trial. If it is unavailable, live mode reports an error; it does not silently substitute a saved result.
 
 ## How to run
+
+### Crop Helper web app
+
+Requirements: Node.js 24 or newer. The default build uses saved demo data when `VITE_API_URL` is empty.
+
+```bash
+cd apps/web
+npm ci
+VITE_API_URL= npm run dev
+```
+
+To run against a local API, start the API as described below, then use `VITE_API_URL=http://localhost:8000 npm run dev`. For the live Azure trial endpoint, use `VITE_API_URL=https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io npm run dev`. The URL is public configuration, not a credential. Never put a token or password in a `VITE_*` variable.
+
+### API and data toolkit
 
 Requirements: [uv](https://docs.astral.sh/uv/) and Python 3.12.
 
 ```bash
-uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt
+uv venv -p 3.12 .venv && uv pip install -r requirements-dev.txt -r apps/api/requirements.txt
 ```
 
-That installs the runtime packages plus pytest. To run only the toolkit, use `requirements.txt` instead.
+Run the API locally on loopback:
+
+```bash
+.venv/bin/uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
+```
+
+No Azure or Cloudflare resources are created by these local commands.
 
 Data toolkit (details in [src/data/README.md](src/data/README.md)):
 
@@ -44,11 +70,25 @@ scripts/earthdata-login.sh        # once; stores credentials in ~/.netrc, never 
 python -m src.data gldas --variable SoilMoi0_10cm_inst --start 2025-01-01 --end 2025-01-31
 ```
 
-Tests: `.venv/bin/python -m pytest` (offline). Real POWER call: `.venv/bin/python -m pytest -m network`.
+### Tests
+
+```bash
+# Web tests, lint and typecheck
+cd apps/web
+npm test
+npm run lint
+npm run typecheck
+
+# Python tests that do not require live data services
+cd ..
+.venv/bin/python -m pytest -m "not network"
+```
+
+Live data checks are separately marked: `.venv/bin/python -m pytest -m network`.
 
 ## NASA data used
 
-Every dataset the project can read. NASA Earth science data are open: free to use and redistribute with attribution, see the [Earthdata data use guidance](https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance). The *License / policy* column says where each dataset states its terms.
+The product uses NASA Earth science data alongside the third-party sources below. The table also preserves datasets available to the repository's data toolkit. NASA Earth science data are open: free to use and redistribute with attribution; see the [Earthdata data use guidance](https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance). The *License / policy* column links to each dataset's terms.
 
 | Dataset | Page | DOI | License / policy |
 |---|---|---|---|
@@ -71,9 +111,11 @@ Every dataset the project can read. NASA Earth science data are open: free to us
 | GIBS `IMERG_Precipitation_Rate`, from GPM IMERG Early and Final Precipitation L3 Half Hourly 0.1° v07 (`GPM_3IMERGHHE`, `GPM_3IMERGHH`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C2723758340-GES_DISC.html) | [10.5067/GPM/IMERG/3B-HH-E/07](https://doi.org/10.5067/GPM/IMERG/3B-HH-E/07), [10.5067/GPM/IMERG/3B-HH/07](https://doi.org/10.5067/GPM/IMERG/3B-HH/07) | NASA open data, EOSDIS use guidance |
 | GIBS `VIIRS_NOAA20_Thermal_Anomalies_375m_All` (FIRMS active fires), from VIIRS NOAA-20 375 m I-Band Active Fire NRT v2 (`VJ114IMGT_NRT`) | [CMR](https://cmr.earthdata.nasa.gov/search/concepts/C1355615368-LANCEMODIS.html) | [10.5067/FIRMS/VIIRS/VJ114IMGT_NRT.002](https://doi.org/10.5067/FIRMS/VIIRS/VJ114IMGT_NRT.002) | NASA open data, EOSDIS use guidance |
 
-DOIs were read from the NASA CMR collection records on 2026-11-14 and every link above answered HTTP 200 that day. The GIBS rows list the source collections that GIBS names for each layer in its layer metadata (`https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/<layer>.json`). Trim this table to the datasets actually used before submitting.
+DOIs were read from the NASA CMR collection records on 2026-11-14. The GIBS rows list the source collections named in each layer's metadata (`https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/<layer>.json`). The table is retained for project and toolkit provenance; it does not imply every dataset appears in every recommendation.
 
-### Page checklist before submitting
+### Public-link maintenance
+
+Ravi reports the NASA submission is complete. Keep these checks current for the public app, repository and supporting materials.
 
 - [ ] Every link in the project page (demo, app, video, slides, data, repo) opens without login and works until 2027-01-26
 - [ ] Repo is public; README lists how to run, NASA data (above), credits and AI usage
@@ -88,6 +130,7 @@ DOIs were read from the NASA CMR collection records on 2026-11-14 and every link
 | Zoneamento Agrícola de Risco Climático (ZARC), "Tábua de Risco": planting periods by crop, municipality, soil class and harvest year | MAPA (Ministério da Agricultura e Pecuária), open data portal | [dados.agricultura.gov.br](https://dados.agricultura.gov.br/dataset/tabua-de-risco-zoneamento-agricola-de-risco-climatico) | none | Creative Commons Attribution (CC BY, from the catalog metadata); credit "ZARC, MAPA" with the harvest year and portaria. The legal text is the portaria PDF. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
 | Sentinel-2 MSI Level-2A surface reflectance, 10 m (`sentinel-2-l2a`) | ESA / Copernicus, served by the Microsoft Planetary Computer | [Planetary Computer catalog](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a) | [10.5270/S2_-znk9xsj](https://doi.org/10.5270/S2_-znk9xsj) (Sentinel-2 MSI Level-2A BOA Reflectance Product, ESA) | Free, full and open under the [Copernicus Sentinel data terms](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice); attribution: "Contains modified Copernicus Sentinel data [year]". Service use: [Planetary Computer terms of use](https://planetarycomputer.microsoft.com/terms) |
 | Open-Meteo Weather Forecast API (ECMWF IFS / NOAA GFS, up to 15 days + FAO-56 ET0) | Open-Meteo | [open-meteo.com](https://open-meteo.com/) | none | Free for non-commercial use under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); attribution required ("Weather data by Open-Meteo.com") |
+| Oceanic Niño Index (ONI), historical season labels in the rain-risk view | NOAA Climate Prediction Center | [NOAA CPC ONI](https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/oni/v6/index.php) | none | NOAA data are public domain; cite NOAA CPC. ONI is used for historical labels, not as a crop recommendation or forecast. NOAA CPC now identifies RONI for official ENSO monitoring. |
 | Produção Agrícola Municipal (PAM), table 5457: area, production, yield and value by municipality and crop, 1974 to 2025 | IBGE (Instituto Brasileiro de Geografia e Estatística), via the SIDRA API | [SIDRA table 5457](https://sidra.ibge.gov.br/tabela/5457) | none | Licence **not verified yet** (the IBGE terms pages block automated access); credit "Fonte: IBGE, Pesquisa Agrícola Municipal" and the access date. See [docs/research/brazil-data-sources.md](docs/research/brazil-data-sources.md) |
 
 The municipal mesh in `data/sample/ibge_se_municipalities.geojson` (used to find the IBGE code of a plot, which selects the ZARC rows) comes from the IBGE malhas API v3, state 28, lowest quality; credit "Fonte: IBGE, Malha Municipal". Third-party data, not NASA.
@@ -110,7 +153,7 @@ On Nov 14, 2026 an AI assistant was also used to critique our scope against the 
 
 On Nov 15, 2026 an AI assistant (Claude Code, BMad deep-recon) was used to research, with cited sources, who leads or advises planting decisions in Sergipe ([docs/research/persona-discovery.md](docs/research/persona-discovery.md)). It did not rank the roles or choose a persona; the team chooses the persona and the role of AI.
 
-The immersive map (`apps/web/src/plot/immersive/`, `scripts/build_risk_cache.py` and the all-combinations mode of `scripts/build_demo_cache.py`) was written with Claude Code and carries the `AI-assisted` header (review pending). For any address it computes the seasonal rain risk in the browser from the NASA POWER daily API; the strong El Niño seasons come from the NOAA CPC Oceanic Niño Index (third party).
+The Crop Helper web interface in `apps/web/src/plot/immersive/`, `scripts/build_risk_cache.py` and the all-combinations mode of `scripts/build_demo_cache.py` were built with AI coding assistants and carry `AI-assisted` headers. For a selected address the app computes seasonal rain risk in the browser from NASA POWER; historical El Niño season labels use the NOAA CPC Oceanic Niño Index (third party, credited above).
 
 ## Credits
 
@@ -140,7 +183,7 @@ Libraries (pinned in [requirements.txt](requirements.txt); pytest in [requiremen
 | [pydantic](https://docs.pydantic.dev/) | MIT |
 | [httpx](https://www.python-httpx.org/) | BSD-3-Clause |
 
-Internal map (`apps/web/`, pinned in [apps/web/package.json](apps/web/package.json)):
+Crop Helper web app (`apps/web/`, dependencies pinned in [apps/web/package.json](apps/web/package.json)):
 
 | Library, data or font | License / terms |
 |---|---|
