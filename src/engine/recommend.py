@@ -398,6 +398,8 @@ def _pest_cycle(
 ) -> tuple[bool, str]:
     if previous is None:
         return False, "Previous crop history is unknown; pest-cycle break cannot be assessed."
+    if any(profile.botanical_family == previous.botanical_family for profile in profiles):
+        return False, "Previous botanical family remains in this strategy; a complete pest-cycle break cannot be claimed."
     introduced = [profile for profile in profiles if profile.botanical_family != previous.botanical_family]
     if introduced:
         names = ", ".join(profile.botanical_family for profile in introduced)

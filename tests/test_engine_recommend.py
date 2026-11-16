@@ -311,6 +311,28 @@ def test_unknown_history_does_not_score_or_claim_a_pest_cycle_break() -> None:
     )
 
 
+def test_mixed_strategy_does_not_claim_complete_break_when_previous_family_remains() -> None:
+    recommendation = recommend(
+        make_plot(previous_crops=("beans",)),
+        make_diagnosis(),
+        make_projection(),
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+    mixed_strategy = next(
+        strategy
+        for strategy in recommendation.strategies
+        if strategy.kind is StrategyKind.SOIL_WATER_CONSERVATION
+    )
+
+    assert "beans" in mixed_strategy.crops
+    assert any(crop != "beans" for crop in mixed_strategy.crops)
+    assert mixed_strategy.breaks_pest_cycle is False
+    assert "previous botanical family remains" in mixed_strategy.pest_cycle_note.casefold()
+    assert "complete pest-cycle break cannot be claimed" in mixed_strategy.pest_cycle_note.casefold()
+
+
 def test_forecast_absent_still_returns_a_recommendation() -> None:
     recommendation = recommend(
         make_plot(),
@@ -402,7 +424,8 @@ def test_each_strategy_has_actions_a_calendar_and_a_pest_note() -> None:
     assert current.planting_schedule[0].planting_end == "2027-06-30"
     assert current.planting_schedule[0].cycle_days == 125
     assert current.breaks_pest_cycle is False
-    assert conservation.breaks_pest_cycle is True
+    assert conservation.breaks_pest_cycle is False
+    assert "previous botanical family remains" in conservation.pest_cycle_note.casefold()
     assert any(action.code == "protect_soil" for action in conservation.actions)
     assert any(action.code == "delay_if_dry" for action in current.actions)
     steep = recommend(

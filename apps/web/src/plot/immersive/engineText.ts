@@ -46,6 +46,7 @@ const NOTE_SENTENCES: [RegExp, string][] = [
     "$1: a janela de $2 a $3 fica só em parte dentro do ZARC ($4 de $5 decêndios).",
   ],
   [/Previous crop history is unknown; pest-cycle break cannot be assessed\./, "O histórico da cultura anterior é desconhecido; não é possível avaliar a quebra do ciclo de pragas."],
+  [/Previous botanical family remains in this strategy; a complete pest-cycle break cannot be claimed\./, "A família botânica da cultura anterior permanece nesta estratégia; não é possível afirmar uma quebra completa do ciclo de pragas."],
   [/Previous crop history is unknown; pest-cycle break cannot be assessed\./, "O histórico da cultura anterior é desconhecido; não é possível avaliar a quebra do ciclo de pragas."],
   [/Introduces (.+), outside (\w+)\./, "Introduz $1, fora de $2."],
   [/Stays in (\w+); the pest cycle is not broken\./, "Continua em $1; o ciclo de pragas não é quebrado."],
