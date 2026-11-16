@@ -276,6 +276,43 @@ def test_last_crop_changes_family_break_and_soil_priority_score() -> None:
     assert current_after_maize.score != current_after_beans.score
 
 
+def test_previous_crop_history_scores_from_rules_without_asserting_rank() -> None:
+    diagnosis = make_diagnosis()
+    projection = make_projection()
+    histories = {
+        "maize": ("maize",),
+        "beans": ("beans",),
+        "cassava": ("cassava",),
+        "unknown": (),
+    }
+    results = {
+        name: recommend(
+            make_plot(previous_crops=previous_crops),
+            diagnosis,
+            projection,
+            Crop.MAIZE,
+            Priority.SOIL,
+            RULES,
+        )
+        for name, previous_crops in histories.items()
+    }
+    current = {
+        name: next(
+            strategy for strategy in result.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+        )
+        for name, result in results.items()
+    }
+
+    assert current["maize"].score == current["unknown"].score
+    assert current["beans"].score > current["maize"].score
+    assert current["cassava"].score > current["maize"].score
+    assert current["maize"].breaks_pest_cycle is False
+    assert current["beans"].breaks_pest_cycle is True
+    assert current["cassava"].breaks_pest_cycle is True
+    assert current["unknown"].breaks_pest_cycle is False
+    assert "history is unknown" in current["unknown"].pest_cycle_note.casefold()
+
+
 def test_unknown_history_does_not_score_or_claim_a_pest_cycle_break() -> None:
     diagnosis = make_diagnosis()
     projection = make_projection()

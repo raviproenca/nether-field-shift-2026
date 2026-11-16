@@ -6,6 +6,7 @@ import { diagnosisMetrics, formatNumber, projectionMetrics } from "./labels";
 import { ClimateCharts, WaterDemandChart } from "./Charts";
 import type { Recommendation, SourceAttribution, Strategy } from "./types";
 import { hasSupportedPreviousCrop } from "./recommendationRequest";
+import { engineNote } from "./immersive/engineText";
 
 function SourceLink({ source }: { source: SourceAttribution | undefined }) {
   const copy = useCopy();
@@ -87,13 +88,14 @@ function StrategyCard({ strategy, historyKnown }: { strategy: Strategy; historyK
           </li>
         ))}
       </ul>
-      {historyKnown && <p className="muted">{strategy.pest_cycle_note}</p>}
+      {historyKnown && <p className="muted">{engineNote(strategy.pest_cycle_note, lang)}</p>}
     </article>
   );
 }
 
 export default function PlotView({ recommendation, explanation }: { recommendation: Recommendation; explanation: string }) {
   const copy = useCopy();
+  const lang = useLang();
   const { diagnosis, projection, strategies } = recommendation;
   const ranked = [...strategies].sort((a, b) => a.rank - b.rank);
   const lastCrop = recommendation.plot.previous_crops?.at(-1);
@@ -114,11 +116,11 @@ export default function PlotView({ recommendation, explanation }: { recommendati
           ))}
         </div>
         <div className="note">
-          <p>{recommendation.uncertainty_note}</p>
-          <p>{recommendation.validation_note}</p>
+          <p>{engineNote(recommendation.uncertainty_note, lang)}</p>
+          <p>{engineNote(recommendation.validation_note, lang)}</p>
         </div>
         <h3 className="strategy-heading">{copy.summary}</h3>
-        <pre className="explanation">{explanation}</pre>
+        <pre className="explanation">{engineNote(explanation, lang)}</pre>
       </section>
       <section aria-labelledby="evidence-heading">
         <h2 id="evidence-heading" className="section-title">

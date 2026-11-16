@@ -38,6 +38,14 @@ const NOTE_SENTENCES: [RegExp, string][] = [
   [/NDVI is missing\./, "Sem dado de NDVI."],
   [/A local technician must confirm this advice\./, "Um técnico local deve confirmar esta recomendação."],
   [/The ZARC check is not done yet\./, "A checagem do ZARC ainda não foi feita."],
+  [/current practice/g, "prática atual"],
+  [/soil water[_ ]conservation/g, "conservação de solo e água"],
+  [/resilient income[_ ]forage/g, "renda resiliente e forragem"],
+  [/Plant during the open window\./, "Plante durante a janela de plantio."],
+  [/Wait for the planting window\./, "Aguarde a janela de plantio."],
+  [/Keep the soil covered\./, "Mantenha o solo coberto."],
+  [/Plant on the contour\./, "Plante em curva de nível."],
+  [/Do not plant until the water balance recovers\./, "Não plante até que o balanço hídrico se recupere."],
   [/ZARC divergence \(MAPA, safra ([\d/]+)\):/, "Divergência do ZARC (MAPA, safra $1):"],
   [/ZARC check \(MAPA, safra ([\d/]+)\): every window is inside the zoning\./, "Checagem do ZARC (MAPA, safra $1): todas as janelas estão dentro do zoneamento."],
   [/Source: (\S+)/, "Fonte: $1"],
@@ -47,7 +55,6 @@ const NOTE_SENTENCES: [RegExp, string][] = [
   ],
   [/Previous crop history is unknown; pest-cycle break cannot be assessed\./, "O histórico da cultura anterior é desconhecido; não é possível avaliar a quebra do ciclo de pragas."],
   [/Previous botanical family remains in this strategy; a complete pest-cycle break cannot be claimed\./, "A família botânica da cultura anterior permanece nesta estratégia; não é possível afirmar uma quebra completa do ciclo de pragas."],
-  [/Previous crop history is unknown; pest-cycle break cannot be assessed\./, "O histórico da cultura anterior é desconhecido; não é possível avaliar a quebra do ciclo de pragas."],
   [/Introduces (.+), outside (\w+)\./, "Introduz $1, fora de $2."],
   [/Stays in (\w+); the pest cycle is not broken\./, "Continua em $1; o ciclo de pragas não é quebrado."],
 ];
@@ -60,5 +67,6 @@ export function engineNote(text: string, lang: Lang): string {
   for (const [pattern, replacement] of NOTE_SENTENCES) {
     result = result.replace(pattern, replacement);
   }
-  return result.replace(/\b(maize|beans|cassava)(?=:)/g, (crop) => CROP_PT[crop] ?? crop);
+  result = result.replace(/\b(maize|beans|cassava)(?=:)/g, (crop) => CROP_PT[crop] ?? crop);
+  return result;
 }
