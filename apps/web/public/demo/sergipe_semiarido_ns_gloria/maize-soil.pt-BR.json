@@ -85,16 +85,16 @@
       ]
     },
     "projection": {
-      "period_start": "2026-11-15",
-      "period_end": "2026-11-29",
+      "period_start": "2026-11-16",
+      "period_end": "2026-11-16",
       "horizon_days": 15,
-      "available": true,
-      "rain_total_mm": 34.9,
-      "rain_daily_mean_mm": 2.327,
-      "temperature_mean_c": 29.67,
-      "temperature_max_c": 37.8,
-      "et0_daily_mean_mm": 6.533,
-      "water_balance_mm": -63.09,
+      "available": false,
+      "rain_total_mm": null,
+      "rain_daily_mean_mm": null,
+      "temperature_mean_c": null,
+      "temperature_max_c": null,
+      "et0_daily_mean_mm": null,
+      "water_balance_mm": null,
       "sources": [
         {
           "source": "open-meteo",
@@ -110,7 +110,7 @@
       {
         "kind": "soil_water_conservation",
         "rank": 1,
-        "score": 0.465875,
+        "score": 0.405875,
         "title": "soil water conservation",
         "crops": [
           "maize",
@@ -136,8 +136,8 @@
           }
         ],
         "water_demand_mm": 950.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -168,7 +168,7 @@
       {
         "kind": "current_practice",
         "rank": 2,
-        "score": 0.4085,
+        "score": 0.3485,
         "title": "current practice",
         "crops": [
           "maize"
@@ -187,7 +187,7 @@
         ],
         "water_demand_mm": 600.0,
         "breaks_pest_cycle": false,
-        "pest_cycle_note": "A single family does not break a pest cycle.",
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -212,7 +212,7 @@
       {
         "kind": "resilient_income_forage",
         "rank": 3,
-        "score": 0.4035,
+        "score": 0.3435,
         "title": "resilient income forage",
         "crops": [
           "maize",
@@ -238,8 +238,8 @@
           }
         ],
         "water_demand_mm": 1600.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -262,7 +262,7 @@
         ]
       }
     ],
-    "uncertainty_note": "The forecast is not an observation. Water balance is below the severe deficit threshold.",
+    "uncertainty_note": "The forecast is absent. Water balance is below the severe deficit threshold.",
     "validation_note": "A local technician must confirm this advice. ZARC divergence (MAPA, safra 2026/2027): maize: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (7 of 9 ten-day periods). cassava: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (8 of 9 ten-day periods).",
     "sources": [
       {
@@ -323,7 +323,7 @@
       }
     ]
   },
-  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nIncerteza: The forecast is not an observation. Water balance is below the severe deficit threshold.",
+  "explanation": "Entradas \u2014 \u00faltima cultura cultivada: n\u00e3o informada; cultura pretendida: milho; prioridade: solo.\nAs notas comparam a adequa\u00e7\u00e3o \u00e0 prioridade escolhida e \u00e0s evid\u00eancias dispon\u00edveis; n\u00e3o s\u00e3o probabilidades de rendimento.\n#1 soil water conservation \u2014 rota\u00e7\u00e3o: milho + feij\u00e3o; nota: 0.405875. Contrapartida: favorece a cobertura e a sa\u00fade do solo. A\u00e7\u00e3o: Wait for the planting window. Ciclo de pragas: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#2 current practice \u2014 rota\u00e7\u00e3o: milho; nota: 0.3485. Contrapartida: mant\u00e9m o calend\u00e1rio e a rotina atuais. A\u00e7\u00e3o: Wait for the planting window. Ciclo de pragas: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#3 resilient income forage \u2014 rota\u00e7\u00e3o: milho + mandioca; nota: 0.3435. Contrapartida: favorece forragem e renda. A\u00e7\u00e3o: Wait for the planting window. Ciclo de pragas: Previous crop history is unknown; pest-cycle break cannot be assessed.\nIncerteza: The forecast is absent. Water balance is below the severe deficit threshold.",
   "lang": "pt-BR",
-  "generated_at": "2026-11-15T20:40:49Z"
+  "generated_at": "2026-11-16T01:30:36Z"
 }

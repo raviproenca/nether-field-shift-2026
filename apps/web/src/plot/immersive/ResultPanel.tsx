@@ -44,7 +44,17 @@ function Figure({ label, value, unit, note }: { label: string; value: string; un
   );
 }
 
-function Alternative({ strategy, best, lang, copy }: { strategy: Strategy; best: number; lang: Lang; copy: ImmersiveCopy }) {
+function Alternative({
+  strategy,
+  best,
+  lang,
+  copy,
+}: {
+  strategy: Strategy;
+  best: number;
+  lang: Lang;
+  copy: ImmersiveCopy;
+}) {
   const base = COPY[lang];
   return (
     <details className="alt">
@@ -60,6 +70,9 @@ function Alternative({ strategy, best, lang, copy }: { strategy: Strategy; best:
         <span className="alt-score-value num">{fmt(strategy.score, lang, 2)}</span>
       </summary>
       <ul className="alt-actions">
+        {strategy.trade_offs.map((tradeOff) => (
+          <li key={tradeOff}>{base.tradeOffLabels[tradeOff] ?? tradeOff}</li>
+        ))}
         {strategy.actions.map((action) => (
           <li key={action.code}>
             <strong>{base.actions[action.code] ?? action.summary}</strong> <span className="muted">{actionEvidence(action, lang)}</span>
@@ -89,51 +102,53 @@ export default function ResultPanel({
   notice: string | null;
 }) {
   const base = COPY[lang];
-  const ranked = [...recommendation.strategies].sort((a, b) => a.rank - b.rank);
-  const [top, ...others] = ranked;
+  const strategies = [...recommendation.strategies].sort((a, b) => a.rank - b.rank);
+  const [top, ...visibleAlternatives] = strategies;
   const { diagnosis, projection } = recommendation;
   return (
     <div className="result">
       {notice && <p className="notice-inline">{notice}</p>}
-      <section className="answer" aria-labelledby="answer-heading">
-        {place && <p className="answer-place">{place}</p>}
-        <p className="answer-kicker" id="answer-heading">
-          {copy.recommendation} · {base.crops[recommendation.crop]} · {base.priorities[recommendation.priority]}
-        </p>
-        <h2 className="answer-title">{base.strategyTitles[top.kind] ?? top.title}</h2>
-        <p className="answer-crops">{top.crops.map((crop) => base.crops[crop] ?? crop).join(" + ")}</p>
-        <p className="answer-context">
-          {copy.cropTransition(
-            recommendation.plot.previous_crops?.at(-1)
-              ? base.crops[recommendation.plot.previous_crops.at(-1)!] ?? recommendation.plot.previous_crops.at(-1)!
-              : copy.noPreviousCrop,
-            base.crops[recommendation.crop] ?? recommendation.crop,
-          )}
-        </p>
-        <p className="answer-score">
-          {copy.score}: {fmt(top.score, lang, 3)} / 1
-        </p>
-        <p className="muted small">{copy.scoreBasis}</p>
-        {top.trade_offs.length > 0 && (
-          <ul className="answer-tradeoffs">
-            {top.trade_offs.map((tradeOff) => (
-              <li key={tradeOff}>{base.tradeOffLabels[tradeOff] ?? tradeOff}</li>
-            ))}
-          </ul>
-        )}
-        <p className="muted small answer-pest">{engineNote(top.pest_cycle_note, lang)}</p>
-        {headline(top, recommendation, lang, copy).map((line) => (
-          <p key={line} className="answer-line">
-            {line}
+      {top && (
+        <section className="answer" aria-labelledby="answer-heading">
+          {place && <p className="answer-place">{place}</p>}
+          <p className="answer-kicker" id="answer-heading">
+            {copy.recommendation} · {base.crops[recommendation.crop]} · {base.priorities[recommendation.priority]}
           </p>
-        ))}
-        <p className="confidence">
-          {copy.confidence}{" "}
-          <a href={BACKTEST_URL} target="_blank" rel="noopener noreferrer">
-            {copy.backtestLink}
-          </a>
-        </p>
-      </section>
+          <h2 className="answer-title">{base.strategyTitles[top.kind] ?? top.title}</h2>
+          <p className="answer-crops">{top.crops.map((crop) => base.crops[crop] ?? crop).join(" + ")}</p>
+          <p className="answer-context">
+            {copy.cropTransition(
+              recommendation.plot.previous_crops?.at(-1)
+                ? base.crops[recommendation.plot.previous_crops.at(-1)!] ?? recommendation.plot.previous_crops.at(-1)!
+                : copy.noPreviousCrop,
+              base.crops[recommendation.crop] ?? recommendation.crop,
+            )}
+          </p>
+          <p className="answer-score">
+            {copy.score}: {fmt(top.score, lang, 3)} / 1
+          </p>
+          <p className="muted small">{copy.scoreBasis}</p>
+          {top.trade_offs.length > 0 && (
+            <ul className="answer-tradeoffs">
+              {top.trade_offs.map((tradeOff) => (
+                <li key={tradeOff}>{base.tradeOffLabels[tradeOff] ?? tradeOff}</li>
+              ))}
+            </ul>
+          )}
+          <p className="muted small answer-pest">{engineNote(top.pest_cycle_note, lang)}</p>
+          {headline(top, recommendation, lang, copy).map((line) => (
+            <p key={line} className="answer-line">
+              {line}
+            </p>
+          ))}
+          <p className="confidence">
+            {copy.confidence}{" "}
+            <a href={BACKTEST_URL} target="_blank" rel="noopener noreferrer">
+              {copy.backtestLink}
+            </a>
+          </p>
+        </section>
+      )}
 
       <div className="figures">
         <Figure label={copy.balance} value={fmt(diagnosis.water_balance_mm, lang)} unit="mm" note={`${formatDay(diagnosis.period_start, lang)} – ${formatDay(diagnosis.period_end, lang)}`} />
@@ -151,8 +166,14 @@ export default function ResultPanel({
           {copy.alternatives}
         </h3>
         <div className="alts">
-          {others.map((strategy) => (
-            <Alternative key={strategy.kind} strategy={strategy} best={top.score} lang={lang} copy={copy} />
+          {visibleAlternatives.map((strategy) => (
+            <Alternative
+              key={strategy.kind}
+              strategy={strategy}
+              best={top?.score ?? 0}
+              lang={lang}
+              copy={copy}
+            />
           ))}
         </div>
       </section>

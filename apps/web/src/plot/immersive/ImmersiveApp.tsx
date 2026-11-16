@@ -13,7 +13,7 @@ import { COPY, type Lang } from "../i18n";
 import { LangContext } from "../LangContext";
 import { CROP_IDS, PRIORITY_IDS } from "../labels";
 import type { Crop, Priority, RecommendationResponse } from "../types";
-import { demoHistoryMatches, recommendationQueryKey, toRecommendationRequest } from "../recommendationRequest";
+import { demoHistoryMatches, recommendationQueryKey, recommendationSource, toRecommendationRequest } from "../recommendationRequest";
 import AddressSearch, { type Place } from "./AddressSearch";
 import { IMMERSIVE_COPY } from "./copy";
 import { fetchLiveRisk } from "./liveRisk";
@@ -132,7 +132,8 @@ export default function ImmersiveApp() {
           const { id, name } = response.recommendation.plot;
           return { response, notice: copy.liveNotice(name ?? id ?? `${point.lat.toFixed(3)}, ${point.lon.toFixed(3)}`) };
         });
-    const operation = resolved.pilot ? fromPilot(resolved.pilot, resolved.notice) : live();
+    const source = recommendationSource(!USING_SAMPLE, resolved.pilot !== null);
+    const operation = source === "saved-pilot" && resolved.pilot ? fromPilot(resolved.pilot, resolved.notice) : live();
     operation
       .then(({ response, notice }) => setOutcome({ key, ok: true, response, notice }))
       .catch((error: unknown) => {

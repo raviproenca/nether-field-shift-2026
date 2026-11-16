@@ -31,6 +31,15 @@ export function demoHistoryMatches(savedPreviousCrops: readonly string[] | undef
   return (savedPreviousCrops?.at(-1) ?? null) === selectedPreviousCrop;
 }
 
+export function recommendationSource(apiConfigured: boolean, pilotResolved: boolean): "saved-pilot" | "live" {
+  return !apiConfigured && pilotResolved ? "saved-pilot" : "live";
+}
+
+export function hasSupportedPreviousCrop(previousCrops: readonly string[] | undefined): boolean {
+  const lastCrop = previousCrops?.at(-1);
+  return lastCrop === "maize" || lastCrop === "beans" || lastCrop === "cassava";
+}
+
 export class RecommendationError extends Error {}
 
 export async function postRecommendation(

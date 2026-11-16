@@ -40,7 +40,7 @@ class RecommendationRequest(BaseModel):
     crop: Crop
     priority: Priority
     season: str | None = None
-    previous_crops: list[str] | None = None
+    previous_crops: list[Crop] | None = None
     lang: Literal["en", "pt-BR"] = "en"
 
 
@@ -83,7 +83,7 @@ def build_recommendation_response(
             plot,
             season=request.season if request.season is not None else plot.season,
             previous_crops=(
-                tuple(request.previous_crops)
+                tuple(crop.value for crop in request.previous_crops)
                 if request.previous_crops is not None
                 else plot.previous_crops
             ),

@@ -34,6 +34,7 @@ export interface Copy {
   toHarvest: (days: number) => string;
   pestBroken: string;
   pestNotBroken: string;
+  pestNotAssessed: string;
   waterDemand: string;
   to: string;
   noData: string;
@@ -96,6 +97,7 @@ const EN: Copy = {
   toHarvest: (days) => `${days} days to harvest`,
   pestBroken: "Breaks the pest cycle",
   pestNotBroken: "Does not break the pest cycle",
+  pestNotAssessed: "Pest-cycle break cannot be assessed without crop history.",
   waterDemand: "Water demand",
   to: "to",
   noData: "No data",
@@ -178,6 +180,7 @@ const PT: Copy = {
   toHarvest: (days) => `${days} dias até a colheita`,
   pestBroken: "Quebra o ciclo de pragas",
   pestNotBroken: "Não quebra o ciclo de pragas",
+  pestNotAssessed: "Não é possível avaliar a quebra do ciclo de pragas sem o histórico da cultura anterior.",
   waterDemand: "Demanda de água",
   to: "a",
   noData: "Sem dados",

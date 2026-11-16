@@ -32,6 +32,8 @@ The default screen (`src/plot/`): click a point in Sergipe, choose the **last cr
 
 The screen calls only the API (`POST /recommendation`, #53) through `src/plot/api.ts`. Set `VITE_API_URL` (for example `http://localhost:8000`) to use it. The request sends the last crop as `previous_crops` (or an explicit empty list when the history is unknown). A configured API failure is shown as an error; it is never replaced by a saved pilot result.
 
+The API accepts only the supported crop IDs (`maize`, `beans`, `cassava`) in `previous_crops`; unsupported history is rejected. When history is unknown, the engine adds no family-break score and says that a pest-cycle break cannot be assessed.
+
 Without `VITE_API_URL`, the screen uses precomputed pilot runs in `public/demo/`. It labels the pilot, generation date and saved crop history. Those files are not recalculated for a clicked address or a newly selected last crop; the UI states when the selected history differs from the saved run. The seasonal rain risk for an arbitrary point is computed separately from NASA POWER. The PT-BR button switches dashboard labels, units and template text; engine evidence and notes remain in English.
 
 ## What the internal map shows

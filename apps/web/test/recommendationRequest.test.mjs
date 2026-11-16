@@ -5,6 +5,8 @@ import {
   demoHistoryMatches,
   postRecommendation,
   recommendationQueryKey,
+  recommendationSource,
+  hasSupportedPreviousCrop,
   toRecommendationRequest,
   RecommendationError,
 } from "../src/plot/recommendationRequest.ts";
@@ -66,6 +68,28 @@ test("saved demo history is compared with the selected last crop", () => {
   assert.equal(demoHistoryMatches([], null), true);
   assert.equal(demoHistoryMatches([], "beans"), false);
   assert.equal(demoHistoryMatches(["maize", "beans"], "beans"), true);
+});
+
+test("a configured API uses live analysis for a selected pilot and sends its history", async () => {
+  assert.equal(recommendationSource(true, true), "live");
+  assert.equal(recommendationSource(false, true), "saved-pilot");
+  assert.equal(recommendationSource(true, false), "live");
+
+  const pilotRequest = toRecommendationRequest({ ...inputs, lat: -10.218, lon: -37.42, previousCrop: "cassava" });
+  let sentBody;
+  await postRecommendation("https://api.example.test", pilotRequest, undefined, async (_url, options) => {
+    sentBody = JSON.parse(options.body);
+    return Response.json({ recommendation: {}, explanation: "live", lang: "en" });
+  });
+  assert.equal(sentBody.lat, -10.218);
+  assert.equal(sentBody.lon, -37.42);
+  assert.deepEqual(sentBody.previous_crops, ["cassava"]);
+});
+
+test("pest-cycle assessment requires a supported recorded previous crop", () => {
+  assert.equal(hasSupportedPreviousCrop([]), false);
+  assert.equal(hasSupportedPreviousCrop(["rice"]), false);
+  assert.equal(hasSupportedPreviousCrop(["maize", "beans"]), true);
 });
 
 test("saved demo notice discloses when the selected history was not applied", () => {

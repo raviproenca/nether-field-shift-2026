@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
+from pydantic import ValidationError
 from referencing import Registry, Resource
 
 from apps.api import recommendation as recommendation_module
@@ -96,6 +97,13 @@ def test_explicit_empty_previous_crops_overrides_inferred_plot_history(
 
     assert omitted.recommendation["plot"]["previous_crops"] == ["beans"]
     assert explicitly_empty.recommendation["plot"]["previous_crops"] == []
+
+
+def test_unsupported_previous_crop_is_rejected_by_request_validation() -> None:
+    with pytest.raises(ValidationError):
+        recommendation_module.RecommendationRequest.model_validate(
+            {**VALID_BODY, "previous_crops": ["rice"]}
+        )
 
 
 def test_portuguese_text_on_request(client: TestClient) -> None:

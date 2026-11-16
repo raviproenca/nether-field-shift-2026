@@ -276,6 +276,41 @@ def test_last_crop_changes_family_break_and_soil_priority_score() -> None:
     assert current_after_maize.score != current_after_beans.score
 
 
+def test_unknown_history_does_not_score_or_claim_a_pest_cycle_break() -> None:
+    diagnosis = make_diagnosis()
+    projection = make_projection()
+    unknown_history = recommend(
+        make_plot(previous_crops=()),
+        diagnosis,
+        projection,
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+    same_family_history = recommend(
+        make_plot(previous_crops=("beans",)),
+        diagnosis,
+        projection,
+        Crop.BEANS,
+        Priority.SOIL,
+        RULES,
+    )
+
+    unknown_current = next(
+        strategy for strategy in unknown_history.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+    )
+    known_current = next(
+        strategy for strategy in same_family_history.strategies if strategy.kind is StrategyKind.CURRENT_PRACTICE
+    )
+    assert unknown_current.score == known_current.score
+    assert all(not strategy.breaks_pest_cycle for strategy in unknown_history.strategies)
+    assert all(
+        "unknown" in strategy.pest_cycle_note.casefold()
+        and "cannot be assessed" in strategy.pest_cycle_note.casefold()
+        for strategy in unknown_history.strategies
+    )
+
+
 def test_forecast_absent_still_returns_a_recommendation() -> None:
     recommendation = recommend(
         make_plot(),

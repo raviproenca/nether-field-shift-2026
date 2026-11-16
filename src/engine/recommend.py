@@ -103,7 +103,7 @@ def _family_break(profiles: tuple[CropProfile, ...], previous: CropProfile | Non
     A companion does not earn the break while the previous family is still planted.
     """
     if previous is None:
-        return True
+        return False
     return all(profile.botanical_family != previous.botanical_family for profile in profiles)
 
 
@@ -397,10 +397,7 @@ def _pest_cycle(
     previous: CropProfile | None,
 ) -> tuple[bool, str]:
     if previous is None:
-        families = {profile.botanical_family for profile in profiles}
-        if len(families) > 1:
-            return True, "More than one botanical family is in the strategy."
-        return False, "A single family does not break a pest cycle."
+        return False, "Previous crop history is unknown; pest-cycle break cannot be assessed."
     introduced = [profile for profile in profiles if profile.botanical_family != previous.botanical_family]
     if introduced:
         names = ", ".join(profile.botanical_family for profile in introduced)

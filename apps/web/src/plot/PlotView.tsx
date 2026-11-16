@@ -5,6 +5,7 @@ import type { Metric } from "./labels";
 import { diagnosisMetrics, formatNumber, projectionMetrics } from "./labels";
 import { ClimateCharts, WaterDemandChart } from "./Charts";
 import type { Recommendation, SourceAttribution, Strategy } from "./types";
+import { hasSupportedPreviousCrop } from "./recommendationRequest";
 
 function SourceLink({ source }: { source: SourceAttribution | undefined }) {
   const copy = useCopy();
@@ -46,7 +47,7 @@ function MetricTable({ caption, metrics, sources }: { caption: string; metrics: 
   );
 }
 
-function StrategyCard({ strategy }: { strategy: Strategy }) {
+function StrategyCard({ strategy, historyKnown }: { strategy: Strategy; historyKnown: boolean }) {
   const copy = useCopy();
   const lang = useLang();
   return (
@@ -64,7 +65,7 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
         {strategy.trade_offs.map((tradeOff) => (
           <li key={tradeOff}>{copy.tradeOffLabels[tradeOff] ?? tradeOff}</li>
         ))}
-        <li>{strategy.breaks_pest_cycle ? copy.pestBroken : copy.pestNotBroken}</li>
+        <li>{historyKnown ? (strategy.breaks_pest_cycle ? copy.pestBroken : copy.pestNotBroken) : copy.pestNotAssessed}</li>
         <li className="num">
           {copy.waterDemand}: {formatNumber(strategy.water_demand_mm, copy.units.mm, copy.noData)}
         </li>
@@ -86,7 +87,7 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
           </li>
         ))}
       </ul>
-      <p className="muted">{strategy.pest_cycle_note}</p>
+      {historyKnown && <p className="muted">{strategy.pest_cycle_note}</p>}
     </article>
   );
 }
@@ -96,6 +97,7 @@ export default function PlotView({ recommendation, explanation }: { recommendati
   const { diagnosis, projection, strategies } = recommendation;
   const ranked = [...strategies].sort((a, b) => a.rank - b.rank);
   const lastCrop = recommendation.plot.previous_crops?.at(-1);
+  const historyKnown = hasSupportedPreviousCrop(recommendation.plot.previous_crops);
   return (
     <div className="plot-view">
       <section aria-labelledby="strategies-heading">
@@ -108,7 +110,7 @@ export default function PlotView({ recommendation, explanation }: { recommendati
         <p className="muted small">{copy.scoreBasis}</p>
         <div className="strategies">
           {ranked.map((strategy) => (
-            <StrategyCard key={strategy.kind} strategy={strategy} />
+            <StrategyCard key={strategy.kind} strategy={strategy} historyKnown={historyKnown} />
           ))}
         </div>
         <div className="note">

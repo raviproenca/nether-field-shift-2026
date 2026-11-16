@@ -85,16 +85,16 @@
       ]
     },
     "projection": {
-      "period_start": "2026-11-15",
-      "period_end": "2026-11-29",
+      "period_start": "2026-11-16",
+      "period_end": "2026-11-16",
       "horizon_days": 15,
-      "available": true,
-      "rain_total_mm": 34.9,
-      "rain_daily_mean_mm": 2.327,
-      "temperature_mean_c": 29.67,
-      "temperature_max_c": 37.8,
-      "et0_daily_mean_mm": 6.533,
-      "water_balance_mm": -63.09,
+      "available": false,
+      "rain_total_mm": null,
+      "rain_daily_mean_mm": null,
+      "temperature_mean_c": null,
+      "temperature_max_c": null,
+      "et0_daily_mean_mm": null,
+      "water_balance_mm": null,
       "sources": [
         {
           "source": "open-meteo",
@@ -110,7 +110,7 @@
       {
         "kind": "soil_water_conservation",
         "rank": 1,
-        "score": 0.482975,
+        "score": 0.437975,
         "title": "soil water conservation",
         "crops": [
           "maize",
@@ -136,8 +136,8 @@
           }
         ],
         "water_demand_mm": 950.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -168,7 +168,7 @@
       {
         "kind": "current_practice",
         "rank": 2,
-        "score": 0.41285,
+        "score": 0.36785,
         "title": "current practice",
         "crops": [
           "maize"
@@ -187,7 +187,7 @@
         ],
         "water_demand_mm": 600.0,
         "breaks_pest_cycle": false,
-        "pest_cycle_note": "A single family does not break a pest cycle.",
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -212,7 +212,7 @@
       {
         "kind": "resilient_income_forage",
         "rank": 3,
-        "score": 0.3828,
+        "score": 0.3378,
         "title": "resilient income forage",
         "crops": [
           "maize",
@@ -238,8 +238,8 @@
           }
         ],
         "water_demand_mm": 1600.0,
-        "breaks_pest_cycle": true,
-        "pest_cycle_note": "More than one botanical family is in the strategy.",
+        "breaks_pest_cycle": false,
+        "pest_cycle_note": "Previous crop history is unknown; pest-cycle break cannot be assessed.",
         "actions": [
           {
             "code": "wait_for_window",
@@ -262,7 +262,7 @@
         ]
       }
     ],
-    "uncertainty_note": "The forecast is not an observation. Water balance is below the severe deficit threshold.",
+    "uncertainty_note": "The forecast is absent. Water balance is below the severe deficit threshold.",
     "validation_note": "A local technician must confirm this advice. ZARC divergence (MAPA, safra 2026/2027): maize: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (7 of 9 ten-day periods). cassava: the window 2027-04-01 to 2027-06-30 is only partly inside the ZARC (8 of 9 ten-day periods).",
     "sources": [
       {
@@ -323,7 +323,7 @@
       }
     ]
   },
-  "explanation": "soil water conservation: Wait for the planting window.\ncurrent practice: Wait for the planting window.\nresilient income forage: Wait for the planting window.\nUncertainty: The forecast is not an observation. Water balance is below the severe deficit threshold.",
+  "explanation": "Inputs \u2014 last crop grown: unknown / none; intended crop: maize; priority: water.\nRule scores compare fit to the selected priority and available evidence; they are not yield probabilities.\n#1 soil water conservation \u2014 rotation: maize + beans; score: 0.437975. Trade-off: favors soil cover and soil health. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#2 current practice \u2014 rotation: maize; score: 0.36785. Trade-off: keeps the current calendar and routine. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\n#3 resilient income forage \u2014 rotation: maize + cassava; score: 0.3378. Trade-off: favors forage and income. Action: Wait for the planting window. Pest-cycle assessment: Previous crop history is unknown; pest-cycle break cannot be assessed.\nUncertainty: The forecast is absent. Water balance is below the severe deficit threshold.",
   "lang": "en",
-  "generated_at": "2026-11-15T20:40:48Z"
+  "generated_at": "2026-11-16T01:30:35Z"
 }

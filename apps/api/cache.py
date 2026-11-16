@@ -113,13 +113,16 @@ def _coord_file_stem(ck: str) -> str:
     return ck.replace(",", "_")
 
 
+RECOMMENDATION_CACHE_VERSION = 2
+
+
 def _rec_entry_key(
     crop: str,
     priority: str,
     season: str | None = None,
     previous_crops: Sequence[str] = (),
 ) -> str:
-    return f"{crop}:{priority}:{season or ''}:{','.join(previous_crops)}"
+    return f"v{RECOMMENDATION_CACHE_VERSION}:{crop}:{priority}:{season or ''}:{','.join(previous_crops)}"
 
 
 def _atomic_write_json(file_path: Path, data: dict[str, Any]) -> None:

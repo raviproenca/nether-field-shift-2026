@@ -204,6 +204,36 @@ def test_recommendation_cache_fallback_keeps_previous_crop_dimension(tmp_path: P
     assert mismatched is None
 
 
+def test_recommendation_cache_ignores_pre_rotation_scoring_entries(tmp_path: Path) -> None:
+    cache_dir = tmp_path / "recommendation_cache"
+    path = write_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        recommendation_dict={"plot": {"previous_crops": []}, "strategies": []},
+        explanations={"en": "legacy ranking", "pt-BR": "ranking antigo"},
+        season=None,
+        previous_crops=(),
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    legacy_entry = next(iter(payload["entries"].values()))
+    payload["entries"] = {"maize:water::": legacy_entry}
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = read_recommendation_cache(
+        cache_dir=cache_dir,
+        lat=-10.685,
+        lon=-37.425,
+        crop="maize",
+        priority="water",
+        previous_crops=(),
+    )
+
+    assert result is None
+
+
 # ---------------------------------------------------------------------------
 # Test 3: Pre-warm Pilots, Schema Validation, and Multi-language (AD-9)
 # ---------------------------------------------------------------------------
