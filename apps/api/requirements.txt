@@ -1,0 +1,9 @@
+# Runtime dependencies of the product API image (Dockerfile). A subset of ../../requirements.txt with the same pins;
+# the heavy NASA download stack (earthaccess, rasterio, pyhdf, ...) is not needed to serve the API.
+fastapi==0.162.7
+uvicorn==0.54.0
+pydantic==2.14.3
+pandas==3.1.1
+numpy==2.5.4
+requests==2.34.2
+PyYAML==6.0.3

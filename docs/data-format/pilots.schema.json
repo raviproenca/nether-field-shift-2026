@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pilots.schema.json",
+  "title": "Pilot places (<region>/pilots.geojson)",
+  "description": "Named places of the team's pilot areas. Their series and terrain are in the same files as the grid points, under their id.",
+  "type": "object",
+  "required": [
+    "type",
+    "features"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "FeatureCollection"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "const": "Feature"
+          },
+          "id": {
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "points.schema.json#/properties/features/items/properties/geometry"
+          },
+          "properties": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "zone",
+              "state",
+              "lat",
+              "lon",
+              "radius_km"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "zone": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "lon": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              },
+              "radius_km": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Radius of the box that represents the place."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

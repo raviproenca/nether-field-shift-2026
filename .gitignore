@@ -16,6 +16,7 @@ venv/
 # dados brutos e cache (baixar com script; não versionar arquivos grandes)
 data/raw/
 data/cache/
+data/processed/
 *.nc
 *.h5
 *.hdf
@@ -25,3 +26,15 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+*.nc4
+*.zip
+# BMad: personal config and render cache
+_bmad/config.user.toml
+_bmad/custom/config.user.toml
+_bmad/render/
+# agents: local settings
+.claude/settings.local.json
+# Maestri canvas (local workspace state)
+.maestri/
+# git worktrees (local)
+.worktrees/
