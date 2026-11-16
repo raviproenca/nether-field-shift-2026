@@ -18,18 +18,19 @@ The static web build is durable relative to the API: saved demo JSON is committe
 
 ## Update or roll back the existing API image
 
-This procedure updates only the image of the existing Container App. It assumes an operator is already authenticated with Azure CLI and has access to the existing Container App and Azure Container Registry (ACR). Resolve the existing resource group and registry names from the Azure portal or team configuration; do not print credentials or enable shell tracing. These commands do not create resources, change billing, registry authentication, ingress, or app environment variables. In particular, leave `API_CORS_ORIGINS` unchanged.
+This procedure updates only the image of the existing Container App. It assumes an operator is already authenticated with Azure CLI and has access to the existing Container App and Azure Container Registry (ACR). Resolve the existing resource group and registry names from the Azure portal or team configuration; do not print credentials or enable shell tracing. These commands do not create resources, change billing configuration, registry auth configuration, ingress, or app environment variables. ACR build/push uses the existing service and may incur its existing charges. In particular, leave `API_CORS_ORIGINS` unchanged.
 
-Run from the repository root. Use a unique source commit tag and retain the previous image reference before building:
+Run from the repository root. Use a unique source commit tag and retain the previous image reference before building. The observed prior image, `field-shift-api:e673b1c`, is tag-based; treat it as a rollback reference, not an immutable identity. A tag can be moved. For byte-exact rollback, use a digest-qualified reference (`repository@sha256:<digest>`) recorded from ACR, and do not overwrite commit tags.
 
 ```bash
+set -euo pipefail
 RESOURCE_GROUP="replace-with-existing-resource-group"
 APP_NAME=field-shift-api
 ACR_NAME="replace-with-existing-registry-name"
 IMAGE_NAME=field-shift-api
 IMAGE_TAG=$(git rev-parse --short=12 HEAD)
 ACR_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
-PREVIOUS_IMAGE=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query 'properties.template.containers[0].image' -o tsv)
+PREVIOUS_IMAGE_REF=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query 'properties.template.containers[0].image' -o tsv)
 PREVIOUS_REVISION=$(az containerapp revision list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "[?properties.trafficWeight==\`100\`].name | [0]" -o tsv)
 CORS_BEFORE=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='API_CORS_ORIGINS'].value | [0]" -o tsv)
 
@@ -39,7 +40,31 @@ CORS_AFTER=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE
 test "$CORS_BEFORE" = "$CORS_AFTER"
 ```
 
-Replace the two placeholder names before running the commands. The equality check prints no environment values and stops the command block if `API_CORS_ORIGINS` changed. The update command intentionally changes only the image. Do not append `--set-env-vars`, registry, ingress, scale, or billing options. Check `/health` and the Crop Helper origin's CORS preflight before considering the revision usable:
+Replace the two placeholder names before running the commands. In this first path, `az acr build` uses ACR Tasks. If it fails with `TasksOperationsNotAllowed`, do not continue this block; use the local Docker fallback below. Stop for other build errors. The equality check prints no environment values and stops the command block if `API_CORS_ORIGINS` changed. The update command intentionally changes only the image. Do not append `--set-env-vars`, registry, ingress, scale, or billing options. Check `/health` and the Crop Helper origin's CORS preflight before considering the revision usable:
+
+If ACR Tasks is unavailable with `TasksOperationsNotAllowed`, rerun from the repository root using the existing registry and app. Set the same resource and registry names and capture the current image/config again before building:
+
+```bash
+set -euo pipefail
+RESOURCE_GROUP="replace-with-existing-resource-group"
+APP_NAME=field-shift-api
+ACR_NAME="replace-with-existing-registry-name"
+IMAGE_NAME=field-shift-api
+IMAGE_TAG=$(git rev-parse --short=12 HEAD)
+ACR_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
+PREVIOUS_IMAGE_REF=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query 'properties.template.containers[0].image' -o tsv)
+PREVIOUS_REVISION=$(az containerapp revision list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "[?properties.trafficWeight==\`100\`].name | [0]" -o tsv)
+CORS_BEFORE=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='API_CORS_ORIGINS'].value | [0]" -o tsv)
+
+docker build --network host -t "$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG" .
+az acr login --name "$ACR_NAME"
+docker push "$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG"
+az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG"
+CORS_AFTER=$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='API_CORS_ORIGINS'].value | [0]" -o tsv)
+test "$CORS_BEFORE" = "$CORS_AFTER"
+```
+
+`az acr login` uses the existing Azure CLI session and Docker credential store; do not print, copy, or log credential values. The Docker build uses host networking for build-time network access and publishes no ports.
 
 ```bash
 API_URL=https://field-shift-api.kindpebble-07cb9fe8.brazilsouth.azurecontainerapps.io
@@ -53,10 +78,10 @@ curl -i -X OPTIONS "$API_URL/recommendation" \
 For the general rollback path, apply the captured previous image. This creates an image-only revision using the app's current configuration, including its current `API_CORS_ORIGINS`:
 
 ```bash
-az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$PREVIOUS_IMAGE"
+az containerapp update --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --image "$PREVIOUS_IMAGE_REF"
 ```
 
-In multiple-revision mode, an operator may instead reactivate and route traffic to `$PREVIOUS_REVISION` with `az containerapp revision activate` and `az containerapp ingress traffic set --revision-weight "$PREVIOUS_REVISION=100"`. Only use that route after confirming the saved revision has the intended CORS origin; a revision restores its own configuration. Single-revision mode may deprovision old revisions, so the captured immutable image reference is the portable rollback record. Azure documents [revision behavior](https://learn.microsoft.com/en-us/azure/container-apps/revisions), [revision activation](https://learn.microsoft.com/en-us/cli/azure/containerapp/revision), and [traffic weights](https://learn.microsoft.com/en-us/cli/azure/containerapp/ingress/traffic).
+In multiple-revision mode, an operator may instead reactivate and route traffic to `$PREVIOUS_REVISION` with `az containerapp revision activate` and `az containerapp ingress traffic set --revision-weight "$PREVIOUS_REVISION=100"`. Only use that route after confirming the saved revision has the intended CORS origin; a revision restores its own configuration. Single-revision mode may deprovision old revisions, so retain the previous image reference or its digest for rollback. Azure documents [revision behavior](https://learn.microsoft.com/en-us/azure/container-apps/revisions), [revision activation](https://learn.microsoft.com/en-us/cli/azure/containerapp/revision), and [traffic weights](https://learn.microsoft.com/en-us/cli/azure/containerapp/ingress/traffic).
 
 ## Reproduce locally without cloud resources
 
